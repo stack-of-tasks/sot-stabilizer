@@ -47,6 +47,7 @@ ADD_REQUIRED_DEPENDENCY("state-observation")
 ADD_REQUIRED_DEPENDENCY("sot-state-observation")
 
 SET(${PROJECT_NAME}_HEADERS
+    include/sot-stabilizer/hrp2-decoupled-stabilizer.hh
 )
 
 

@@ -1,0 +1,27 @@
+<!-- -*- xml -*-
+
+This test checks that the synchornized behaves properly.
+
+It relies on the bag file located in bag/force-imu.bag
+
+  -->
+<launch>
+  <!-- Which robot are we controlling ? -->
+  <arg name="robot" default="hrp2_14" />
+
+  <!-- We are in simulation ! -->
+  <arg name="simulation" default="false" />
+
+  <!-- mode should be dg_with_stabilizer -->
+  <arg name="mode" default="dg_with_stabilizer" />
+
+  <!-- Load robot model and machine description -->
+  <include file="$(find hrp2_bringup)/launch/geometric_simu.launch">
+  </include>
+
+  <!-- Initialize the SoT -->
+  <node pkg="sot_state_observation" type="launcher" name="launcher">
+    <param name="~simulation" value="$(arg simulation)" />
+  </node>
+</launch>
+

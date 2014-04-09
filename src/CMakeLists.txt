@@ -34,6 +34,7 @@ SET(LIBRARY_NAME ${PROJECT_NAME})
 
 ADD_LIBRARY(${LIBRARY_NAME}
   SHARED
+  hrp2-decoupled-stabilizer.cpp
   ${${PROJECT_NAME}_ABSOLUTE_HEADERS}
   )
 
@@ -68,7 +69,7 @@ SET(NEW_ENTITY_CLASS
 #  MovingFrameTransformation
   )
 
-DYNAMIC_GRAPH_PYTHON_MODULE("sot/application/${PYTHON_LIBRARY_NAME}" ${LIBRARY_NAME} wrap)
+DYNAMIC_GRAPH_PYTHON_MODULE("sot/application/stabilizer" ${LIBRARY_NAME} wrap)
 
 ###
 # PYTHON PART
@@ -109,6 +110,18 @@ INCLUDE(../cmake/python.cmake)
 FINDPYTHON ()
 
 INSTALL(FILES
+  dynamic_graph/sot/application/stabilizer/scenarii/hand_compensater.py
+  dynamic_graph/sot/application/stabilizer/scenarii/ds_stabilizer.py
+  dynamic_graph/sot/application/stabilizer/scenarii/hrp2_flexibility_estimator.py
+  dynamic_graph/sot/application/stabilizer/scenarii/hand_compensater_chicken.py
+  dynamic_graph/sot/application/stabilizer/scenarii/hand_compensater_solver_kine.py
+  dynamic_graph/sot/application/stabilizer/scenarii/__init__.py
+  DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/application/stabilizer/scenarii
+  )
 
-  DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/application/stabilizer
+INSTALL(FILES
+  dynamic_graph/sot/application/stabilizer/scripts/appli_hands_compensater_chicken.py
+  dynamic_graph/sot/application/stabilizer/scripts/appli_two_hands_compensater_hrp.py
+  dynamic_graph/sot/application/stabilizer/scripts/appli_ds_stabilizer_hrp.py
+  DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/application/stabilizer/scripts
   )
