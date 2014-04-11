@@ -146,7 +146,7 @@ namespace sot {
       // State of the flexibility
       SignalPtr <MatrixHomogeneous, int> stateFlexSIN_;
       // Velocity of the flexibility
-      SignalPtr <MatrixHomogeneous, int> stateFlexDotSIN_;
+      SignalPtr <dynamicgraph::Vector, int> stateFlexDotSIN_;
       SignalPtr <double, int> controlGainSIN_;
       // Acceleration of center of mass
       SignalTimeDependent <dynamicgraph::Vector, int> d2comSOUT_;

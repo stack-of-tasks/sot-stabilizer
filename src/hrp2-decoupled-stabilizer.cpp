@@ -82,14 +82,15 @@ HRP2DecoupledStabilizer::HRP2DecoupledStabilizer(const std::string& inName) :
     stateFlexSIN_
     (NULL, "HRP2DecoupledStabilizer("+inName+")::input(MatrixHomo)::stateFlex"),
     stateFlexDotSIN_
-    (NULL, "HRP2DecoupledStabilizer("+inName+")::input(MatrixHomo)::stateFlexDot"),
+    (NULL, "HRP2DecoupledStabilizer("+inName+")::input(vector)::stateFlexDot"),
     controlGainSIN_
     (NULL, "HRP2DecoupledStabilizer("+inName+")::input(double)::controlGain"),
     d2comSOUT_ ("HRP2DecoupledStabilizer("+inName+")::output(vector)::d2com"),
     nbSupportSOUT_
-    ("HRP2DecoupledStabilizer("+inName+")::output(unsigned int)::nbSupport"),
-    supportPos1SOUT_("HRP2DecoupledStabilizer("+inName+")::output(Vector)::supportPos1"),
-    supportPos2SOUT_("HRP2DecoupledStabilizer("+inName+")::output(Vector)::supportPos2"),
+    ("HRP2DecoupledStabilizer("+inName+")::output(unsigned)::nbSupport"),
+    errorSOUT_ ("HRP2DecoupledStabilizer("+inName+")::output(vector)::error"),
+    supportPos1SOUT_("HRP2DecoupledStabilizer("+inName+")::output(vector)::supportPos1"),
+    supportPos2SOUT_("HRP2DecoupledStabilizer("+inName+")::output(vector)::supportPos2"),
     gain1_ (4), gain2_ (4), gainz_ (4), gainLat_ (4),
     prevCom_(3), dcom_ (3), dt_ (.005), on_ (false),
     forceThreshold_ (.036*m_*g_), angularStiffness_ (425.), d2com_ (3),
@@ -118,6 +119,7 @@ HRP2DecoupledStabilizer::HRP2DecoupledStabilizer(const std::string& inName) :
     signalRegistration (controlGainSIN_);
     signalRegistration (d2comSOUT_);
     signalRegistration (nbSupportSOUT_ << supportPos1SOUT_ << supportPos2SOUT_);
+    signalRegistration (errorSOUT_);
 
     taskSOUT.addDependency (comSIN_);
     taskSOUT.addDependency (comRefSIN_);
@@ -271,7 +273,7 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
     const Vector& comdotRef = comdotSIN_ (time);
     const MatrixHomogeneous& flexibility =
                 stateFlexSIN_.access(time);
-    const MatrixHomogeneous& flexDot =
+    const Vector& flexDot =
                 stateFlexDotSIN_.access(time);
     const MatrixHomogeneous& leftFootPosition =
         leftFootPositionSIN_.access (time);
@@ -303,8 +305,8 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
     flexLatControl_ (0) = 0.;
 
     //feet position
-    Vector rfpos;
-    Vector lfpos;
+    Vector rfpos(3);
+    Vector lfpos(3);
 
 
 
@@ -312,9 +314,10 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
     double flz = leftFootPosition (2,0) * forceLf (0) +
                  leftFootPosition(2,1) * forceLf (1) +
                  leftFootPosition (2,2) * forceLf (2);
-    double frz = leftFootPosition (2,0) * forceRf (0) +
-                 leftFootPosition(2,1) * forceRf (1) +
-                 leftFootPosition (2,2) * forceRf (2);
+    double frz = rightFootPosition (2,0) * forceRf (0) +
+                 rightFootPosition(2,1) * forceRf (1) +
+                 rightFootPosition (2,2) * forceRf (2);
+
 
     //compute the number of supports
     nbSupport_ = 0;
@@ -381,14 +384,14 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
 
         //along x
         theta0 = rpyFlex (1);
-        dtheta0 = flexDot (4);
+        dtheta0 = flexDot (1);
         d2com_ (0)= -(gain1_ (0)*x + gain1_ (1)*theta0 +
                       gain1_ (2)*dcom_ (0) + gain1_ (3)*dtheta0);
         dcom_ (0) += dt_ * d2com_ (0);
 
         // along y
         theta1 = rpyFlex (0);
-        dtheta1 = flexDot (3);
+        dtheta1 = flexDot (0);
         d2com_ (1) = - (gain1_ (0)*y + gain1_ (1)*theta1 +
                         gain1_ (2)*dcom_ (1) + gain1_ (3)*dtheta1);
         dcom_ (1) += dt_ * d2com_ (1);
@@ -415,7 +418,7 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
 
         //along the orthogonal to the contacts line
         theta0 = u1x_ * rpyFlex (1) + u1y_ * rpyFlex (0);
-        dtheta0 = u1x_ * flexDot (4) + u1y_ * flexDot (3);
+        dtheta0 = u1x_ * flexDot (1) + u1y_ * flexDot (0);
         xi = u1x_*x + u1y_*y;
         dxi = u1x_*dcom_ (0) + u1y_*dcom_ (1);
         ddxi = - (gain2_ (0)*xi + gain2_ (1)*theta0 + gain2_ (2)*dxi +
@@ -423,7 +426,7 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
 
         //along the contacts line
         theta1 = u2x_ * rpyFlex (1) + u2y_ * rpyFlex (0);
-        dtheta1 = u2x_ * flexDot (4) + u2y_ * flexDot (3);
+        dtheta1 = u2x_ * flexDot (1) + u2y_ * flexDot (0);
         lat = u2x_*x + u2y_*y;
         dlat = u2x_*dcom_ (0) + u2y_*dcom_ (1);
         ddlat = - (gainLat_ (0)*lat + gainLat_ (1)*(theta1-theta1Ref_)
