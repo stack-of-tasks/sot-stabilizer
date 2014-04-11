@@ -1,4 +1,3 @@
-from dynamic_graph.sot.core import *
 from dynamic_graph.sot.core.meta_task_6d import MetaTask6d,toFlags
 from dynamic_graph.sot.core.meta_task_visual_point import MetaTaskVisualPoint
 from dynamic_graph.sot.core.meta_tasks import *
@@ -12,7 +11,7 @@ from dynamic_graph.sot.core.meta_task_posture import MetaTaskPosture
 from dynamic_graph.sot.core.feature_vector3 import FeatureVector3
 from dynamic_graph.tracer_real_time import *
 
-import dynamic_graph.sot.application.state_observation as sotso
+from dynamic_graph.sot.application.state_observation import MovingFrameTransformation
 from dynamic_graph.sot.application.velocity.precomputed_tasks import Application
 
 toList = lambda sot: map(lambda x: x[2:],sot.display().split('\n')[3:-2])
@@ -64,7 +63,7 @@ class HandCompensater(Application):
     # --- TASKS --------------------------------------------------------------------
     # --- TASKS --------------------------------------------------------------------
     def createTasks(self):
-	(self.tasks['trunk'],self.gains['trunk'])= createTrunkTask (self.robot, self, 'Tasktrunk')
+	    (self.tasks['trunk'],self.gains['trunk'])= createTrunkTask (self.robot, self, 'Tasktrunk')
         self.taskbalance = self.tasks['balance']
         self.taskRH      = self.tasks['right-wrist']
         self.taskLH      = self.tasks['left-wrist']
@@ -236,7 +235,7 @@ class HandCompensater(Application):
         # cMcc= flexibility
         # ccMc= flexibility inverted
 
-        self.transformerR = sotso.MovingFrameTransformation('tranformation_right')
+        self.transformerR = MovingFrameTransformation('tranformation_right')
 
         self.ccMc = self.transformerR.gMl # inverted flexibility
         self.cMrhref = self.transformerR.lM0 # reference position in the world control frame
@@ -254,7 +253,7 @@ class HandCompensater(Application):
         ######
 
         if self.twoHands:
-            self.transformerL = sotso.MovingFrameTransformation('tranformation_left')
+            self.transformerL = MovingFrameTransformation('tranformation_left')
 
             self.sym = Multiply_of_matrixHomo('sym')
 
@@ -274,7 +273,7 @@ class HandCompensater(Application):
 
         if self.trunkStabilize:
             ### waist
-            self.transformerWaist = sotso.MovingFrameTransformation('tranformation_waist')
+            self.transformerWaist = MovingFrameTransformation('tranformation_waist')
             plug(self.ccMc,self.transformerWaist.gMl) # inverted flexibility
             self.cMwaist = self.transformerWaist.lM0 # reference position in the world control frame
             # You need to set up the inverted flexibility : plug( ..., self.ccMc)
@@ -289,7 +288,7 @@ class HandCompensater(Application):
             self.ccVwaist = self.transformerWaist.gV0
 
             ### chest
-            self.transformerChest = sotso.MovingFrameTransformation('tranformation_chest')
+            self.transformerChest = MovingFrameTransformation('tranformation_chest')
             plug(self.ccMc,self.transformerChest.gMl) # inverted flexibility
             self.cMchest = self.transformerChest.lM0 # reference position in the world control frame
             # You need to set up the inverted flexibility : plug( ..., self.ccMc)
@@ -304,7 +303,7 @@ class HandCompensater(Application):
             self.ccVchest = self.transformerChest.gV0
 
             ### gaze
-            self.transformerGaze = sotso.MovingFrameTransformation('tranformation_gaze')
+            self.transformerGaze = MovingFrameTransformation('tranformation_gaze')
             plug(self.ccMc,self.transformerGaze.gMl) # inverted flexibility
             self.cMgaze = self.transformerGaze.lM0 # reference position in the world control frame
             # You need to set up the inverted flexibility : plug( ..., self.ccMc)

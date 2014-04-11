@@ -1,4 +1,3 @@
-from dynamic_graph.sot.core import *
 from dynamic_graph.sot.core.meta_task_6d import MetaTask6d,toFlags
 from dynamic_graph.sot.core.meta_task_visual_point import MetaTaskVisualPoint
 from dynamic_graph.sot.core.meta_tasks import *
@@ -12,7 +11,7 @@ from dynamic_graph.sot.core.meta_task_posture import MetaTaskPosture
 from dynamic_graph.sot.core.feature_vector3 import FeatureVector3
 from dynamic_graph.tracer_real_time import *
 
-import dynamic_graph.sot.application.state_observation as sotso
+from dynamic_graph.sot.application.state_observation import MovingFrameTransformation
 from dynamic_graph.sot.application.stabilizer import HRP2DecoupledStabilizer
 from dynamic_graph.sot.application.velocity.precomputed_tasks import Application
 
@@ -39,20 +38,26 @@ def createTrunkTask (robot, application, taskName, ingain = 1.):
     plug(task.error, gain.error)      
     return (task, gain)
 
-class HandCompensater(Application):
+def createAnklesTask (robot, application, taskName, ingain = 1.):
+    task = Task (taskName)
+    task.add (application.leftAnkle.name)
+    task.add (application.rightAnkle.name)
+    gain = GainAdaptive('gain'+taskName)
+    gain.setConstant(ingain)
+    plug(gain.gain, task.controlGain)
+    plug(task.error, gain.error)      
+    return (task, gain)
+
+class DSStabilizer(Application):
 
     threePhaseScrew = True
     tracesRealTime = True
 
-    def __init__(self,robot,twoHands = True,trunkStabilize = True):
+    def __init__(self,robot,trunkStabilize = True):
         Application.__init__(self,robot)
-
-        self.twoHands = twoHands
         self.trunkStabilize = trunkStabilize
-
         self.robot = robot
         plug(self.robot.dynamic.com,self.robot.device.zmp)
-        
         self.sot = self.solver.sot
 
         self.createTasks()
@@ -65,17 +70,20 @@ class HandCompensater(Application):
     # --- TASKS --------------------------------------------------------------------
     # --- TASKS --------------------------------------------------------------------
     def createTasks(self):
-	(self.tasks['trunk'],self.gains['trunk'])= createTrunkTask (self.robot, self, 'Tasktrunk')
+	    (self.tasks['trunk'],self.gains['trunk'])= createTrunkTask (self.robot, self, 'Tasktrunk')
+        (self.tasks['ankles'],self.gains['ankles'])= createAnklesTask (self.robot, self, 'TaskAnkles')
         self.taskLF      = self.tasks['left-ankle']
         self.taskLF      = self.tasks['right-ankle']
-        self.taskCom
+        self.taskCom     = self.tasks['com']
         self.taskRH      = self.tasks['right-wrist']
         self.taskLH      = self.tasks['left-wrist']
         self.taskPosture = self.tasks['posture']
         self.taskTrunk   = self.tasks['trunk']
+        self.taskAnkles  = self.tasks['ankles']
         self.taskHalfStitting = MetaTaskPosture(self.robot.dynamic,'halfsitting')
-	
-        
+        self.createStabilizedCoMTask ()
+        (self.tasks['com-stabilized'],self.gains['com-stabilized']) = createStabilizedCoMTask()
+        self.taskCoMStabilized = self.tasks['com-stabilized']
 
     #initialization is separated from the creation of the tasks because if we want to switch
     #to second order controlm the initialization will remain while the creation is 
@@ -84,11 +92,8 @@ class HandCompensater(Application):
     def initTasks(self):
         self.initTaskBalance()
         self.initTaskPosture()
-        #self.initTaskHalfSitting()
-        self.initTaskCompensate()
+        self.initTaskStabilize()
 
-    #def initTaskHalfSitting(self):
-    #    self.taskHalfStitting.gotoq(None,self.robot.halfSitting)
 
     def initTaskBalance(self):
         # --- BALANCE ---
@@ -120,19 +125,20 @@ class HandCompensater(Application):
         self.featurePosture.jacobianIN.value = matrixToTuple(weight)
         self.featurePostureDes.errorIN.value = self.robot.halfSitting
         mask = '1'*36
-        # mask = 6*'0'+12*'0'+4*'1'+14*'0'
-        # mask = '000000000000111100000000000000000000000000'
-        # robot.dynamic.displaySignals ()
-        # robot.dynamic.Jchest.value
         self.features['posture'].selec.value = mask
 
     def initTaskGains(self, setup = "medium"):
         if setup == "medium":
             self.gains['balance'].setConstant(10)
             self.gains['trunk'].setConstant(10)
+            self.gains['com-stabilized'].setConstant(10)
+            self.gains['ankles'].setConstant(10)
             self.gains['right-wrist'].setByPoint(4,0.2,0.01,0.8)
             self.gains['left-wrist'].setByPoint(4,0.2,0.01,0.8)
             self.taskHalfStitting.gain.setByPoint(2,0.2,0.01,0.8)
+
+    def createStabilizedCoMTask ():
+        raise Exception("createStabilizedCoMTask is not overloaded")
          
     # --- SOLVER ----------------------------------------------------------------
 
@@ -151,6 +157,8 @@ class HandCompensater(Application):
         elif "task" in task.__dict__:  taskName=task.task.name
         else: taskName=task.name
         if taskName in toList(self.sot): self.sot.remove(taskName)
+
+
 
     # --- DISPLAY -------------------------------------------------------------
     def initDisplay(self):
@@ -215,65 +223,17 @@ class HandCompensater(Application):
     def nextStep(self,step=None):
         if step!=None: self.seqstep = step
         if self.seqstep==0:
-            self.moveToInit()
+            self.stabilize()
         elif self.seqstep==1:
-            self.startCompensate()
-        elif self.seqstep==2:
             self.goHalfSitting()
         self.seqstep += 1
         
     def __add__(self,i):
         self.nextStep()
 
-
     # COMPENATION ######################################
 
     def initTaskCompensate(self):
-        # The constraint is:
-        #    cMhref !!=!! cMh = cMcc ccMh
-        # or written in ccMh
-        #    ccMh !!=!! ccMc cMhref
-
-        # c : central frame of the robot
-        # cc : central frame for the controller  (without the flexibility)
-        # cMcc= flexibility
-        # ccMc= flexibility inverted
-
-        self.transformerR = sotso.MovingFrameTransformation('tranformation_right')
-
-        self.ccMc = self.transformerR.gMl # inverted flexibility
-        self.cMrhref = self.transformerR.lM0 # reference position in the world control frame
-        # You need to set up the inverted flexibility : plug( ..., self.ccMc)
-        # You need to set up a reference value here: plug( ... ,self.cMhref)
-
-        self.ccVc = self.transformerR.gVl # inverted flexibility velocity
-        self.cVrhref = self.transformerR.lV0 # reference velocity in the world control frame
-        # You need to set up the inverted flexibility velocity : plug( ..., self.ccVc)
-        # You need to set up a reference velocity value here: plug( ... ,self.cVhref)
-
-        self.ccMrhref = self.transformerR.gM0 # reference matrix homo in the control frame
-        self.ccVrhref = self.transformerR.gV0
-        
-        ######
-
-        if self.twoHands:
-            self.transformerL = sotso.MovingFrameTransformation('tranformation_left')
-
-            self.sym = Multiply_of_matrixHomo('sym')
-
-            self.sym.sin1.value =((1, 0, 0, 0), (0, -1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))
-            plug (self.ccMrhref,self.sym.sin2)
-            
-
-
-            self.symVel = Multiply_matrix_vector('symvel')
-            self.symVel.sin1.value =((1,0,0,0,0,0),(0,-1,0,0,0,0),(0,0,0,1,0,0),(0,0,0,1,0,0),(0,0,0,0,-1,0),(0,0,0,0,0,1))
-            plug (self.ccVrhref,self.symVel.sin2)
-            
-        
-
-            self.cMrhref.value = (matrixToTuple(diag([1,1,1,1])))
-            self.cVrhref.value = (0.0 , 0.0 , 0.0 , 0.0 , 0.0 , 0.0)
 
         if self.trunkStabilize:
             ### waist
@@ -322,30 +282,14 @@ class HandCompensater(Application):
             self.ccVgaze = self.transformerGaze.gV0            
             
 
-    def startCompensate(self):
+    def stabilize(self):
 
 
-        '''Start to compensate for the hand movements.'''
-        self.cMrhref.value = self.robot.dynamic.signal('right-wrist').value
-        self.cVrhref.value = (0.0 , 0.0 , 0.0 , 0.0 , 0.0 , 0.0)
-        
-        plug(self.ccMrhref,self.features['right-wrist'].reference)
-        plug(self.ccVrhref,self.features['right-wrist'].velocity)
-        
-        self.gains['right-wrist'].setByPoint(4,0.2,0.01,0.8)        
-        self.tasks['right-wrist'].setWithDerivative (True)
-        self.features['right-wrist'].frame('desired')
-
-        print matrix(self.cMrhref.value)
-
-        if self.twoHands:
-            self.gains['left-wrist'].setByPoint(4,0.2,0.01,0.8)
-            
-            plug (self.sym.sout,self.features['left-wrist'].reference)
-            plug (self.symVel.sout,self.features['left-wrist'].velocity)
-            self.features['left-wrist'].selec.value='000111'
-            self.tasks['left-wrist'].setWithDerivative (True)
-            self.features['left-wrist'].frame('desired')
+        '''Start to stabilize for the hand movements.'''
+        self.sot.clear()
+        self.push(self.tasks['com-stabilized'])
+        self.push(self.tasks['ankles'])
+        self.push(self.taskTrunk)
         
                
         if self.trunkStabilize:

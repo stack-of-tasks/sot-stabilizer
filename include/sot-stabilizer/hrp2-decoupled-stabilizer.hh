@@ -143,10 +143,6 @@ namespace sot {
       SignalPtr <dynamicgraph::Vector, int> forceLeftFootSIN_;
       // Force in right foot sensor
       SignalPtr <dynamicgraph::Vector, int> forceRightFootSIN_;
-      // Reference force in left foot
-      SignalPtr <Vector, int> forceLeftFootRefSIN_;
-      // Reference force in right foot
-      SignalPtr <Vector, int> forceRightFootRefSIN_;
       // State of the flexibility
       SignalPtr <MatrixHomogeneous, int> stateFlexSIN_;
       // Velocity of the flexibility
@@ -160,6 +156,9 @@ namespace sot {
       // Contact Position
       SignalTimeDependent <Vector, int> supportPos1SOUT_;
       SignalTimeDependent <Vector, int> supportPos2SOUT_;
+
+      //error output
+      SignalTimeDependent <Vector, int> errorSOUT_;
 
 
       /// Gains single support

@@ -112,9 +112,9 @@ FINDPYTHON ()
 INSTALL(FILES
   dynamic_graph/sot/application/stabilizer/scenarii/hand_compensater.py
   dynamic_graph/sot/application/stabilizer/scenarii/ds_stabilizer.py
-  dynamic_graph/sot/application/stabilizer/scenarii/hrp2_flexibility_estimator.py
   dynamic_graph/sot/application/stabilizer/scenarii/hand_compensater_chicken.py
   dynamic_graph/sot/application/stabilizer/scenarii/hand_compensater_solver_kine.py
+  dynamic_graph/sot/application/stabilizer/scenarii/hrp2_stabilizer.py
   dynamic_graph/sot/application/stabilizer/scenarii/__init__.py
   DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/application/stabilizer/scenarii
   )

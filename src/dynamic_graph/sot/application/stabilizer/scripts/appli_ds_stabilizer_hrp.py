@@ -1,12 +1,13 @@
 # Launch it with py ../robotViewerLauncher.py +compensater.py +appli.py 
 import sys
 import numpy as np
-import dynamic_graph as dg
+from dynamic_graph import plug
 import dynamic_graph.signal_base as dgsb
 
 from math import sin
 from dynamic_graph.sot.core import Stack_of_vector, OpPointModifier
 
+from dynamic_graph.sot.application.state_observation.initializations.hrp2_flexibility_estimator import HRP2FlexibilityEstimator 
 from dynamic_graph.sot.application.stabilizer.scenarii.hand_compensater import *
 
 
