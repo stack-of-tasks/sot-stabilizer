@@ -11,7 +11,7 @@ from dynamic_graph.sot.core.meta_task_posture import MetaTaskPosture
 from dynamic_graph.sot.core.feature_vector3 import FeatureVector3
 from dynamic_graph.tracer_real_time import *
 
-from dynamic_graph.sot.application.state_observation import MovingFrameTransformation
+
 from dynamic_graph.sot.application.stabilizer import HRP2DecoupledStabilizer
 from dynamic_graph.sot.application.velocity.precomputed_tasks import Application
 
@@ -70,7 +70,7 @@ class DSStabilizer(Application):
     # --- TASKS --------------------------------------------------------------------
     # --- TASKS --------------------------------------------------------------------
     def createTasks(self):
-	    (self.tasks['trunk'],self.gains['trunk'])= createTrunkTask (self.robot, self, 'Tasktrunk')
+        (self.tasks['trunk'],self.gains['trunk'])= createTrunkTask (self.robot, self, 'Tasktrunk')
         (self.tasks['ankles'],self.gains['ankles'])= createAnklesTask (self.robot, self, 'TaskAnkles')
         self.taskLF      = self.tasks['left-ankle']
         self.taskLF      = self.tasks['right-ankle']
@@ -81,8 +81,7 @@ class DSStabilizer(Application):
         self.taskTrunk   = self.tasks['trunk']
         self.taskAnkles  = self.tasks['ankles']
         self.taskHalfStitting = MetaTaskPosture(self.robot.dynamic,'halfsitting')
-        self.createStabilizedCoMTask ()
-        (self.tasks['com-stabilized'],self.gains['com-stabilized']) = createStabilizedCoMTask()
+        (self.tasks['com-stabilized'],self.gains['com-stabilized']) = self.createStabilizedCoMTask()
         self.taskCoMStabilized = self.tasks['com-stabilized']
 
     #initialization is separated from the creation of the tasks because if we want to switch
@@ -137,7 +136,7 @@ class DSStabilizer(Application):
             self.gains['left-wrist'].setByPoint(4,0.2,0.01,0.8)
             self.taskHalfStitting.gain.setByPoint(2,0.2,0.01,0.8)
 
-    def createStabilizedCoMTask ():
+    def createStabilizedCoMTask (self):
         raise Exception("createStabilizedCoMTask is not overloaded")
          
     # --- SOLVER ----------------------------------------------------------------
@@ -231,19 +230,22 @@ class DSStabilizer(Application):
     def __add__(self,i):
         self.nextStep()
 
-    # COMPENATION ######################################
+    # Stabilization ######################################
 
-    def initTaskCompensate(self):
+    def initTaskStabilize(self):
+        from dynamic_graph.sot.application.state_observation import MovingFrameTransformation
 
         if self.trunkStabilize:
             ### waist
-            self.transformerWaist = sotso.MovingFrameTransformation('tranformation_waist')
-            plug(self.ccMc,self.transformerWaist.gMl) # inverted flexibility
+            
+            
+            self.transformerWaist = MovingFrameTransformation('tranformation_waist')
+            self.ccMc = self.transformerWaist.gMl # inverted flexibility
             self.cMwaist = self.transformerWaist.lM0 # reference position in the world control frame
             # You need to set up the inverted flexibility : plug( ..., self.ccMc)
             # You need to set up a reference value here: plug( ... ,self.cMhref)
 
-            plug(self.ccVc,self.transformerWaist.gVl) # inverted flexibility velocity
+            self.ccVc = self.transformerWaist.gVl # inverted flexibility velocity
             self.cVwaist = self.transformerWaist.lV0 # reference velocity in the world control frame
             # You need to set up the inverted flexibility velocity : plug( ..., self.ccVc)
             # You need to set up a reference velocity value here: plug( ... ,self.cVhref)
@@ -252,7 +254,7 @@ class DSStabilizer(Application):
             self.ccVwaist = self.transformerWaist.gV0
 
             ### chest
-            self.transformerChest = sotso.MovingFrameTransformation('tranformation_chest')
+            self.transformerChest = MovingFrameTransformation('tranformation_chest')
             plug(self.ccMc,self.transformerChest.gMl) # inverted flexibility
             self.cMchest = self.transformerChest.lM0 # reference position in the world control frame
             # You need to set up the inverted flexibility : plug( ..., self.ccMc)
@@ -267,7 +269,7 @@ class DSStabilizer(Application):
             self.ccVchest = self.transformerChest.gV0
 
             ### gaze
-            self.transformerGaze = sotso.MovingFrameTransformation('tranformation_gaze')
+            self.transformerGaze = MovingFrameTransformation('tranformation_gaze')
             plug(self.ccMc,self.transformerGaze.gMl) # inverted flexibility
             self.cMgaze = self.transformerGaze.lM0 # reference position in the world control frame
             # You need to set up the inverted flexibility : plug( ..., self.ccMc)
@@ -290,6 +292,7 @@ class DSStabilizer(Application):
         self.push(self.tasks['com-stabilized'])
         self.push(self.tasks['ankles'])
         self.push(self.taskTrunk)
+        self.taskCoMStabilized.start()
         
                
         if self.trunkStabilize:
