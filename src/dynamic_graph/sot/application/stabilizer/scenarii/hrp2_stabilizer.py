@@ -2,21 +2,25 @@
 
 from dynamic_graph.sot.application.stabilizer import HRP2DecoupledStabilizer
 from dynamic_graph import plug
+import numpy as np
 import dynamic_graph.signal_base as dgsb
     
 from dynamic_graph.sot.core import Stack_of_vector, MatrixHomoToPoseUTheta, OpPointModifier, Multiply_matrix_vector
+from dynamic_graph.sot.core.matrix_util import matrixToTuple
+
 
 
 class HRP2Stabilizer(HRP2DecoupledStabilizer):
     
     
-    def __init__(robot,taskname = 'com-stabilized'):
+    def __init__(self,robot,taskname = 'com-stabilized'):
         
         from dynamic_graph.sot.application.state_observation.initializations.hrp2_flexibility_estimator import HRP2FlexibilityEstimator
 
-        HRP2DecoupledStabilizer.__init__(taskname)
+        HRP2DecoupledStabilizer.__init__(self,taskname)
         robot.dynamic.com.recompute(0)
         robot.dynamic.Jcom.recompute(0)
+        
         plug (robot.dynamic.com, self.com)
         plug (robot.dynamic.Jcom, self.Jcom)
         plug (robot.device.forceLLEG,self.force_lf)
@@ -25,8 +29,12 @@ class HRP2Stabilizer(HRP2DecoupledStabilizer):
         plug (robot.frames['leftFootForceSensor'].position,self.leftFootPosition)
         #TODO ///// SELEC ??
 
-        est = HRP2FlexibilityEstimator(robot, taskname+"estimator")
-        plug (self.nbSupport,est.contactNbr)
+        self.estimator = HRP2FlexibilityEstimator(robot, taskname+"Estimator")
+        plug (self.nbSupport,self.estimator.contactNbr)
         
-        plug(self.supportPos1,est.contact1)
-        plug(self.supportPos2,est.contact2)
+        plug(self.supportPos1,self.estimator.contact1)
+        plug(self.supportPos2,self.estimator.contact2)
+        self.estimator.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-2,)*6)))
+
+        plug(self.estimator.flexTransformationMatrix, self.stateFlex )        
+        plug(self.estimator.flexOmega, self.stateFlexDot )
