@@ -63,7 +63,7 @@ class HandCompensater(Application):
     # --- TASKS --------------------------------------------------------------------
     # --- TASKS --------------------------------------------------------------------
     def createTasks(self):
-	    (self.tasks['trunk'],self.gains['trunk'])= createTrunkTask (self.robot, self, 'Tasktrunk')
+        (self.tasks['trunk'],self.gains['trunk'])= createTrunkTask (self.robot, self, 'Tasktrunk')
         self.taskbalance = self.tasks['balance']
         self.taskRH      = self.tasks['right-wrist']
         self.taskLH      = self.tasks['left-wrist']
