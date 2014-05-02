@@ -36,5 +36,5 @@ class HRP2Stabilizer(HRP2DecoupledStabilizer):
         plug(self.supportPos2,self.estimator.contact2)
         self.estimator.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-2,)*6)))
 
-        plug(self.estimator.flexTransformationMatrix, self.stateFlex )        
-        plug(self.estimator.flexOmega, self.stateFlexDot )
+        plug(self.estimator.flexMatrixInverse, self.stateFlex )        
+        plug(self.estimator.flexInverseOmega, self.stateFlexDot )
