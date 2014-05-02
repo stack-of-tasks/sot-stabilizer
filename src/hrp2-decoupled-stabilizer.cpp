@@ -89,6 +89,7 @@ HRP2DecoupledStabilizer::HRP2DecoupledStabilizer(const std::string& inName) :
     nbSupportSOUT_
     ("HRP2DecoupledStabilizer("+inName+")::output(unsigned)::nbSupport"),
     errorSOUT_ ("HRP2DecoupledStabilizer("+inName+")::output(vector)::error"),
+    debugSOUT_ ("HRP2DecoupledStabilizer("+inName+")::output(vector)::debug"),
     supportPos1SOUT_("HRP2DecoupledStabilizer("+inName+")::output(vector)::supportPos1"),
     supportPos2SOUT_("HRP2DecoupledStabilizer("+inName+")::output(vector)::supportPos2"),
     gain1_ (4), gain2_ (4), gainz_ (4), gainLat_ (4),
@@ -106,7 +107,7 @@ HRP2DecoupledStabilizer::HRP2DecoupledStabilizer(const std::string& inName) :
     uth_ (),
     R_ (), translation_ (3), zmp_ (3),
     theta1Ref_ (0), theta1RefPrev_ (0), dtheta1Ref_ (0),
-    debug_ (4)
+    debug_(10)
 {
     // Register signals into the entity.
     signalRegistration (comSIN_);
@@ -120,6 +121,8 @@ HRP2DecoupledStabilizer::HRP2DecoupledStabilizer(const std::string& inName) :
     signalRegistration (d2comSOUT_);
     signalRegistration (nbSupportSOUT_ << supportPos1SOUT_ << supportPos2SOUT_);
     signalRegistration (errorSOUT_);
+    signalRegistration (debugSOUT_);
+
 
     taskSOUT.addDependency (comSIN_);
     taskSOUT.addDependency (comRefSIN_);
@@ -261,6 +264,8 @@ HRP2DecoupledStabilizer::HRP2DecoupledStabilizer(const std::string& inName) :
     gainLat_ (2) = 29.154645333333335;
     gainLat_ (3) = 2.2762837333333308;
 
+    debug_.setZero();
+
     zmp_.setZero ();
 }
 
@@ -321,52 +326,56 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
 
     //compute the number of supports
     nbSupport_ = 0;
-    if (on_)
+    if (frz >= forceThreshold_)
     {
-        if (frz >= forceThreshold_)
+        rightFootPosition.extract(rfpos);
+        nbSupport_++;
+        supportCandidateRf_++;
+        supportPos1SOUT_.setConstant (rfpos);
+        nbSupportSOUT_.setTime (time);
+        if (supportCandidateRf_ >= 3)
         {
-            rightFootPosition.extract(rfpos);
-            nbSupport_++;
-            supportCandidateRf_++;
+            iterationsSinceLastSupportRf_ = 0;
+        }
+    }
+    else
+    {
+        supportCandidateRf_ = 0;
+        iterationsSinceLastSupportRf_ ++;
+    }
+    if (flz >= forceThreshold_)
+    {
+        leftFootPosition.extract(rfpos);
+        nbSupport_++;
+        supportCandidateLf_++;
+        if (nbSupport_==0)
+        {
             supportPos1SOUT_.setConstant (rfpos);
-            nbSupportSOUT_.setTime (time);
-            if (supportCandidateRf_ >= 3)
-            {
-                iterationsSinceLastSupportRf_ = 0;
-
-            }
+            supportPos1SOUT_.setTime (time);
         }
         else
         {
-            supportCandidateRf_ = 0;
-            iterationsSinceLastSupportRf_ ++;
+            supportPos2SOUT_.setConstant (rfpos);
+            supportPos2SOUT_.setTime (time);
         }
-        if (flz >= forceThreshold_)
+        if (supportCandidateLf_ >= 3)
         {
-            leftFootPosition.extract(rfpos);
-            nbSupport_++;
-            supportCandidateLf_++;
-            if (nbSupport_==0)
-            {
-                supportPos1SOUT_.setConstant (rfpos);
-                supportPos1SOUT_.setTime (time);
-            }
-            else
-            {
-                supportPos2SOUT_.setConstant (rfpos);
-                supportPos2SOUT_.setTime (time);
-            }
+            iterationsSinceLastSupportLf_ = 0;
+        }
+    }
+    else
+    {
+        supportCandidateLf_ = 0;
+        iterationsSinceLastSupportLf_++;
+    }
+    nbSupportSOUT_.setConstant (nbSupport_);
+    nbSupportSOUT_.setTime (time);
 
-            if (supportCandidateLf_ >= 3)
-            {
-                iterationsSinceLastSupportLf_ = 0;
-            }
-        }
-        else
-        {
-            supportCandidateLf_ = 0;
-            iterationsSinceLastSupportLf_++;
-        }
+    if (!on_)
+    {
+
+        nbSupport_=0;
+
     }
 
     switch (nbSupport_)
@@ -375,6 +384,8 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
         dcom_ (0) = -gain * x;
         dcom_ (1) = -gain * y;
         dcom_ (2) = -gain * z;
+
+        debug_.setZero();
         break;
     case 1: //single support
     {
@@ -399,6 +410,13 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
         //d2com_ (2) = - (gainz_ (0)*z + gainz_ (1)*thetaz +
         //		gainz_ (2)*dcom_ (2) + gainz_ (3)*dthetaz);
         //dcom_ (2) += dt_ * d2com_ (2);
+
+        debug_(0)=theta0;
+        debug_(1)=theta1;
+        debug_(2)=d2com_(0);
+        debug_(3)=d2com_(1);
+        debug_(4)=dcom_(0);
+        debug_(5)=dcom_(0);
     }
         break;
     case 2: //double support
@@ -446,6 +464,13 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
         //d2com_ (2) = - (gainz_ (0)*z + gainz_ (1)*thetaz +
         //		gainz_ (2)*dcom_ (2) + gainz_ (3)*dthetaz);
         //dcom_ (2) += dt_ * d2com_ (2);
+
+        debug_(0)=theta0;
+        debug_(1)=theta1;
+        debug_(2)=ddxi;
+        debug_(3)=ddlat;
+        debug_(4)=dxi;
+        debug_(5)=dlat;
     }
     break;
     default:
@@ -460,11 +485,11 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
     d2comSOUT_.setConstant (d2com_);
     d2comSOUT_.setTime (time);
 
-    nbSupportSOUT_.setConstant (nbSupport_);
-    nbSupportSOUT_.setTime (time);
-
-    errorSOUT_.setConstant (dcom_);
+    errorSOUT_.setConstant (deltaCom_);
     errorSOUT_.setTime (time);
+
+    debugSOUT_.setConstant (debug_);
+    debugSOUT_.setTime (time);
 
     return comdot;
 }

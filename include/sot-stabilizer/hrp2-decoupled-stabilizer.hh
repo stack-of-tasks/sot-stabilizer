@@ -160,6 +160,9 @@ namespace sot {
       //error output
       SignalTimeDependent <Vector, int> errorSOUT_;
 
+      //error output
+      SignalTimeDependent <Vector, int> debugSOUT_;
+
 
       /// Gains single support
       Vector gain1_;
