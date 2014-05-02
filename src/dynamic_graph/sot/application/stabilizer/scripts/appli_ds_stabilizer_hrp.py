@@ -7,7 +7,7 @@ from dynamic_graph.sot.core import Stack_of_vector, OpPointModifier, MatrixHomoT
 from dynamic_graph.sot.application.state_observation.initializations.hrp2_flexibility_estimator import HRP2FlexibilityEstimator 
 from dynamic_graph.sot.application.stabilizer.scenarii.ds_stabilizer_hrp2 import DSStabilizerHRP2
 
-appli =  DSStabilizerHRP2(robot, False)
+appli =  DSStabilizerHRP2(robot, True)
 appli.withTraces()
 
 est = appli.taskCoMStabilized.estimator
