@@ -6,12 +6,20 @@ import dynamic_graph.signal_base as dgsb
 from dynamic_graph.sot.core import Stack_of_vector, OpPointModifier, MatrixHomoToPose 
 from dynamic_graph.sot.application.state_observation.initializations.hrp2_flexibility_estimator import HRP2FlexibilityEstimator 
 from dynamic_graph.sot.application.stabilizer.scenarii.ds_stabilizer_hrp2 import DSStabilizerHRP2
+from dynamic_graph.sot.application.stabilizer import VectorPerturbationsGenerator
 
 appli =  DSStabilizerHRP2(robot, True)
 appli.withTraces()
 
 est = appli.taskCoMStabilized.estimator
 stabilizer = appli.taskCoMStabilized
+
+perturbator = VectorPerturbationsGenerator('comref')
+comRef = perturbator.sin
+comRef.value = appli.comRef.value
+plug (perturbator.sout,appli.comRef)
+perturbator.perturbation.value=(-1,0,0)
+perturbator.selec.value = '111'
 
 appli.robot.addTrace( est.name,'flexibility' )
 appli.robot.addTrace( est.name,'flexInversePoseThetaU' )
@@ -28,15 +36,19 @@ appli.robot.addTrace( stabilizer.name,'error' )
 appli.robot.addTrace( stabilizer.name,'d2com' )
 appli.robot.addTrace( stabilizer.name,'debug' )
 
+appli.robot.addTrace( perturbator.name, 'sout')
+
 appli.robot.addTrace( robot.device.name, 'forceLLEG')
 appli.robot.addTrace( robot.device.name, 'forceRLEG')
 appli.robot.addTrace( robot.device.name, 'accelerometer')
-appli.robot.addTrace( robot.device.name,  'gyrometer')
+appli.robot.addTrace( robot.device.name, 'gyrometer')
 
 appli.startTracer()
 
 appli.gains['trunk'].setConstant(2)
 
 stabilizer.start()
+
+#perturbator.activate(True)
 
 appli.nextStep()

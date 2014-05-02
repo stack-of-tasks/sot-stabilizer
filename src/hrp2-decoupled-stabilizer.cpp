@@ -25,9 +25,7 @@
 
 #include <sot-stabilizer/hrp2-decoupled-stabilizer.hh>
 
-namespace sot
-{
-namespace dynamic
+namespace sotStabilizer
 {
 using dynamicgraph::sot::TaskAbstract;
 using dynamicgraph::Signal;
@@ -700,7 +698,5 @@ Matrix& HRP2DecoupledStabilizer::computeJacobianCom(Matrix& jacobian, const int&
 //    }
 
 
-
-} // namespace dynamic
-} // namespace sot
+} // namespace sotStabilizer
 

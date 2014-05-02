@@ -33,8 +33,8 @@
 #include <sot/core/vector-utheta.hh>
 #include <sot/core/vector-roll-pitch-yaw.hh>
 
-namespace sot {
-  namespace dynamic {
+namespace sotStabilizer
+{
     using dynamicgraph::sot::TaskAbstract;
     using dynamicgraph::Signal;
     using dynamicgraph::SignalPtr;
@@ -224,7 +224,6 @@ namespace sot {
       double dtheta1Ref_;
       Vector debug_;
     }; // class Stabilizer
-  } // namespace dynamic
-} // namespace sot
+} // namespace sotStabiilizer
 
 #endif // SOT_DYNAMIC_STABILIZER_HH
