@@ -16,8 +16,8 @@ class DSStabilizerHRP2(DSStabilizer):
         plug(gain.gain, task.controlGain)
         plug(task.error, gain.error) 
         if self.trunkStabilize:
-            plug(self.estimator.flexMatrixInverse, self.ccMc)
-            plug(self.estimator.flexInverseVelocityVector, self.ccVc)
+            self.ccMc = task.estimator.flexMatrixInverse
+            self.ccVc = task.estimator.flexInverseVelocityVector
         return (task, gain)
 
 

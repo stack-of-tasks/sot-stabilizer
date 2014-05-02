@@ -240,12 +240,12 @@ class DSStabilizer(Application):
             
             
             self.transformerWaist = MovingFrameTransformation('tranformation_waist')
-            self.ccMc = self.transformerWaist.gMl # inverted flexibility
+            plug(self.ccMc,self.transformerWaist.gMl) # inverted flexibility
             self.cMwaist = self.transformerWaist.lM0 # reference position in the world control frame
             # You need to set up the inverted flexibility : plug( ..., self.ccMc)
             # You need to set up a reference value here: plug( ... ,self.cMhref)
 
-            self.ccVc = self.transformerWaist.gVl # inverted flexibility velocity
+            plug(self.ccVc,self.transformerWaist.gVl) # inverted flexibility velocity
             self.cVwaist = self.transformerWaist.lV0 # reference velocity in the world control frame
             # You need to set up the inverted flexibility velocity : plug( ..., self.ccVc)
             # You need to set up a reference velocity value here: plug( ... ,self.cVhref)
