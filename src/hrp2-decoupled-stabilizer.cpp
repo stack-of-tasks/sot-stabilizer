@@ -407,6 +407,8 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
                         gain1_ (2)*dcom_ (1) + gain1_ (3)*dtheta1);
         dcom_ (1) += dt_ * d2com_ (1);
         // along z
+        dcom_ (2) = -gain * z;
+
         //d2com_ (2) = - (gainz_ (0)*z + gainz_ (1)*thetaz +
         //		gainz_ (2)*dcom_ (2) + gainz_ (3)*dthetaz);
         //dcom_ (2) += dt_ * d2com_ (2);
@@ -461,6 +463,7 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
         dcom_ (1) += dt_ * d2com_ (1);
 
         // along z
+        dcom_ (2) = -gain * z;
         //d2com_ (2) = - (gainz_ (0)*z + gainz_ (1)*thetaz +
         //		gainz_ (2)*dcom_ (2) + gainz_ (3)*dthetaz);
         //dcom_ (2) += dt_ * d2com_ (2);
