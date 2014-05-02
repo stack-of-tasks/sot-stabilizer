@@ -11,13 +11,22 @@ appli =  DSStabilizerHRP2(robot, False)
 appli.withTraces()
 
 est = appli.taskCoMStabilized.estimator
+stabilizer = appli.taskCoMStabilized
 
 appli.robot.addTrace( est.name,'flexibility' )
+appli.robot.addTrace( est.name,'flexInversePoseThetaU' )
+appli.robot.addTrace( est.name,'flexInverseOmega')
 appli.robot.addTrace( est.name,'flexInverseVelocityVector' )
 appli.robot.addTrace( est.name,'flexMatrixInverse' )
 appli.robot.addTrace( est.name,'input')
 appli.robot.addTrace( est.name,'measurement')
 appli.robot.addTrace( est.name,'simulatedSensors' )
+
+appli.robot.addTrace( stabilizer.name,'task' )
+appli.robot.addTrace( stabilizer.name,'nbSupport' )
+appli.robot.addTrace( stabilizer.name,'error' )
+appli.robot.addTrace( stabilizer.name,'d2com' )
+appli.robot.addTrace( stabilizer.name,'debug' )
 
 appli.robot.addTrace( robot.device.name, 'forceLLEG')
 appli.robot.addTrace( robot.device.name, 'forceRLEG')
@@ -28,6 +37,6 @@ appli.startTracer()
 
 appli.gains['trunk'].setConstant(2)
 
-stabilizer = appli.taskCoMStabilized
+stabilizer.start()
 
 appli.nextStep()
