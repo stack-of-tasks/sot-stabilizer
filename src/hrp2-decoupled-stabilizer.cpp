@@ -72,15 +72,15 @@ HRP2DecoupledStabilizer::HRP2DecoupledStabilizer(const std::string& inName) :
     jacobianSIN_ (NULL, "HRP2DecoupledStabilizer("+inName+")::input(matrix)::Jcom"),
     comdotSIN_ (NULL, "HRP2DecoupledStabilizer("+inName+")::input(vector)::comdot"),
     leftFootPositionSIN_
-    (NULL, "HRP2DecoupledStabilizer("+inName+")::input(vector)::leftFootPosition"),
+    (NULL, "HRP2DecoupledStabilizer("+inName+")::input(HomoMatrix)::leftFootPosition"),
     rightFootPositionSIN_
-    (NULL, "HRP2DecoupledStabilizer("+inName+")::input(vector)::rightFootPosition"),
+    (NULL, "HRP2DecoupledStabilizer("+inName+")::input(HomoMatrix)::rightFootPosition"),
     forceLeftFootSIN_
     (NULL, "HRP2DecoupledStabilizer("+inName+")::input(vector)::force_lf"),
     forceRightFootSIN_
     (NULL, "HRP2DecoupledStabilizer("+inName+")::input(vector)::force_rf"),
     stateFlexSIN_
-    (NULL, "HRP2DecoupledStabilizer("+inName+")::input(MatrixHomo)::stateFlex"),
+    (NULL, "HRP2DecoupledStabilizer("+inName+")::input(HomoMatrix)::stateFlex"),
     stateFlexDotSIN_
     (NULL, "HRP2DecoupledStabilizer("+inName+")::input(vector)::stateFlexDot"),
     controlGainSIN_
@@ -276,7 +276,7 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
 {
     const Vector deltaCom = comSIN_ (time) - comRefSIN_ (time);
     const Vector& comdotRef = comdotSIN_ (time);
-    const MatrixHomogeneous& flexibility =
+    const MatrixHomogeneous& flexibilityMatrix =
                 stateFlexSIN_.access(time);
     const Vector& flexDot =
                 stateFlexDotSIN_.access(time);
@@ -288,13 +288,24 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
     const Vector& forceLf = forceLeftFootSIN_.access (time);
     const Vector& forceRf = forceRightFootSIN_.access (time);
 
+    Vector flexibilityPos(3);
+    MatrixRotation flexibilityRot;
+
+    flexibilityMatrix.extract(flexibilityRot);
+    flexibilityMatrix.extract(flexibilityPos);
+
+    VectorUTheta flexibility;
+    flexibility.fromMatrix(flexibilityRot);
+
+
+    deltaCom_ = comSIN_ (time) - comRefSIN_ (time);
+    //(flexibilityRot*comRefSIN_ (time)+flexibilityPos);
 
     double x = deltaCom_ (0);
     double y = deltaCom_ (1);
     double z = deltaCom_ (2);
 
-    MatrixRotation flexibilityRot;
-    flexibility.extract(flexibilityRot);
+
 
     // z-component of center of mass deviation in global frame
     flexZobs_ (0) = deltaCom (2);
@@ -391,23 +402,20 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
         break;
     case 1: //single support
     {
-        VectorRollPitchYaw rpyFlex;
-        rpyFlex.fromMatrix(flexibilityRot);
-
-
         //along x
-        theta0 = rpyFlex (1);
+        theta0 = flexibility (1);
         dtheta0 = flexDot (1);
         d2com_ (0)= -(gain1_ (0)*x + gain1_ (1)*theta0 +
                       gain1_ (2)*dcom_ (0) + gain1_ (3)*dtheta0);
         dcom_ (0) += dt_ * d2com_ (0);
 
         // along y
-        theta1 = rpyFlex (0);
+        theta1 = flexibility (0);
         dtheta1 = flexDot (0);
         d2com_ (1) = - (gain1_ (0)*y + gain1_ (1)*theta1 +
                         gain1_ (2)*dcom_ (1) + gain1_ (3)*dtheta1);
         dcom_ (1) += dt_ * d2com_ (1);
+
         // along z
         dcom_ (2) = -gain * z;
 
@@ -435,29 +443,24 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
         u1x_ = u2y_;
         u1y_ = -u2x_;
 
-        VectorRollPitchYaw rpyFlex;
-        rpyFlex.fromMatrix(flexibilityRot);
-
         //along the orthogonal to the contacts line
-        theta0 = u1x_ * rpyFlex (1) + u1y_ * rpyFlex (0);
+        theta0 = u1x_ * flexibility (1) + u1y_ * flexibility (0);
         dtheta0 = u1x_ * flexDot (1) + u1y_ * flexDot (0);
         xi = u1x_*x + u1y_*y;
         dxi = u1x_*dcom_ (0) + u1y_*dcom_ (1);
         ddxi = - (gain2_ (0)*xi + gain2_ (1)*theta0 + gain2_ (2)*dxi +
                   gain2_ (3)*dtheta0);
 
+
+
         //along the contacts line
-        theta1 = u2x_ * rpyFlex (1) + u2y_ * rpyFlex (0);
+        theta1 = u2x_ * flexibility (1) + u2y_ * flexibility (0);
         dtheta1 = u2x_ * flexDot (1) + u2y_ * flexDot (0);
         lat = u2x_*x + u2y_*y;
         dlat = u2x_*dcom_ (0) + u2y_*dcom_ (1);
-        ddlat = - (gainLat_ (0)*lat + gainLat_ (1)*(theta1-theta1Ref_)
-                   + gainLat_ (2)*dlat + gainLat_ (3)*(dtheta1 - dtheta1Ref_));
+        ddlat = - (gainLat_ (0)*lat + gainLat_ (1)*(theta1)
+                   + gainLat_ (2)*dlat + gainLat_ (3)*(dtheta1));
         flexLatControl_ (0) = ddlat;
-        debug_ (0) = lat;
-        debug_ (1) = theta1-theta1Ref_;
-        debug_ (2) = dlat;
-        debug_ (3) = dtheta1 - dtheta1Ref_;
 
         d2com_ (0) = ddxi * u1x_ + ddlat*u2x_;
         d2com_ (1) = ddxi * u1y_ + ddlat*u2y_;
