@@ -313,6 +313,8 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
     Vector rfpos(3);
     Vector lfpos(3);
 
+    leftFootPosition.extract(rfpos);
+    rightFootPosition.extract(lfpos);
 
 
     // Express vertical component of force in global basis
