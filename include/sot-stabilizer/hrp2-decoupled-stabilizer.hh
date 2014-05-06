@@ -100,7 +100,12 @@ namespace sotStabilizer
 
       /// Start stabilizer
       void start () {
-	on_ = true;
+        on_ = true;
+      }
+
+      /// Start stabilizer
+      void stop () {
+        on_ = false;
       }
 
       /// @}

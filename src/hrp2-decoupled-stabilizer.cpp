@@ -174,6 +174,10 @@ HRP2DecoupledStabilizer::HRP2DecoupledStabilizer(const std::string& inName) :
                 makeCommandVoid0 (*this, &HRP2DecoupledStabilizer::start,
                                   docCommandVoid0 ("Start stabilizer")));
 
+    addCommand ("stop",
+                makeCommandVoid0 (*this, &HRP2DecoupledStabilizer::stop,
+                                  docCommandVoid0 ("Stop stabilizer")));
+
     addCommand ("setGain1",
                 makeDirectSetter (*this, &gain1_,
                                   docDirectSetter
