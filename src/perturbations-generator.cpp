@@ -34,6 +34,8 @@ namespace sotStabilizer
         signalRegistration (perturbationSIN);
         signalRegistration (selecSIN);
 
+        iterationNumber_ = 0;
+
         soutSOUT.setFunction(boost::bind(&VectorPerturbationsGenerator::computeSout,
 				    this, _1, _2));
 
@@ -43,6 +45,7 @@ namespace sotStabilizer
                 "\n"
                 "    Set the perturbation Mode"
                 "      - 0 (default): dirac perturbation"
+                "      - 1 : step perturbation"
                 "\n";
 
         addCommand(std::string("setMode"),
@@ -101,7 +104,8 @@ namespace sotStabilizer
 
                     if (timeSinceLast_==perturbationPeriod_)
                     {
-                        timeSinceLast_ =0;
+                        ++iterationNumber_;
+                        timeSinceLast_=0;
                         const dynamicgraph::Vector & perturbation = perturbationSIN(inTime);
                         const dynamicgraph::sot::Flags & selec = selecSIN(inTime);
                         dynamicgraph::Vector impulsion(perturbation.size());
@@ -123,7 +127,40 @@ namespace sotStabilizer
                     else
                         ++timeSinceLast_;
                 }
-                std::cout << name + "-output :" << output << std::endl;
+                else if (perturbationMode_==1) //step
+                {
+                    output = sin;
+
+                    if (timeSinceLast_==perturbationPeriod_)
+                    {
+                        timeSinceLast_=0;
+                        ++iterationNumber_;
+                    }
+
+                    const dynamicgraph::Vector & perturbation = perturbationSIN(inTime);
+                    const dynamicgraph::sot::Flags & selec = selecSIN(inTime);
+                    dynamicgraph::Vector step(perturbation.size());
+                    for (unsigned i=0; i<perturbation.size(); ++i)
+                    {
+                        if (selec(i))
+                        {
+                            step(i) = iterationNumber_*perturbation(i);
+                        }
+                        else
+                        {
+                            step(i) = 0;
+                        }
+                    }
+                    output += step;
+
+                    if (perturbationPeriod_ == 0)
+                        on_ = false;
+                    else
+                        ++timeSinceLast_;
+                }
+
+
+
             }
             else
             {

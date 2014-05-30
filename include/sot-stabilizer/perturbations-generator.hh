@@ -52,6 +52,8 @@ namespace sotStabilizer
             virtual void setPerturbationMode (const int & k)
             {
                 perturbationMode_ = k;
+                iterationNumber_ = 0;
+                timeSinceLast_=0;
             }
 
             virtual void setPeriod (const int & k)
@@ -62,6 +64,11 @@ namespace sotStabilizer
             virtual void activate (const bool & b)
             {
                 on_ = b;
+                if (!b)
+                {
+                    iterationNumber_=0;
+                    timeSinceLast_=0;
+                }
             }
 
             /**
@@ -108,6 +115,8 @@ namespace sotStabilizer
             bool on_;
 
             ::dynamicgraph::Vector currentOutput_;
+
+            unsigned iterationNumber_;
 
             unsigned currentTime_;
         };
