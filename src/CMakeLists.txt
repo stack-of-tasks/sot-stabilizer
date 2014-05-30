@@ -114,6 +114,8 @@ INSTALL(FILES
   dynamic_graph/sot/application/stabilizer/scenarii/hand_compensater.py
   dynamic_graph/sot/application/stabilizer/scenarii/ds_stabilizer.py
   dynamic_graph/sot/application/stabilizer/scenarii/ds_stabilizer_hrp2.py
+  dynamic_graph/sot/application/stabilizer/scenarii/seqplay_stabilizer.py
+  dynamic_graph/sot/application/stabilizer/scenarii/seqplay_stabilizer_hrp2.py
   dynamic_graph/sot/application/stabilizer/scenarii/hand_compensater_chicken.py
   dynamic_graph/sot/application/stabilizer/scenarii/hand_compensater_solver_kine.py
   dynamic_graph/sot/application/stabilizer/scenarii/hrp2_stabilizer.py
@@ -125,5 +127,6 @@ INSTALL(FILES
   dynamic_graph/sot/application/stabilizer/scripts/appli_hands_compensater_chicken.py
   dynamic_graph/sot/application/stabilizer/scripts/appli_two_hands_compensater_hrp.py
   dynamic_graph/sot/application/stabilizer/scripts/appli_ds_stabilizer_hrp.py
+  dynamic_graph/sot/application/stabilizer/scripts/appli_seqplay_stabilizer_hrp.py
   DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/application/stabilizer/scripts
   )
