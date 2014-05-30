@@ -23,6 +23,8 @@
 #include <dynamic-graph/command-direct-getter.h>
 #include <dynamic-graph/command-bind.h>
 
+#include <state-observation/tools/definitions.hpp>
+
 #include <sot-stabilizer/hrp2-decoupled-stabilizer.hh>
 
 namespace sotStabilizer
@@ -91,6 +93,7 @@ HRP2DecoupledStabilizer::HRP2DecoupledStabilizer(const std::string& inName) :
     supportPos1SOUT_("HRP2DecoupledStabilizer("+inName+")::output(vector)::supportPos1"),
     supportPos2SOUT_("HRP2DecoupledStabilizer("+inName+")::output(vector)::supportPos2"),
     gain1_ (4), gain2_ (4), gainz_ (4), gainLat_ (4),
+    poles1_ (4),poles2_ (4),polesLat_ (4),
     prevCom_(3), dcom_ (3), dt_ (.005), on_ (false),
     forceThreshold_ (.036*m_*g_), angularStiffness_ (425.), d2com_ (3),
     deltaCom_ (3),
@@ -178,10 +181,15 @@ HRP2DecoupledStabilizer::HRP2DecoupledStabilizer(const std::string& inName) :
                 makeCommandVoid0 (*this, &HRP2DecoupledStabilizer::stop,
                                   docCommandVoid0 ("Stop stabilizer")));
 
-    addCommand ("setGain1",
-                makeDirectSetter (*this, &gain1_,
+    addCommand ("setPoles1",
+                makeDirectSetter (*this, &poles1_,
                                   docDirectSetter
-                                  ("Set gains single support",
+                                  ("Set poles single support",
+                                   "vector")));
+    addCommand ("getPoles1",
+                makeDirectGetter (*this, &poles1_,
+                                  docDirectGetter
+                                  ("Get poles single support",
                                    "vector")));
 
     addCommand ("getGain1",
@@ -190,10 +198,16 @@ HRP2DecoupledStabilizer::HRP2DecoupledStabilizer(const std::string& inName) :
                                   ("Get gains single support",
                                    "vector")));
 
-    addCommand ("setGain2",
-                makeDirectSetter (*this, &gain2_,
+    addCommand ("setPoles2",
+                makeDirectSetter (*this, &poles2_,
                                   docDirectSetter
-                                  ("Set gains double support",
+                                  ("Set poles double support",
+                                   "vector")));
+
+    addCommand ("getPoles2",
+                makeDirectGetter (*this, &poles2_,
+                                  docDirectGetter
+                                  ("Get poles double support",
                                    "vector")));
 
     addCommand ("getGain2",
@@ -202,22 +216,16 @@ HRP2DecoupledStabilizer::HRP2DecoupledStabilizer(const std::string& inName) :
                                   ("Get gains double support",
                                    "vector")));
 
-    addCommand ("setGainz",
-                makeDirectSetter (*this, &gainz_,
+    addCommand ("setPolesLateral",
+                makeDirectSetter (*this, &polesLat_,
                                   docDirectSetter
-                                  ("Set gains of vertical flexibility",
+                                  ("Set poles of lateral flexibility",
                                    "vector")));
 
-    addCommand ("getGainz",
-                makeDirectGetter (*this, &gainz_,
+    addCommand ("getPolesLateral",
+                makeDirectGetter (*this, &polesLat_,
                                   docDirectGetter
-                                  ("Get gains of vertical flexibility",
-                                   "vector")));
-
-    addCommand ("setGainLateral",
-                makeDirectSetter (*this, &gainLat_,
-                                  docDirectSetter
-                                  ("Set gains of lateral flexibility",
+                                  ("Get poles of lateral flexibility",
                                    "vector")));
 
     addCommand ("getGainLateral",
@@ -225,6 +233,11 @@ HRP2DecoupledStabilizer::HRP2DecoupledStabilizer(const std::string& inName) :
                                   docDirectGetter
                                   ("Get gains of lateral flexibility",
                                    "vector")));
+
+    addCommand ("setKth",
+                makeDirectSetter (*this, &kth_,
+                                  docDirectSetter
+                                  ("Set angular elasticity","float")));
 
     prevCom_.fill (0.);
 
@@ -248,15 +261,6 @@ HRP2DecoupledStabilizer::HRP2DecoupledStabilizer(const std::string& inName) :
     gain2_ (2) = 37.326305882352941;
     gain2_ (3) = -10.661044705882359;
 
-    // Vectical gains for
-    //  - kz = 150000
-    //  - m = 56
-    //  - eigen values = 21, 21, 21, 21.
-    gainz_ (0) = 25.23;
-    gainz_ (1) = -124.77;
-    gainz_ (2) = 10.19;
-    gainz_ (3) = -9.81;
-
     // Lateral gains for
     //  - kth = 3000 (kz = 160000, h=.19)
     //  - m = 56
@@ -266,9 +270,36 @@ HRP2DecoupledStabilizer::HRP2DecoupledStabilizer(const std::string& inName) :
     gainLat_ (2) = 29.154645333333335;
     gainLat_ (3) = 2.2762837333333308;
 
+
+    //computed by hand on simulation
+    //gainLat_ (0) = 100.62268196078432;
+    //gainLat_ (1) = -200.543997288515406;
+    //gainLat_ (2) = 37.326305882352941;
+    //gainLat_ (3) = -0.661044705882359;
+
+    kth_ = 510;
+    kz_= 150000;
+
+    poles1_(0) = -3 ;
+    poles1_(1) = -3 ;
+    poles1_(2) = -6 ;
+    poles1_(3) = -6 ;
+
+    poles2_(0) = -4 ;
+    poles2_(1) = -4 ;
+    poles2_(2) = -8 ;
+    poles2_(3) = -8 ;
+
+    polesLat_(0) = -8 ;
+    polesLat_(1) = -8 ;
+    polesLat_(2) = -8 ;
+    polesLat_(3) = -8 ;
+
     debug_.setZero();
 
     zmp_.setZero ();
+
+    hrp2Mass_ = 58;
 }
 
 /// Compute the control law
@@ -276,16 +307,13 @@ VectorMultiBound&
 HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
                                    const int& time)
 {
+    const Vector & com = comSIN_ (time);
     const Vector deltaCom = comSIN_ (time) - comRefSIN_ (time);
     const Vector& comdotRef = comdotSIN_ (time);
-    const MatrixHomogeneous& flexibilityMatrix =
-                stateFlexSIN_.access(time);
-    const Vector& flexDot =
-                stateFlexDotSIN_.access(time);
-    const MatrixHomogeneous& leftFootPosition =
-        leftFootPositionSIN_.access (time);
-    const MatrixHomogeneous& rightFootPosition =
-        rightFootPositionSIN_.access (time);
+    const MatrixHomogeneous& flexibilityMatrix = stateFlexSIN_.access(time);
+    const Vector& flexDot = stateFlexDotSIN_.access(time);
+    const MatrixHomogeneous& leftFootPosition = leftFootPositionSIN_.access (time);
+    const MatrixHomogeneous& rightFootPosition = rightFootPositionSIN_.access (time);
     const double& gain = controlGainSIN_.access (time);
     const Vector& forceLf = forceLeftFootSIN_.access (time);
     const Vector& forceRf = forceRightFootSIN_.access (time);
@@ -404,6 +432,8 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
         break;
     case 1: //single support
     {
+        gain1_ = computeGainsFromPoles(poles1_, com(2), kth_, hrp2Mass_);
+
         //along x
         theta0 = flexibility (1);
         dtheta0 = flexDot (1);
@@ -433,12 +463,17 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
         debug_(5)=dcom_(0);
     }
         break;
-    case 2: //double support
+    default: //double support or more
     {
+
+
         // compute component of angle orthogonal to the line joining the feet
         double delta_x = lfpos (0) - rfpos (0);
         double delta_y = lfpos (1) - rfpos (1);
         double stepLength = sqrt (delta_x*delta_x+delta_y*delta_y);
+
+        gain2_ = computeGainsFromPoles(poles2_, com(2), 2 * kth_, hrp2Mass_);
+        gainLat_ = computeGainsFromPoles(polesLat_, com(2), 2*kth_ + kz_*stepLength, hrp2Mass_);
 
         u2x_ = delta_x/stepLength;
         u2y_ = delta_y/stepLength;
@@ -483,8 +518,6 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
         debug_(5)=dlat;
     }
     break;
-    default:
-        break;
     };
 
     comdot.resize (3);
@@ -511,195 +544,31 @@ Matrix& HRP2DecoupledStabilizer::computeJacobianCom(Matrix& jacobian, const int&
     return jacobian;
 }
 
-//    /// Compute flexibility state from both feet
-//    void Stabilizer::computeFlexibility (const int& time)
-//    {
-//      const MatrixHomogeneous& flexibility = stateFlexSIN_.access (time);
-//      const MatrixHomogeneous& Mr = rightFootPositionSIN_.access (time);
-//      const MatrixHomogeneous& Ml = leftFootPositionSIN_.access (time);
-//      const Vector& fr = forceRightFootSIN_.access (time);
-//      const Vector& fl = forceLeftFootSIN_.access (time);
-//      const Vector& forceRefLf = forceLeftFootRefSIN_.access (time);
-//      const Vector& forceRefRf = forceRightFootRefSIN_.access (time);
-//      const Vector& com = comSIN_ (time);
-//      double deltaComRfx, deltaComRfy, deltaComLfx, deltaComLfy;
-//      double dcomRfx, dcomRfy, dcomLfx, dcomLfy;
-//
-//      // compute component of angle orthogonal to the line joining the feet
-//      double delta_x = Ml (0, 3) - Mr (0, 3);
-//      double delta_y = Ml (1, 3) - Mr (1, 3);
-//      double stepLength = sqrt (delta_x*delta_x+delta_y*delta_y);
-//      stepLengthSOUT_.setConstant (stepLength);
-//
-//      u2x_ = delta_x/stepLength;
-//      u2y_ = delta_y/stepLength;
-//      u1x_ = u2y_;
-//      u1y_ = -u2x_;
-//
-//      // Express vertical component of force in global basis
-//      double flz = Ml (2,0) * fl (0) + Ml(2,1) * fl (1) + Ml (2,2) * fl (2);
-//      double frz = Mr (2,0) * fr (0) + Mr(2,1) * fr (1) + Mr (2,2) * fr (2);
-//
-//      kth_ = flexRfx (4) + flexLfx (4);
-//      nbSupport_ = 0;
-//      if (on_) {
-//	if (frz >= forceThreshold_) {
-//	  nbSupport_++;
-//	  supportCandidateRf_++;
-//	  if (supportCandidateRf_ >= 3) {
-//	    iterationsSinceLastSupportRf_ = 0;
-//	  }
-//	} else {
-//	  supportCandidateRf_ = 0;
-//	  iterationsSinceLastSupportRf_ ++;
-//	}
-//	if (flz >= forceThreshold_) {
-//	  nbSupport_++;
-//	  supportCandidateLf_++;
-//	  if (supportCandidateLf_ >= 3) {
-//	    iterationsSinceLastSupportLf_ = 0;
-//	  }
-//	} else {
-//	  supportCandidateLf_ = 0;
-//	  iterationsSinceLastSupportLf_++;
-//	}
-//      }
-//      theta1RefPrev_ = theta1Ref_;
-//      dtheta1Ref_ = 0.;
-//      if (nbSupport_ == 2) {
-//	// Compute reference moment from reference forces
-//	double kthLat = .5*stepLength*stepLength*flexLat (4);
-//	double Mu1Ref;
-//	Mu1Ref = .5*(forceRefRf (2) - forceRefLf (2))*stepLength;
-//	theta1Ref_ = Mu1Ref/kthLat;
-//	dtheta1Ref_ = (theta1Ref_ - theta1RefPrev_)/dt_;
-//      }
-//
-//      if (frz < 0) frz = 0;
-//      if (flz < 0) flz = 0;
-//      double Fz = flz + frz;
-//      flexZobs_ (1) = Fz - m_ * g_;
-//      flexLatObs_ (0) = u2x_* (com (0) - .5 * (Mr (0, 3) + Ml (0, 3))) +
-//	u2y_ * ((com (1) - .5 * (Mr (1, 3) + Ml (1, 3))));
-//      flexLatObs_ (1) = .5*stepLength*(frz - flz)
-//	- (u1x_ * (Ml(0,0)*fl(3)+Ml(0,1)*fl(4)+Ml(0,2)*fl(5)) +
-//	   u1y_ * (Ml(1,0)*fl(3)+Ml(1,1)*fl(4)+Ml(1,2)*fl(5)))
-//	- (u1x_ * (Mr(0,0)*fr(3)+Mr(0,1)*fr(4)+Mr(0,2)*fr(5)) +
-//	   u1y_ * (Mr(1,0)*fr(3)+Mr(1,1)*fr(4)+Mr(1,2)*fr(5)));
-//      if (Fz == 0) {
-//	flexValue_ (0) = 0;
-//	flexValue_ (1) = 0;
-//	flexDeriv_ (0) = 0;
-//	flexDeriv_ (1) = 0;
-//	deltaCom_ = comSIN_ (time) - comRefSIN_ (time);
-//	return;
-//      }
-//      // Extract yaw from right foot position
-//      double nx = Mr (0,0);
-//      double ny = Mr (1,0);
-//      double norm = sqrt (nx*nx + ny*ny);
-//      double cth = nx/norm;
-//      double sth = ny/norm;
-//      // Flexibility right foot in global frame
-//      double flexAngleRfx = cth * flexRfx (1) + sth * flexRfy (1);
-//      double flexAngleRfy = -sth * flexRfx (1) + cth * flexRfy (1);
-//      double flexDerivRfx = cth * flexRfx (3) + sth * flexRfy (3);
-//      double flexDerivRfy = -sth * flexRfx (3) + cth * flexRfy (3);
-//      // Compute deviation of center of mass
-//      deltaComRfx = cth * flexRfx (0) - sth * flexRfy (0);
-//      deltaComRfy = sth * flexRfx (0) + cth * flexRfy (0);
-//      dcomRfx = cth * flexRfx (2) - sth * flexRfy (2);
-//      dcomRfy = sth * flexRfx (2) + cth * flexRfy (2);
-//      // Extract yaw from left foot position
-//      nx = Ml (0,0);
-//      ny = Ml (1,0);
-//      norm = sqrt (nx*nx + ny*ny);
-//      cth = nx/norm;
-//      sth = ny/norm;
-//      // Flexibility left foot in global frame
-//      double flexAngleLfx = cth * flexLfx (1) + sth * flexLfy (1);
-//      double flexAngleLfy = -sth * flexLfx (1) + cth * flexLfy (1);
-//      double flexDerivLfx = cth * flexLfx (3) + sth * flexLfy (3);
-//      double flexDerivLfy = -sth * flexLfx (3) + cth * flexLfy (3);
-//
-//      flexValue_ (0) = (frz * flexAngleRfx + flz * flexAngleLfx)/Fz;
-//      flexValue_ (1) = (frz * flexAngleRfy + flz * flexAngleLfy)/Fz;
-//      flexValue_ (2) = flexZ (1);
-//      flexDeriv_ (0) = (frz * flexDerivRfx + flz * flexDerivLfx)/Fz;
-//      flexDeriv_ (1) = (frz * flexDerivRfy + flz * flexDerivLfy)/Fz;
-//      flexDeriv_ (2) = flexZ (3);
-//      // Compute deviation of center of mass
-//      deltaComLfx = cth * flexLfx (0) - sth * flexLfy (0);
-//      deltaComLfy = sth * flexLfx (0) + cth * flexLfy (0);
-//      dcomLfx = cth * flexLfx (2) - sth * flexLfy (2);
-//      dcomLfy = sth * flexLfx (2) + cth * flexLfy (2);
-//
-//      deltaCom_ (0) = (frz * deltaComRfx + flz * deltaComLfx)/Fz;
-//      deltaCom_ (1) = (frz * deltaComRfy + flz * deltaComLfy)/Fz;
-//      deltaCom_ (2) = flexZ (0);
-//      dcom_ (0) = (frz * dcomRfx + flz * dcomLfx)/Fz;
-//      dcom_ (1) = (frz * dcomRfy + flz * dcomLfy)/Fz;
-//      dcom_ (2) = flexZ (2);
-//      // Compute flexibility transformations and velocities
-//      if (Fz != 0) {
-//	zmp_ (0) = (frz * Mr (0, 3) + flz * Ml (0, 3))/Fz;
-//	zmp_ (1) = (frz * Mr (1, 3) + flz * Ml (1, 3))/Fz;
-//	zmp_ (2) = (frz * Mr (2, 3) + flz * Ml (2, 3))/Fz;
-//	uth_ (0) = flexValue_ (1);
-//	uth_ (1) = -flexValue_ (0);
-//	translation_ = zmp_ - R_ * zmp_;
-//	uth_.toMatrix (R_);
-//	for (std::size_t row = 0; row < 3; ++row) {
-//	  for (std::size_t col = 0; col < 3; ++col) {
-//	    flexPosition_ (row, col) = R_ (row, col);
-//	  }
-//	  flexPosition_ (row, 3) = translation_ (row);
-//	}
-//	// Lateral flexibility
-//	double theta = flexLat (1);
-//	uth_ (0) = u1x_ * theta;
-//	uth_ (1) = u1y_ * theta;
-//	uth_.toMatrix (R_);
-//	translation_ = zmp_ - R_ * zmp_;
-//	for (std::size_t row = 0; row < 3; ++row) {
-//	  for (std::size_t col = 0; col < 3; ++col) {
-//	    flexPositionLat_ (row, col) = R_ (row, col);
-//	  }
-//	  flexPositionLat_ (row, 3) = translation_ (row);
-//	}
-//
-//	flexVelocity_ (0) = zmp_ (2) * flexDeriv_ (0);
-//	flexVelocity_ (1) = zmp_ (2) * flexDeriv_ (1);
-//	flexVelocity_ (2) = -zmp_ (0)*flexDeriv_ (0)-zmp_ (1)*flexDeriv_ (1);
-//	flexVelocity_ (3) = flexDeriv_ (1);
-//	flexVelocity_ (4) = -flexDeriv_ (0);
-//
-//	if (iterationsSinceLastSupportLf_ * dt_ >
-//	    timeBeforeFlyingFootCorrection_) {
-//	  flexPositionLf_ = flexPosition_;
-//	  flexVelocityLf_ = flexVelocity_;
-//	} else {
-//	  flexPositionLf_.setIdentity ();
-//	  flexVelocityLf_.setZero ();
-//	}
-//	if (iterationsSinceLastSupportRf_ * dt_ >
-//	    timeBeforeFlyingFootCorrection_) {
-//	  flexPositionRf_ = flexPosition_;
-//	  flexVelocityRf_ = flexVelocity_;
-//	} else {
-//	  flexPositionRf_.setIdentity ();
-//	  flexVelocityRf_.setZero ();
-//	}
-//	flexPositionSOUT_.setConstant (flexPosition_);
-//	flexPositionLfSOUT_.setConstant (flexPositionLf_);
-//	flexPositionRfSOUT_.setConstant (flexPositionRf_);
-//	flexPositionLatSOUT_.setConstant (flexPositionLat_);
-//	flexVelocitySOUT_.setConstant (flexVelocity_);
-//	flexVelocityLfSOUT_.setConstant (flexVelocityLf_);
-//	flexVelocityRfSOUT_.setConstant (flexVelocityRf_);
-//	flexVelocityLatSOUT_.setConstant (flexVelocityLat_);
-//      }
-//    }
+Vector HRP2DecoupledStabilizer::computeGainsFromPoles
+                            (const Vector & pole, double comHeight, double kth, double mass) const
+{
+
+    const double & g = stateObservation::cst::gravityConstant;
+
+    //the characteristic polynomial coefficients
+    double a0 =   pole(0)*pole(1)*pole(2)*pole(3);
+    double a1 = - pole(0)*pole(1)*pole(2) - pole(0)*pole(1)*pole(3)
+                - pole(0)*pole(2)*pole(3) - pole(1)*pole(2)*pole(3);
+    double a2 =   pole(0)*pole(1) + pole(0)*pole(2) + pole(0)*pole(3)
+                + pole(1)*pole(2) + pole(1)*pole(3) + pole(2)*pole(3);
+    double a3 = - pole(0) - pole(1) - pole(2) - pole(3);
+
+    double mu = kth / (mass * comHeight) - g;
+
+    Vector gains(4);
+
+    gains(0) = mass*comHeight*(a0*comHeight + a2*g - g/comHeight) / kth;
+    gains(1) = mass*comHeight*(a2*mu*comHeight - mu*mu - a0*comHeight*comHeight) / kth;
+    gains(2) = mass*comHeight*(a3*g + a1*comHeight) / kth;
+    gains(3) = mass*comHeight*comHeight*(a3*mu - a1*comHeight) / kth;
+
+    return gains;
+}
 
 
 } // namespace sotStabilizer
