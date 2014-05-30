@@ -53,8 +53,10 @@ class DSStabilizer(Application):
     threePhaseScrew = True
     tracesRealTime = True
 
-    def __init__(self,robot,trunkStabilize = True):
+    def __init__(self,robot,trunkStabilize = True, hands = True, posture=True):
         Application.__init__(self,robot)
+        self.hands =hands
+        self.posture = posture
         self.trunkStabilize = trunkStabilize
         self.robot = robot
         plug(self.robot.dynamic.com,self.robot.device.zmp)
@@ -101,30 +103,9 @@ class DSStabilizer(Application):
         self.features['gaze'].frame('desired')
         #self.taskChest.feature.selec.value = '111111'
         self.features['chest'].selec.value = '111000'
-        self.features['waist'].selec.value = '111100'
+        self.features['waist'].selec.value = '111000'
         self.features['gaze'].selec.value = '111000'
-        self.featureCom.selec.value = '011'
-
-    def initTaskPosture(self):
-        # --- LEAST NORM
-        weight_ff        = 0
-        weight_leg       = 3
-        weight_knee      = 5
-        weight_chest     = 1
-        weight_chesttilt = 10
-        weight_head      = 0.3
-        weight_arm       = 1
-
-        weight = diag( (weight_ff,)*6 + (weight_leg,)*12 + (weight_chest,)*2 + (weight_head,)*2 + (weight_arm,)*14)
-        weight[9,9] = weight_knee
-        weight[15,15] = weight_knee
-        weight[19,19] = weight_chesttilt
-        #weight = weight[6:,:]
-
-        self.featurePosture.jacobianIN.value = matrixToTuple(weight)
-        self.featurePostureDes.errorIN.value = self.robot.halfSitting
-        mask = '1'*36
-        self.features['posture'].selec.value = mask
+        self.featureCom.selec.value = '111'
 
     def initTaskGains(self, setup = "medium"):
         if setup == "medium":
@@ -193,22 +174,12 @@ class DSStabilizer(Application):
         self.sot.clear()
         self.push(self.tasks['balance'])
         self.push(self.taskTrunk)
-        #self.push(self.taskPosture)
-
-    def moveToInit(self):
-        '''Go to initial pose.'''
-        #gotoNd(self.taskRH,(0.3,-0.2,1.1,0,-pi/2,0),'111001')
-        #gotoNd(self.taskLH,(0.3,0.2,1.1,0,-pi/2,0),'111001')
-        change6dPositionReference(self.taskRH,self.features['right-wrist'],\
-                                    self.gains['right-wrist'],\
-                                    (0.3,-0.2,1.1,0,-pi/2,0),'111111')
-        self.push(self.taskRH)
-        if self.twoHands:
-            change6dPositionReference(self.taskLH,self.features['left-wrist'],\
-                                    self.gains['left-wrist'],\
-                                     (0.3,0.2,1.1,0,-pi/2,0),'111111')
+        if self.hands:
+            self.push(self.taskRH)
             self.push(self.taskLH)
-        None
+        if self.posture:
+            self.push(self.taskPosture)
+        #self.push(self.taskPosture)
 
     def goHalfSitting(self):
         '''End of application, go to final pose.'''
@@ -289,9 +260,14 @@ class DSStabilizer(Application):
 
         '''Start to stabilize for the hand movements.'''
         self.sot.clear()
+        if self.posture:
+            self.push(self.taskPosture)
         self.push(self.tasks['com-stabilized'])
         self.push(self.tasks['ankles'])
         self.push(self.taskTrunk)
+        if self.hands:
+            self.push(self.taskRH)
+            self.push(self.taskLH)
         self.taskCoMStabilized.start()
         
                
