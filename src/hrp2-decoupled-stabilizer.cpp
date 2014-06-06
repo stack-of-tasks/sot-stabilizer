@@ -48,8 +48,6 @@ using dynamicgraph::sot::MatrixRotation;
 using dynamicgraph::sot::VectorUTheta;
 
 double HRP2DecoupledStabilizer::m_ = 59.8;
-double HRP2DecoupledStabilizer::g_ = 9.81;
-double HRP2DecoupledStabilizer::zeta_ = .80;
 
 DYNAMICGRAPH_FACTORY_ENTITY_PLUGIN (HRP2DecoupledStabilizer, "HRP2DecoupledStabilizer");
 
@@ -95,7 +93,8 @@ HRP2DecoupledStabilizer::HRP2DecoupledStabilizer(const std::string& inName) :
     gain1_ (4), gain2_ (4), gainz_ (4), gainLat_ (4),
     poles1_ (4),poles2_ (4),polesLat_ (4),
     prevCom_(3), dcom_ (3), dt_ (.005), on_ (false),
-    forceThreshold_ (.036*m_*g_), angularStiffness_ (425.), d2com_ (3),
+    forceThreshold_ (.036 * m_*stateObservation::cst::gravityConstant),
+    angularStiffness_ (425.), d2com_ (3),
     deltaCom_ (3),
     flexPosition_ (), flexPositionLf_ (), flexPositionRf_ (),
     flexPositionLat_ (),
@@ -432,7 +431,7 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
         break;
     case 1: //single support
     {
-        gain1_ = computeGainsFromPoles(poles1_, com(2), kth_, hrp2Mass_);
+            gain1_ = computeGainsFromPoles(poles1_, com(2), kth_, hrp2Mass_);
 
         //along x
         theta0 = flexibility (1);

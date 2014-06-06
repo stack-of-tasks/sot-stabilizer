@@ -67,7 +67,6 @@ public:
     // Constant values
     static double m_;
     static double g_;
-    static double zeta_;
 
     /// Constructor by name
     HRP2DecoupledStabilizer(const std::string& inName);
