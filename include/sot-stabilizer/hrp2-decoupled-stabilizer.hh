@@ -109,6 +109,11 @@ public:
         on_ = false;
     }
 
+    void setFixedGains(const bool & b)
+    {
+        fixedGains_=b;
+    }
+
     /// @}
     /// \name Sampling time period
     /// @{
@@ -239,6 +244,8 @@ private:
     Vector poles1_;
     Vector poles2_;
     Vector polesLat_;
+
+    bool fixedGains_;
 
     double hrp2Mass_;
 }; // class Stabilizer

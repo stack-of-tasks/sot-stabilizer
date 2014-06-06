@@ -163,6 +163,17 @@ HRP2DecoupledStabilizer::HRP2DecoupledStabilizer(const std::string& inName) :
                (*this, &HRP2DecoupledStabilizer::setTimePeriod, docstring));
     docstring =
         "\n"
+        "    Set if yes or no the gains are fixed\n"
+        "\n"
+        "      input:\n"
+        "        boolean\n"
+        "\n";
+    addCommand("setFixedGains",
+               new dynamicgraph::command::Setter<HRP2DecoupledStabilizer, bool>
+               (*this, &HRP2DecoupledStabilizer::setFixedGains, docstring));
+
+    docstring =
+        "\n"
         "    Get sampling time period task\n"
         "\n"
         "      return:\n"
@@ -185,13 +196,19 @@ HRP2DecoupledStabilizer::HRP2DecoupledStabilizer(const std::string& inName) :
                                   docDirectSetter
                                   ("Set poles single support",
                                    "vector")));
+    addCommand ("setGains1",
+                makeDirectSetter (*this, &gain1_,
+                                  docDirectSetter
+                                  ("Set gains on single support (fixed gains have to be activated)",
+                                   "vector")));
+
     addCommand ("getPoles1",
                 makeDirectGetter (*this, &poles1_,
                                   docDirectGetter
                                   ("Get poles single support",
                                    "vector")));
 
-    addCommand ("getGain1",
+    addCommand ("getGains1",
                 makeDirectGetter (*this, &gain1_,
                                   docDirectGetter
                                   ("Get gains single support",
@@ -208,8 +225,13 @@ HRP2DecoupledStabilizer::HRP2DecoupledStabilizer(const std::string& inName) :
                                   docDirectGetter
                                   ("Get poles double support",
                                    "vector")));
+    addCommand ("setGains2",
+                makeDirectSetter (*this, &gain2_,
+                                  docDirectSetter
+                                  ("Set gains double support  (fixed gains have to be activated)",
+                                   "vector")));
 
-    addCommand ("getGain2",
+    addCommand ("getGains2",
                 makeDirectGetter (*this, &gain2_,
                                   docDirectGetter
                                   ("Get gains double support",
@@ -221,13 +243,19 @@ HRP2DecoupledStabilizer::HRP2DecoupledStabilizer(const std::string& inName) :
                                   ("Set poles of lateral flexibility",
                                    "vector")));
 
+    addCommand ("setGainsLateral",
+                makeDirectSetter (*this, &gainLat_,
+                                  docDirectSetter
+                                  ("Set gains of lateral flexibility   (fixed gains have to be activated)",
+                                   "vector")));
+
     addCommand ("getPolesLateral",
                 makeDirectGetter (*this, &polesLat_,
                                   docDirectGetter
                                   ("Get poles of lateral flexibility",
                                    "vector")));
 
-    addCommand ("getGainLateral",
+    addCommand ("getGainsLateral",
                 makeDirectGetter (*this, &gainLat_,
                                   docDirectGetter
                                   ("Get gains of lateral flexibility",
@@ -431,6 +459,7 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
         break;
     case 1: //single support
     {
+        if (!fixedGains_)
             gain1_ = computeGainsFromPoles(poles1_, com(2), kth_, hrp2Mass_);
 
         //along x
@@ -470,9 +499,11 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
         double delta_x = lfpos (0) - rfpos (0);
         double delta_y = lfpos (1) - rfpos (1);
         double stepLength = sqrt (delta_x*delta_x+delta_y*delta_y);
-
-        gain2_ = computeGainsFromPoles(poles2_, com(2), 2 * kth_, hrp2Mass_);
-        gainLat_ = computeGainsFromPoles(polesLat_, com(2), 2*kth_ + kz_*stepLength, hrp2Mass_);
+        if (!fixedGains_)
+        {
+            gain2_   = computeGainsFromPoles(poles2_, com(2), 2 * kth_, m_);
+            gainLat_ = computeGainsFromPoles(polesLat_, com(2), 2*kth_ + 2*kz_*stepLength/2, m_);
+        }
 
         u2x_ = delta_x/stepLength;
         u2y_ = delta_y/stepLength;
