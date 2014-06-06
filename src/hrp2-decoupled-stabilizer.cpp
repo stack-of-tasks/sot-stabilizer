@@ -260,11 +260,25 @@ HRP2DecoupledStabilizer::HRP2DecoupledStabilizer(const std::string& inName) :
                                   docDirectGetter
                                   ("Get gains of lateral flexibility",
                                    "vector")));
+    addCommand ("getKth",
+                makeDirectGetter (*this, &kth_,
+                                  docDirectGetter
+                                  ("Set angular elasticity","float")));
+
+    addCommand ("getKz",
+                makeDirectGetter (*this, &kz_,
+                                  docDirectGetter
+                                  ("Set linear elasticity","float")));
 
     addCommand ("setKth",
                 makeDirectSetter (*this, &kth_,
                                   docDirectSetter
                                   ("Set angular elasticity","float")));
+
+    addCommand ("setKz",
+                makeDirectSetter (*this, &kz_,
+                                  docDirectSetter
+                                  ("Set linear elasticity","float")));
 
     prevCom_.fill (0.);
 
