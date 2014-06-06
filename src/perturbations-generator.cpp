@@ -153,14 +153,8 @@ namespace sotStabilizer
                     }
                     output += step;
 
-                    if (perturbationPeriod_ == 0)
-                        on_ = false;
-                    else
-                        ++timeSinceLast_;
+                    ++timeSinceLast_;
                 }
-
-
-
             }
             else
             {
