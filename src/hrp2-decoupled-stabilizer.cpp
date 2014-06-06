@@ -456,6 +456,11 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
         dcom_ (2) = -gain * z;
 
         debug_.setZero();
+        debug_(0)=x;
+        debug_(2)=dcom_(0);
+
+        debug_(5)=y;
+        debug_(7)=dcom_(1);
         break;
     case 1: //single support
     {
@@ -467,28 +472,32 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
         dtheta0 = flexDot (1);
         d2com_ (0)= -(gain1_ (0)*x + gain1_ (1)*theta0 +
                       gain1_ (2)*dcom_ (0) + gain1_ (3)*dtheta0);
-        dcom_ (0) += dt_ * d2com_ (0);
+
 
         // along y
-        theta1 = flexibility (0);
-        dtheta1 = flexDot (0);
+        theta1 = -flexibility (0);
+        dtheta1 = -flexDot (0);
         d2com_ (1) = - (gain1_ (0)*y + gain1_ (1)*theta1 +
                         gain1_ (2)*dcom_ (1) + gain1_ (3)*dtheta1);
-        dcom_ (1) += dt_ * d2com_ (1);
 
+
+        debug_(0)=x;
+        debug_(1)=theta0;
+        debug_(2)=dcom_(0);
+        debug_(3)=dtheta0;
+        debug_(4)=d2com_(0);
+
+        debug_(5)=y;
+        debug_(6)=theta1;
+        debug_(7)=dcom_(1);
+        debug_(8)=dtheta1;
+        debug_(9)=d2com_(1);
+
+        dcom_ (0) += dt_ * d2com_ (0);
+        dcom_ (1) += dt_ * d2com_ (1);
         // along z
         dcom_ (2) = -gain * z;
 
-        //d2com_ (2) = - (gainz_ (0)*z + gainz_ (1)*thetaz +
-        //		gainz_ (2)*dcom_ (2) + gainz_ (3)*dthetaz);
-        //dcom_ (2) += dt_ * d2com_ (2);
-
-        debug_(0)=theta0;
-        debug_(1)=theta1;
-        debug_(2)=d2com_(0);
-        debug_(3)=d2com_(1);
-        debug_(4)=dcom_(0);
-        debug_(5)=dcom_(0);
     }
         break;
     default: //double support or more
@@ -511,8 +520,8 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
         u1y_ = -u2x_;
 
         //along the orthogonal to the contacts line
-        theta0 = u1x_ * flexibility (1) + u1y_ * flexibility (0);
-        dtheta0 = u1x_ * flexDot (1) + u1y_ * flexDot (0);
+        theta0 = + u1x_ * flexibility (1) - u1y_ * flexibility (0);
+        dtheta0 = + u1x_ * flexDot (1) - u1y_ * flexDot (0);
         xi = u1x_*x + u1y_*y;
         dxi = u1x_*dcom_ (0) + u1y_*dcom_ (1);
         ddxi = - (gain2_ (0)*xi + gain2_ (1)*theta0 + gain2_ (2)*dxi +
@@ -521,8 +530,8 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
 
 
         //along the contacts line
-        theta1 = u2x_ * flexibility (1) + u2y_ * flexibility (0);
-        dtheta1 = u2x_ * flexDot (1) + u2y_ * flexDot (0);
+        theta1 = + u2x_ * flexibility (1) - u2y_ * flexibility (0);
+        dtheta1 = + u2x_ * flexDot (1) - u2y_ * flexDot (0);
         lat = u2x_*x + u2y_*y;
         dlat = u2x_*dcom_ (0) + u2y_*dcom_ (1);
         ddlat = - (gainLat_ (0)*lat + gainLat_ (1)*(theta1)
@@ -540,12 +549,17 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
         //		gainz_ (2)*dcom_ (2) + gainz_ (3)*dthetaz);
         //dcom_ (2) += dt_ * d2com_ (2);
 
-        debug_(0)=theta0;
-        debug_(1)=theta1;
-        debug_(2)=ddxi;
-        debug_(3)=ddlat;
-        debug_(4)=dxi;
-        debug_(5)=dlat;
+        debug_(0)=xi;
+        debug_(1)=theta0;
+        debug_(2)=dxi;
+        debug_(3)=dtheta0;
+        debug_(4)=ddxi;
+
+        debug_(5)=lat;
+        debug_(6)=theta1;
+        debug_(7)=dlat;
+        debug_(8)=dtheta1;
+        debug_(9)=ddlat;
     }
     break;
     };
