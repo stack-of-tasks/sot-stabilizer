@@ -319,7 +319,7 @@ HRP2DecoupledStabilizer::HRP2DecoupledStabilizer(const std::string& inName) :
     //gainLat_ (3) = -0.661044705882359;
 
     kth_ = 510;
-    kz_= 150000;
+    kz_= 53200;//150000;
 
     poles1_(0) = -3 ;
     poles1_(1) = -3 ;
