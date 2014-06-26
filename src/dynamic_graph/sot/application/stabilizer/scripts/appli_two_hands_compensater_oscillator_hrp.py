@@ -5,17 +5,19 @@ from dynamic_graph import plug
 import dynamic_graph.signal_base as dgsb
 from dynamic_graph.sot.core import Stack_of_vector, OpPointModifier, MatrixHomoToPose 
 from dynamic_graph.sot.application.state_observation.initializations.hrp2_flexibility_estimator import HRP2FlexibilityEstimator 
-from dynamic_graph.sot.application.stabilizer.scenarii.hand_compensater import HandCompensater
+from dynamic_graph.sot.application.stabilizer.scenarii.hand_compensater_oscillator import HandCompensaterOscillator
+
 from dynamic_graph.sot.core.matrix_util import matrixToTuple
 
-appli = HandCompensater(robot, True, True)
+
+appli = HandCompensaterOscillator(robot, True, True)
+
 appli.withTraces()
 
 est = HRP2FlexibilityEstimator(robot)
 
 meas = est.signal('measurement')
 inputs = est.signal('input')
-
 contactNbr = est.signal('contactNbr')
 
 contactNbr.value = 2

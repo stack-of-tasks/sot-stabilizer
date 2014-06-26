@@ -1,6 +1,6 @@
 # Launch it with py ../robotViewerLauncher.py +compensater.py +appli.py 
 
-from dynamic_graph.sot.application.stabilizer import HRP2DecoupledStabilizer
+from dynamic_graph.sot.application.stabilizer import HRP2LQRDecoupledStabilizer
 from dynamic_graph import plug
 import numpy as np
 import dynamic_graph.signal_base as dgsb
@@ -10,14 +10,14 @@ from dynamic_graph.sot.core.matrix_util import matrixToTuple
 
 
 
-class HRP2Stabilizer(HRP2DecoupledStabilizer):
+class HRP2Stabilizer(HRP2LQRDecoupledStabilizer):
     
     
     def __init__(self,robot,taskname = 'com-stabilized'):
         
         from dynamic_graph.sot.application.state_observation.initializations.hrp2_flexibility_estimator import HRP2FlexibilityEstimator
 
-        HRP2DecoupledStabilizer.__init__(self,taskname)
+        HRP2LQRDecoupledStabilizer.__init__(self,taskname)
         robot.dynamic.com.recompute(0)
         robot.dynamic.Jcom.recompute(0)
         
@@ -34,7 +34,7 @@ class HRP2Stabilizer(HRP2DecoupledStabilizer):
         
         plug(self.supportPos1,self.estimator.contact1)
         plug(self.supportPos2,self.estimator.contact2)
-        self.estimator.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-2,)*6)))
-
-        plug(self.estimator.flexTransformationMatrix, self.stateFlex )        
-        plug(self.estimator.flexOmega, self.stateFlexDot )
+        
+        plug(self.estimator.flexMatrixInverse, self.stateFlex )        
+        plug(self.estimator.flexInverseOmega, self.stateFlexDot )
+        plug(self.estimator.flexInverseOmegaDot, self.stateFlexDDot )

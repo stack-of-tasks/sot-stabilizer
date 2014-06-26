@@ -8,8 +8,10 @@ from dynamic_graph.sot.application.state_observation.initializations.hrp2_flexib
 from dynamic_graph.sot.application.stabilizer.scenarii.ds_stabilizer_hrp2 import DSStabilizerHRP2
 from dynamic_graph.sot.application.stabilizer import VectorPerturbationsGenerator
 from dynamic_graph.sot.core.matrix_util import matrixToTuple
+from dynamic_graph.sot.tools import Seqplay
+from dynamic_graph.sot.dynamics.zmp_from_forces import ZmpFromForces
 
-appli =  DSStabilizerHRP2(robot, True, False, True)
+appli =  DSStabilizerHRP2(robot, False, False, True)
 appli.withTraces()
 
 est = appli.taskCoMStabilized.estimator
@@ -55,21 +57,61 @@ appli.robot.addTrace( robot.device.name, 'gyrometer')
 
 appli.startTracer()
 
-appli.gains['trunk'].setConstant(2)
+appli.gains['trunk'].setConstant(5)
+
+
+
+
+sequenceFile = '/home/mbenalle/devel/ros/install/resources/seqplay/walkfwd-resampled'
+#sequenceFile = '/home/mbenalle/devel/ros/install/resources/seqplay/stand-on-left-foot'
+
+seq = Seqplay ('seqplay')
+seq.load (sequenceFile)
+
+plug (seq.leftAnkle, appli.leftAnkle.reference)
+plug (seq.rightAnkle, appli.rightAnkle.reference)
+plug (seq.com, comRef)
+plug (seq.comdot, appli.comdot)
+plug (seq.leftAnkleVel, appli.leftAnkle.velocity)
+plug (seq.rightAnkleVel, appli.rightAnkle.velocity)
+plug (seq.posture, appli.featurePostureDes.errorIN)
+zmpRef = ZmpFromForces('zmpRef')
+plug (seq.forceLeftFoot , zmpRef.force_0)
+plug (seq.forceRightFoot, zmpRef.force_1)
+plug (robot.frames['leftFootForceSensor'].position , zmpRef.sensorPosition_0)
+plug (robot.frames['rightFootForceSensor'].position, zmpRef.sensorPosition_1)
+plug (zmpRef.zmp , robot.device.zmp)
+
+
+zmp = ZmpFromForces('zmp')
+plug (robot.device.forceLLEG , zmp.force_0)
+plug (robot.device.forceRLEG, zmp.force_1)
+plug (robot.frames['leftFootForceSensor'].position , zmp.sensorPosition_0)
+plug (robot.frames['rightFootForceSensor'].position, zmp.sensorPosition_1)
+
+appli.robot.addTrace( zmpRef.name, 'zmp')
+appli.robot.addTrace( zmp.name, 'zmp')
+
+appli.robot.addTrace( appli.features['waist'].name, 'position')
+
 
 est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-1,)*6)))
-est.setVirtualMeasurementsCovariance(1e-4)
+est.setVirtualMeasurementsCovariance(1e-10)
 
-stabilizer.start()
-
+#seq.start()
 #comRef.value = (0.0,0.0,0.8)
 #perturbator.perturbation.value=(0.001,0,0)
 #perturbator.setMode(1)
 #perturbator.setPeriod(3200)
 #perturbator.activate(True)
+#stabilizer.setPoles2((-8,)*4)
+#stabilizer.setPolesLateral((-20,)*4)
 
-stabilizer.setPoles1((-7,)*4)
-stabilizer.setPoles2((-8,)*4)
-stabilizer.setPolesLateral((-30,)*4)
+
+#stabilizer.start()
+
+#stabilizer.setStateCost(matrixToTuple(np.diag((1e6,100,1e6,10))))
+#stabilizer.setStateCost(matrixToTuple(np.diag((1e1,10000,1e1,10000))))
+
 
 appli.nextStep()
