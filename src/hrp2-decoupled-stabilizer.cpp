@@ -271,14 +271,10 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
 {
     const Vector deltaCom = comSIN_ (time) - comRefSIN_ (time);
     const Vector& comdotRef = comdotSIN_ (time);
-    const MatrixHomogeneous& flexibility =
-                stateFlexSIN_.access(time);
-    const Vector& flexDot =
-                stateFlexDotSIN_.access(time);
-    const MatrixHomogeneous& leftFootPosition =
-        leftFootPositionSIN_.access (time);
-    const MatrixHomogeneous& rightFootPosition =
-        rightFootPositionSIN_.access (time);
+    const MatrixHomogeneous& flexibility = stateFlexSIN_.access(time);
+    const Vector& flexDot = stateFlexDotSIN_.access(time);
+    const MatrixHomogeneous& leftFootPosition = leftFootPositionSIN_.access (time);
+    const MatrixHomogeneous& rightFootPosition = rightFootPositionSIN_.access (time);
     const double& gain = controlGainSIN_.access (time);
     const Vector& forceLf = forceLeftFootSIN_.access (time);
     const Vector& forceRf = forceRightFootSIN_.access (time);
@@ -341,6 +337,7 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
             supportCandidateRf_ = 0;
             iterationsSinceLastSupportRf_ ++;
         }
+
         if (flz >= forceThreshold_)
         {
             leftFootPosition.extract(rfpos);
@@ -395,6 +392,7 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
         d2com_ (1) = - (gain1_ (0)*y + gain1_ (1)*theta1 +
                         gain1_ (2)*dcom_ (1) + gain1_ (3)*dtheta1);
         dcom_ (1) += dt_ * d2com_ (1);
+
         // along z
         //d2com_ (2) = - (gainz_ (0)*z + gainz_ (1)*thetaz +
         //		gainz_ (2)*dcom_ (2) + gainz_ (3)*dthetaz);

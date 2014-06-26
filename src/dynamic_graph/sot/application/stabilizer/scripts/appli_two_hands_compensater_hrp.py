@@ -15,6 +15,7 @@ est = HRP2FlexibilityEstimator(robot)
 
 meas = est.signal('measurement')
 inputs = est.signal('input')
+
 contactNbr = est.signal('contactNbr')
 
 contactNbr.value = 2
