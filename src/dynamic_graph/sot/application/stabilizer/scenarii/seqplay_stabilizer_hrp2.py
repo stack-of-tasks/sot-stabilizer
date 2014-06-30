@@ -25,21 +25,20 @@ class SeqPlayStabilizerHRP2(SeqPlayStabilizer):
     def initTaskPosture(self):
         # --- LEAST NORM
         weight_ff        = 0
-        weight_leg       = 3
-        weight_knee      = 5
+        weight_leg       = 2
+        weight_knee      = 3
         weight_chest     = 1
         weight_chesttilt = 10
         weight_head      = 0.3
         weight_arm       = 1
 
-        weight = diag( (weight_ff,)*6 + (weight_leg,)*12 + (weight_chest,)*2 + (weight_head,)*2 + (weight_arm,)*14)
-        weight[9,9] = weight_knee
-        weight[15,15] = weight_knee
-        weight[19,19] = weight_chesttilt
+        #weight = diag( (weight_ff,)*6 + (weight_leg,)*12 + (weight_chest,)*2 + (weight_head,)*2 + (weight_arm,)*14)
+        #weight[9,9] = weight_knee
+        #weight[15,15] = weight_knee
+        #weight[19,19] = weight_chesttilt
+
+        weight = diag( (0,)*6+(1,)*30)
         #weight = weight[6:,:]
 
         self.featurePosture.jacobianIN.value = matrixToTuple(weight)
         self.featurePostureDes.errorIN.value = self.robot.halfSitting
-        #mask = '1'*36
-        #mask = '1'*14+'0'*22
-        #self.tasks['posture'].controlSelec.value = mask
