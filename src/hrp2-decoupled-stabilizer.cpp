@@ -104,7 +104,7 @@ HRP2DecoupledStabilizer::HRP2DecoupledStabilizer(const std::string& inName) :
     timeBeforeFlyingFootCorrection_ (.1),
     iterationsSinceLastSupportLf_ (0), iterationsSinceLastSupportRf_ (0),
     supportCandidateLf_ (0), supportCandidateRf_ (0),
-    uth_ (),
+    uth_ (),fixedGains_(false),
     R_ (), translation_ (3), zmp_ (3),
     theta1Ref_ (0), theta1RefPrev_ (0), dtheta1Ref_ (0),
     debug_(10)
@@ -376,11 +376,9 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
     double y = deltaCom_ (1);
     double z = deltaCom_ (2);
 
-
-
-    // z-component of center of mass deviation in global frame
-    flexZobs_ (0) = deltaCom (2);
-    flexLatObs_ (0) = 0;
+    double dx = dcom_(0) - comdotRef (0);
+    double dy = dcom_(1) - comdotRef (1);
+    double dz = dcom_(2) - comdotRef (2);
 
     double theta0, dtheta0;
     double theta1, dtheta1, ddxi;
@@ -465,9 +463,9 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
     switch (nbSupport_)
     {
     case 0:
-        dcom_ (0) = -gain * x;
-        dcom_ (1) = -gain * y;
-        dcom_ (2) = -gain * z;
+        dcom_ (0) = -gain * x + comdotRef(0);
+        dcom_ (1) = -gain * y + comdotRef(1);
+        dcom_ (2) = -gain * z + comdotRef(2);
 
         debug_.setZero();
         debug_(0)=x;
@@ -485,32 +483,32 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
         theta0 = flexibility (1);
         dtheta0 = flexDot (1);
         d2com_ (0)= -(gain1_ (0)*x + gain1_ (1)*theta0 +
-                      gain1_ (2)*dcom_ (0) + gain1_ (3)*dtheta0);
+                      gain1_ (2)*dx + gain1_ (3)*dtheta0);
 
 
         // along y
         theta1 = -flexibility (0);
         dtheta1 = -flexDot (0);
         d2com_ (1) = - (gain1_ (0)*y + gain1_ (1)*theta1 +
-                        gain1_ (2)*dcom_ (1) + gain1_ (3)*dtheta1);
+                        gain1_ (2)*dy + gain1_ (3)*dtheta1);
 
 
         debug_(0)=x;
         debug_(1)=theta0;
-        debug_(2)=dcom_(0);
+        debug_(2)=dx;
         debug_(3)=dtheta0;
         debug_(4)=d2com_(0);
 
         debug_(5)=y;
         debug_(6)=theta1;
-        debug_(7)=dcom_(1);
+        debug_(7)=dx;
         debug_(8)=dtheta1;
         debug_(9)=d2com_(1);
 
         dcom_ (0) += dt_ * d2com_ (0);
         dcom_ (1) += dt_ * d2com_ (1);
         // along z
-        dcom_ (2) = -gain * z;
+        dcom_ (2) = -gain * z + comdotRef(2);
 
     }
         break;
@@ -537,7 +535,7 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
         theta0 = + u1x_ * flexibility (1) - u1y_ * flexibility (0);
         dtheta0 = + u1x_ * flexDot (1) - u1y_ * flexDot (0);
         xi = u1x_*x + u1y_*y;
-        dxi = u1x_*dcom_ (0) + u1y_*dcom_ (1);
+        dxi = u1x_*dx + u1y_*dy;
         ddxi = - (gain2_ (0)*xi + gain2_ (1)*theta0 + gain2_ (2)*dxi +
                   gain2_ (3)*dtheta0);
 
@@ -547,7 +545,7 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
         theta1 = + u2x_ * flexibility (1) - u2y_ * flexibility (0);
         dtheta1 = + u2x_ * flexDot (1) - u2y_ * flexDot (0);
         lat = u2x_*x + u2y_*y;
-        dlat = u2x_*dcom_ (0) + u2y_*dcom_ (1);
+        dlat = u2x_*dx + u2y_*dy;
         ddlat = - (gainLat_ (0)*lat + gainLat_ (1)*(theta1)
                    + gainLat_ (2)*dlat + gainLat_ (3)*(dtheta1));
         flexLatControl_ (0) = ddlat;
@@ -558,10 +556,7 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
         dcom_ (1) += dt_ * d2com_ (1);
 
         // along z
-        dcom_ (2) = -gain * z;
-        //d2com_ (2) = - (gainz_ (0)*z + gainz_ (1)*thetaz +
-        //		gainz_ (2)*dcom_ (2) + gainz_ (3)*dthetaz);
-        //dcom_ (2) += dt_ * d2com_ (2);
+        dcom_ (2) = -gain * z + comdotRef(2);
 
         debug_(0)=xi;
         debug_(1)=theta0;
@@ -579,9 +574,9 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
     };
 
     comdot.resize (3);
-    comdot [0].setSingleBound (comdotRef (0) + dcom_ (0));
-    comdot [1].setSingleBound (comdotRef (1) + dcom_ (1));
-    comdot [2].setSingleBound (comdotRef (2) + dcom_ (2));
+    comdot [0].setSingleBound (dcom_ (0));
+    comdot [1].setSingleBound (dcom_ (1));
+    comdot [2].setSingleBound (dcom_ (2));
 
     d2comSOUT_.setConstant (d2com_);
     d2comSOUT_.setTime (time);
