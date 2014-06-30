@@ -14,6 +14,8 @@ from dynamic_graph.tracer_real_time import *
 
 from dynamic_graph.sot.application.stabilizer import HRP2DecoupledStabilizer
 from dynamic_graph.sot.application.velocity.precomputed_tasks import Application
+from dynamic_graph.sot.dynamics.zmp_from_forces import ZmpFromForces
+
 
 toList = lambda sot: map(lambda x: x[2:],sot.display().split('\n')[3:-2])
 
@@ -65,6 +67,14 @@ class SeqPlayStabilizer(Application):
 
         self.seq = Seqplay ('seqplay')
         self.seq.load (sequenceFile)
+
+        self.zmpRef = ZmpFromForces('zmpRef')
+        plug (self.seq.forceLeftFoot , self.zmpRef.force_0)
+        plug (self.seq.forceRightFoot, self.zmpRef.force_1)
+        plug (self.robot.frames['leftFootForceSensor'].position , self.zmpRef.sensorPosition_0)
+        plug (self.robot.frames['rightFootForceSensor'].position, self.zmpRef.sensorPosition_1)
+        plug (self.zmpRef.zmp , self.robot.device.zmp)
+
 
         self.createTasks()
         self.initTasks()
@@ -199,18 +209,15 @@ class SeqPlayStabilizer(Application):
     def nextStep(self,step=None):
         if step!=None: self.seqstep = step
         if self.seqstep==0:
-            self.stabilize()
-            print ('Stabilizer on')
-        elif self.seqstep==1:
-            self.initSeqplay()
-            print ('Seqplay initialized')
-        elif self.seqstep==2:
             self.prepareSeqplay()
             print ('Seqplay prepared')
-        elif self.seqstep==3:
+        elif self.seqstep==1:
+            self.stabilize()
+            print ('Stabilizer on')
+        elif self.seqstep==2:
             self.runSeqplay()
             print ('Seqplay run')
-        elif self.seqstep==4:
+        elif self.seqstep==3:
             self.goHalfSitting()
             print ('Half-Sitting the robot can be lifted')
         self.seqstep += 1
@@ -277,11 +284,10 @@ class SeqPlayStabilizer(Application):
 
         '''Start to stabilize for the hand movements.'''
         self.sot.clear()
-        if self.posture:
-            self.push(self.taskPosture)
+        
         self.comRef = self.tasks['com-stabilized'].comRef
-        self.push(self.tasks['com-stabilized'])
         self.push(self.tasks['ankles'])
+        self.push(self.tasks['com-stabilized'])
         self.push(self.taskTrunk)
         if self.hands:
             self.push(self.taskRH)
@@ -296,7 +302,7 @@ class SeqPlayStabilizer(Application):
             plug(self.ccMwaist,self.features['waist'].reference)
             plug(self.ccVwaist,self.features['waist'].velocity)
         
-            #self.tasks['waist'].setWithDerivative (True)
+            self.tasks['waist'].setWithDerivative (True)
 
             ### chest            
             self.cMchest.value = self.robot.dynamic.signal('chest').value
@@ -305,7 +311,7 @@ class SeqPlayStabilizer(Application):
             plug(self.ccMchest,self.features['chest'].reference)
             plug(self.ccVchest,self.features['chest'].velocity)
         
-            #self.tasks['chest'].setWithDerivative (True)
+            self.tasks['chest'].setWithDerivative (True)
 
             ### value            
             self.cMgaze.value = self.robot.dynamic.signal('gaze').value
@@ -314,7 +320,10 @@ class SeqPlayStabilizer(Application):
             plug(self.ccMgaze,self.features['gaze'].reference)
             plug(self.ccVgaze,self.features['gaze'].velocity)
         
-            #self.tasks['gaze'].setWithDerivative (True)            
+            self.tasks['gaze'].setWithDerivative (True)
+        
+        if self.posture:
+            self.push(self.taskPosture)           
         
         #######
 
@@ -325,17 +334,6 @@ class SeqPlayStabilizer(Application):
         ######
 
     def prepareSeqplay(self):
-        plug (self.seq.leftAnkle, self.leftAnkle.reference)
-        plug (self.seq.rightAnkle, self.rightAnkle.reference)
-        plug (self.seq.com, self.comRef)
-        plug (self.seq.com, self.featureComDes.errorIN)
-        plug (self.seq.com, self.tasks['com-stabilized'].comRef)
-        plug (self.seq.comdot, self.comdot)
-        plug (self.seq.leftAnkleVel, self.leftAnkle.velocity)
-        plug (self.seq.rightAnkleVel, self.rightAnkle.velocity)
-        plug (self.seq.posture, self.featurePostureDes.errorIN)
-
-    def initSeqplay(self):
         self.seq.leftAnkle.recompute(2)  
         self.seq.rightAnkle.recompute(2) 
         self.seq.com.recompute(2) 
@@ -343,17 +341,22 @@ class SeqPlayStabilizer(Application):
         self.seq.leftAnkleVel.recompute(2) 
         self.seq.rightAnkleVel.recompute(2)
         self.seq.posture.recompute(2)
+
         
-        self.leftAnkle.reference.value      =self.seq.leftAnkle.value  
-        self.rightAnkle.reference.value     =self.seq.rightAnkle.value
-        self.comRef.value                  =self.seq.com.value
-        self.featureComDes.errorIN.value   =self.seq.com.value
-        self.tasks['com-stabilized'].comRef.value  =self.seq.com.value
-        self.comdot.value                  =self.seq.comdot.value
-        self.leftAnkle.velocity.value      =self.seq.leftAnkleVel.value
-        self.rightAnkle.velocity.value     = self.seq.rightAnkleVel.value
-        self.featurePostureDes.errorIN.value = self.seq.posture.value
-        
+        plug (self.seq.leftAnkle, self.leftAnkle.reference)
+        plug (self.seq.rightAnkle, self.rightAnkle.reference)
+
+        plug (self.seq.com, self.comRef)
+        plug (self.seq.com, self.featureComDes.errorIN)
+        plug (self.seq.com, self.tasks['com-stabilized'].comRef)
+
+        plug (self.seq.comdot, self.comdot)
+        plug (self.seq.comdot, self.featureComDes.errordotIN)
+        plug (self.seq.comdot, self.tasks['com-stabilized'].comdot)
+
+        plug (self.seq.leftAnkleVel, self.leftAnkle.velocity)
+        plug (self.seq.rightAnkleVel, self.rightAnkle.velocity)
+        plug (self.seq.posture, self.featurePostureDes.errorIN)
 
     def runSeqplay(self):
         self.seq.start ()
