@@ -36,8 +36,14 @@ ADD_LIBRARY(${LIBRARY_NAME}
   SHARED
   hrp2-decoupled-stabilizer.cpp
   perturbations-generator.cpp
+  discrete-time-non-alg-riccati-eqn.cpp  
+  discrete-time-finie-horizon-lqr.cpp
+  prototyping/decoupled-elastic-inv-pendulum-simulator.cpp
+  prototyping/zmp-to-com-algebraic-controller.cpp
+  prototyping/linearized-table-cart-device.cc
   ${${PROJECT_NAME}_ABSOLUTE_HEADERS}
-  )
+)
+
 
 SET_TARGET_PROPERTIES(${LIBRARY_NAME}
   PROPERTIES
@@ -52,7 +58,12 @@ INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
 ADD_DEPENDENCIES(${LIBRARY_NAME} state-observation sot-state-observation sot-core dynamic-graph dynamic-graph-python)
 TARGET_LINK_LIBRARIES(${LIBRARY_NAME} state-observation sot-state-observation sot-core dynamic-graph dynamic-graph-python)
 
+
 # Add dynamic-graph-python compilation flags and link to dependency libraries
+PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} state-observation)
+PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} sot-core)
+PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} dynamic-graph)
+PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} sot-state-observation)
 PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} state-observation)
 PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} sot-core)
 PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} dynamic-graph)
@@ -62,7 +73,7 @@ PKG_CONFIG_USE_DEPENDENCY(${LIBRARY_NAME} sot-state-observation)
 INSTALL(TARGETS ${LIBRARY_NAME}
   DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
-STRING(REPLACE - _ PYTHON_LIBRARY_NAME ${LIBRARY_NAME})
+#STRING(REPLACE - _ PYTHON_LIBRARY_NAME ${LIBRARY_NAME})
 
 SET(NEW_ENTITY_CLASS
 #  DGIMUFlexibilityEstimation
@@ -118,6 +129,7 @@ INSTALL(FILES
   dynamic_graph/sot/application/stabilizer/scenarii/seqplay_stabilizer_hrp2.py
   dynamic_graph/sot/application/stabilizer/scenarii/hand_compensater_chicken.py
   dynamic_graph/sot/application/stabilizer/scenarii/hand_compensater_solver_kine.py
+  dynamic_graph/sot/application/stabilizer/scenarii/hrp2_stabilizer_simulated_decoupled_model.py
   dynamic_graph/sot/application/stabilizer/scenarii/hrp2_stabilizer.py
   dynamic_graph/sot/application/stabilizer/scenarii/__init__.py
   DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/application/stabilizer/scenarii
