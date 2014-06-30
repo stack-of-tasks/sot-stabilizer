@@ -193,7 +193,7 @@ class DSStabilizer(Application):
     def nextStep(self,step=None):
         if step!=None: self.seqstep = step
         if self.seqstep==0:
-            self.stabilize()
+            self.plugStabilizer()
         elif self.seqstep==1:
             self.goHalfSitting()
         self.seqstep += 1
@@ -255,10 +255,10 @@ class DSStabilizer(Application):
             self.ccVgaze = self.transformerGaze.gV0            
             
 
-    def stabilize(self):
+    def plugStabilizer(self):
 
 
-        '''Start to stabilize for the hand movements.'''
+        '''Plug The stabilizer.'''
         self.sot.clear()
         if self.posture:
             self.push(self.taskPosture)
@@ -268,9 +268,7 @@ class DSStabilizer(Application):
         if self.hands:
             self.push(self.taskRH)
             self.push(self.taskLH)
-        self.taskCoMStabilized.start()
-        
-               
+                       
         if self.trunkStabilize:
             #waist
             self.cMwaist.value = self.robot.dynamic.signal('waist').value
