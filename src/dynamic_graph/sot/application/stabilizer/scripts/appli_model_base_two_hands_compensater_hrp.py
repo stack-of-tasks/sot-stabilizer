@@ -21,23 +21,18 @@ contactNbr = est1.signal('contactNbr')
 # Definition des contacts
 contactNbr.value = 2
 
-
 rFootPos = MatrixHomoToPose('rFootFrame')
 lFootPos = MatrixHomoToPose('lFootFrame')
 plug(robot.frames['rightFootForceSensor'].position,rFootPos.sin)
 plug(robot.frames['leftFootForceSensor'].position,lFootPos.sin)
-contacts = Stack_of_vector ('contacts')
-plug(rFootPos.sout,contacts.sin1)
-plug(lFootPos.sout,contacts.sin2)
-contacts.selec1 (0, 3)
-contacts.selec2 (0, 3)
+est1.contacts = Stack_of_vector ('contacts')
+plug(rFootPos.sout,est1.contacts.sin1)
+plug(lFootPos.sout,est1.contacts.sin2)
+est1.contacts.selec1 (0, 3)
+est1.contacts.selec2 (0, 3)
+plug(est1.contacts.sout,est1.inputVector.contactsPosition)
 
-
-# Load contacts
-plug(contacts.sout,est1.inputVector.sin2)
-est1.inputVector.selec2 (0, 3*contactNbr.value)
-
-
+flexVect=est1.signal('flexibility')
 flex=est1.signal('flexMatrixInverse')
 flexdot = est1.signal('flexInverseVelocityVector')
 

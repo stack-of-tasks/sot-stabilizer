@@ -29,6 +29,7 @@ plug(rFootPos.sout,contact1)
 plug(lFootPos.sout,contact2)
 
 flex=est.signal('flexMatrixInverse')
+flexVect=est.signal('flexibility')
 flexdot = est.signal('flexInverseVelocityVector')
 
 appli.robot.addTrace( est.name,'flexibility' )
