@@ -4,10 +4,11 @@ import numpy as np
 from dynamic_graph import plug
 import dynamic_graph.signal_base as dgsb
 from dynamic_graph.sot.core import Stack_of_vector, OpPointModifier, MatrixHomoToPose 
-from dynamic_graph.sot.application.state_observation.initializations.hrp2_model_base_flex_estimator import HRP2ModelBaseFlexEstimator 
+from dynamic_graph.sot.application.state_observation.initializations.hrp2_model_base_flex_estimator import HRP2ModelBaseFlexEstimator, PositionStateReconstructor 
 from dynamic_graph.sot.application.stabilizer.scenarii.hand_compensater import HandCompensater
 from dynamic_graph.sot.core.matrix_util import matrixToTuple
 from dynamic_graph.sot.application.state_observation import InputReconstructor
+import time
 
 appli = HandCompensater(robot, True, True)
 appli.withTraces()
@@ -43,18 +44,50 @@ appli.robot.addTrace( est1.name,'input')
 appli.robot.addTrace( est1.name,'measurement')
 appli.robot.addTrace( est1.name,'simulatedSensors' )
 appli.robot.addTrace( est1.name,'inovation' )
+appli.robot.addTrace( est1.name,'prediction' )
 appli.robot.addTrace( robot.device.name, 'forceLLEG')
 appli.robot.addTrace( robot.device.name, 'forceRLEG')
 appli.robot.addTrace( robot.device.name, 'accelerometer')
 appli.robot.addTrace( robot.device.name,  'gyrometer')
+
+deriv=PositionStateReconstructor('deriv')
+deriv.inputFormat.value='000010'
+deriv.outputFormat.value='001000'
+deriv.setSampligPeriod(0.005)
+plug(est1.flexThetaU,deriv.sin)
+
+
+appli.robot.addTrace( est1.name,'flexThetaU' )
+appli.robot.addTrace( est1.name,'flexOmega' )
+appli.robot.addTrace( deriv.name,'sout')
+
+
+
 
 appli.startTracer()
 
 plug(flex,appli.ccMc)
 plug(flexdot,appli.ccVc)
 
-est1.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-2,)*6)))
+est1.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-6,)*6)))
 
 appli.gains['trunk'].setConstant(2)
 
-appli.nextStep()
+#appli.nextStep()
+
+time.sleep(120)
+appli.comRef.value=(0.033566999999999999, 0.001536, 0.80771000000000004)
+time.sleep(120)
+appli.comRef.value=(0.003566999999999999, 0.001536, 0.80771000000000004)
+time.sleep(120)
+appli.comRef.value=(-0.01, 0.001536, 0.80771000000000004)
+time.sleep(120)
+appli.comRef.value=(0.003566999999999999, 0.001536, 0.80771000000000004)
+time.sleep(120)
+appli.comRef.value=(0.003566999999999999, 0.031536, 0.80771000000000004)
+time.sleep(120)
+appli.comRef.value=(0.003566999999999999, 0.001536, 0.80771000000000004)
+time.sleep(120)
+appli.comRef.value=(0.003566999999999999, -0.031536, 0.80771000000000004)
+time.sleep(120)
+appli.comRef.value=(0.003566999999999999, 0.001536, 0.80771000000000004)

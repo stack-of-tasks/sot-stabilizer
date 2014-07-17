@@ -54,4 +54,6 @@ est.setVirtualMeasurementsCovariance(1e-4)
 
 appli.gains['trunk'].setConstant(2)
 
-appli.nextStep()
+#appli.nextStep()
+
+appli.comRef.value=(0.033566999999999999, 0.001536, 0.80771000000000004)
