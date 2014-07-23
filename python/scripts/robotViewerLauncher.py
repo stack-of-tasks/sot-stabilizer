@@ -9,6 +9,28 @@ addRobotViewer(robot.device,small=True,verbose=False)
 robot.timeStep=5e-3
 usingRobotViewer = True
 
+
+
+
+from dynamic_graph.sot.core import Stack_of_vector
+acc = Stack_of_vector('acc')
+gyr = Stack_of_vector('gyr')
+acc.selec1(0,2)
+acc.selec2(0,1)
+gyr.selec1(0,2)
+gyr.selec2(0,1)
+
+acc.sin1.value=(0.0,0.0)
+acc.sin2.value=(9.8,)
+
+gyr.sin1.value=(0.0,0.0)
+gyr.sin2.value=(0.0,)
+
+robot.device.accelerometer = acc.sout
+robot.device.gyrometer = gyr.sout
+
+
+
 # --- MAIN LOOP ----------------------------------------------------------------
 
 from dynamic_graph.sot.core.utils.thread_interruptible_loop import loopInThread,optionalparentheses,loopShortcuts
