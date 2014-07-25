@@ -3,12 +3,46 @@ import sys
 import numpy as np
 from dynamic_graph import plug
 import dynamic_graph.signal_base as dgsb
-from dynamic_graph.sot.core import Stack_of_vector, OpPointModifier, MatrixHomoToPose 
+from dynamic_graph.sot.core import Stack_of_vector, OpPointModifier, MatrixHomoToPose, MatrixHomoToPoseRollPitchYaw 
 from dynamic_graph.sot.application.state_observation.initializations.hrp2_model_base_flex_estimator import HRP2ModelBaseFlexEstimator, PositionStateReconstructor 
 from dynamic_graph.sot.application.stabilizer.scenarii.hand_compensater import HandCompensater
 from dynamic_graph.sot.core.matrix_util import matrixToTuple
 from dynamic_graph.sot.application.state_observation import InputReconstructor
 import time
+
+def addContact(MatrixHomo):
+    contactNbr.value = contactNbr.value+1
+    
+    contactPos = MatrixHomoToPose('contact'+str(contactNbr.value)+'FramePos')
+    contactRot = HomoToRotation('contact'+str(contactNbr.value)+'FrameRot')
+    
+    plug(MatrixHomo,contactPos.sin)
+    plug(MatrixHomo,contactRot.sin)
+    
+    contact = Stack_of_vector ('contact')
+    plug(contactPos.sout,contact.sin1)
+    plug(contactPos.sout,contact.sin2)
+    contact.selec1 (0, 3)
+    contact.selec2 (0, 3)
+    
+    allcontacts = Stack_of_vector ('contact')
+    plug(est1.inputVector.contactsPosition,allcontacts.sin1)
+    plug(contact.sout,allcontacts.sin2)
+    allcontacts.selec1 (0, contactNbr.value*6-6)
+    allcontacts.selec2 (0, 6)
+    
+    plug(allcontacts.sout,est1.inputVector.contactsPosition)
+    
+    
+def removeContact(contactNum):
+    contactNbr.value = contactNbr.value-1
+    
+    est1.inputVector.contactsPosition.value
+    
+    
+    
+    
+
 
 appli = HandCompensater(robot, True, True)
 appli.withTraces()
@@ -19,19 +53,26 @@ meas = est1.signal('measurement')
 inputs = est1.signal('input')
 contactNbr = est1.signal('contactNbr')
 
+#addContact(robot.frames['rightFootForceSensor'].position)
+#addContact(robot.frames['leftFootForceSensor'].position)
+
 # Definition des contacts
 contactNbr.value = 2
 
-rFootPos = MatrixHomoToPose('rFootFrame')
-lFootPos = MatrixHomoToPose('lFootFrame')
+rFootPos = MatrixHomoToPoseRollPitchYaw('rFootFramePos')
+lFootPos = MatrixHomoToPoseRollPitchYaw('lFootFramePos')
+
+
 plug(robot.frames['rightFootForceSensor'].position,rFootPos.sin)
 plug(robot.frames['leftFootForceSensor'].position,lFootPos.sin)
+
 est1.contacts = Stack_of_vector ('contacts')
 plug(rFootPos.sout,est1.contacts.sin1)
 plug(lFootPos.sout,est1.contacts.sin2)
-est1.contacts.selec1 (0, 3)
-est1.contacts.selec2 (0, 3)
+est1.contacts.selec1 (0, 6)
+est1.contacts.selec2 (0, 6)
 plug(est1.contacts.sout,est1.inputVector.contactsPosition)
+
 
 flexVect=est1.signal('flexibility')
 flex=est1.signal('flexMatrixInverse')
