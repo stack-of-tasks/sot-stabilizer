@@ -9,39 +9,7 @@ from dynamic_graph.sot.application.stabilizer.scenarii.hand_compensater import H
 from dynamic_graph.sot.core.matrix_util import matrixToTuple
 from dynamic_graph.sot.application.state_observation import InputReconstructor
 import time
-
-def addContact(MatrixHomo):
-    contactNbr.value = contactNbr.value+1
-    
-    contactPos = MatrixHomoToPose('contact'+str(contactNbr.value)+'FramePos')
-    contactRot = HomoToRotation('contact'+str(contactNbr.value)+'FrameRot')
-    
-    plug(MatrixHomo,contactPos.sin)
-    plug(MatrixHomo,contactRot.sin)
-    
-    contact = Stack_of_vector ('contact')
-    plug(contactPos.sout,contact.sin1)
-    plug(contactPos.sout,contact.sin2)
-    contact.selec1 (0, 3)
-    contact.selec2 (0, 3)
-    
-    allcontacts = Stack_of_vector ('contact')
-    plug(est1.inputVector.contactsPosition,allcontacts.sin1)
-    plug(contact.sout,allcontacts.sin2)
-    allcontacts.selec1 (0, contactNbr.value*6-6)
-    allcontacts.selec2 (0, 6)
-    
-    plug(allcontacts.sout,est1.inputVector.contactsPosition)
-    
-    
-def removeContact(contactNum):
-    contactNbr.value = contactNbr.value-1
-    
-    est1.inputVector.contactsPosition.value
-    
-    
-    
-    
+  
 
 
 appli = HandCompensater(robot, True, True)
@@ -61,8 +29,6 @@ contactNbr.value = 2
 
 rFootPos = MatrixHomoToPoseRollPitchYaw('rFootFramePos')
 lFootPos = MatrixHomoToPoseRollPitchYaw('lFootFramePos')
-
-
 plug(robot.frames['rightFootForceSensor'].position,rFootPos.sin)
 plug(robot.frames['leftFootForceSensor'].position,lFootPos.sin)
 
@@ -111,7 +77,7 @@ appli.startTracer()
 plug(flex,appli.ccMc)
 plug(flexdot,appli.ccVc)
 
-est1.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e0,)*6)))
+est1.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e4,)*6)))
 
 appli.gains['trunk'].setConstant(2)
 
