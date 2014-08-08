@@ -48,6 +48,7 @@ plug(flex,appli.ccMc)
 plug(flexdot,appli.ccVc)
 
 est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-2,)*6)))
+est.setVirtualMeasurementsCovariance(1e-4)
 
 appli.gains['trunk'].setConstant(2)
 
