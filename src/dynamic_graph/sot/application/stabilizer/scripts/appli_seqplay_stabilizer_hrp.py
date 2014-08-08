@@ -16,7 +16,7 @@ from dynamic_graph.sot.dynamics.zmp_from_forces import ZmpFromForces
 traj = '/home/mbenalle/devel/ros/install/resources/seqplay/walkfwd-shifted'
 #traj = '/home/mbenalle/devel/ros/install/resources/seqplay/stand-on-left-foot'
 
-appli =  SeqPlayStabilizerHRP2(robot, traj , False, False, True)
+appli =  SeqPlayStabilizerHRP2(robot, traj , True, False, True)
 appli.withTraces()
 
 est = appli.taskCoMStabilized.estimator
@@ -76,12 +76,14 @@ appli.robot.addTrace( zmp.name, 'zmp')
 
 
 #stabilizer.setGainLateral((800, -2000, 300, 0))
-stabilizer.setPoles1((-5,)*4)
-stabilizer.setPoles2((-8,)*4)
-stabilizer.setPolesLateral((-10,)*4)
+#stabilizer.setPoles1((-5,)*4)
+#stabilizer.setPoles2((-8,)*4)
+#stabilizer.setPolesLateral((-10,)*4)
 
 #stabilizer.start()
 
 #stabilizer.setKth(395)
+
+#stabilizer.setStateCost(matrixToTuple(np.diag((100,10,100,10))))
 
 appli.nextStep()
