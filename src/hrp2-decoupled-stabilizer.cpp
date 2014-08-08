@@ -501,7 +501,7 @@ HRP2DecoupledStabilizer::computeControlFeedback(VectorMultiBound& comdot,
 
         debug_(5)=y;
         debug_(6)=theta1;
-        debug_(7)=dx;
+        debug_(7)=dy;
         debug_(8)=dtheta1;
         debug_(9)=d2com_(1);
 
