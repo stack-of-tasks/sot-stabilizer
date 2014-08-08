@@ -1,6 +1,7 @@
 /*
  * Copyright 2010,
  * Florent Lamiraux
+ * Mehdi Benallegue
  *
  * CNRS
  *

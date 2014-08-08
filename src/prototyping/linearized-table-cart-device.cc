@@ -12,7 +12,7 @@
 #include <dynamic-graph/command-getter.h>
 #include <dynamic-graph/command-direct-setter.h>
 #include <dynamic-graph/command-direct-getter.h>
-#include <sot-stabilizer/prototyping/linearized-table-cart.hh>
+//#include <sot-stabilizer/prototyping/linearized-table-cart.hh>
 #include <dynamic-graph/command-bind.h>
 
 #include <state-observation/tools/definitions.hpp>
