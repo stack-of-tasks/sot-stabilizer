@@ -35,9 +35,10 @@ SET(LIBRARY_NAME ${PROJECT_NAME})
 ADD_LIBRARY(${LIBRARY_NAME}
   SHARED
   hrp2-decoupled-stabilizer.cpp
+  hrp2-lqr-decoupled-stabilizer.cpp
   perturbations-generator.cpp
   discrete-time-non-alg-riccati-eqn.cpp  
-  discrete-time-finie-horizon-lqr.cpp
+  discrete-time-lti-lqr.cpp
   prototyping/decoupled-elastic-inv-pendulum-simulator.cpp
   prototyping/zmp-to-com-algebraic-controller.cpp
   prototyping/linearized-table-cart-device.cc

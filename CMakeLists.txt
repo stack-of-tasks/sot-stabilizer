@@ -48,8 +48,10 @@ ADD_REQUIRED_DEPENDENCY("sot-state-observation")
 
 SET(${PROJECT_NAME}_HEADERS
     include/sot-stabilizer/hrp2-decoupled-stabilizer.hh
+    include/sot-stabilizer/hrp2-lqr-decoupled-stabilizer.hh
     include/sot-stabilizer/perturbations-generator.hh
-    include/sot-stabilizer/controllers/discrete-time-finie-horizon-lqr.hh
+    include/sot-stabilizer/controllers/controller-base.hh
+    include/sot-stabilizer/controllers/discrete-time-lti-lqr.hh
     include/sot-stabilizer/tools/discrete-time-non-alg-riccati-eqn.hh
     include/sot-stabilizer/prototyping/decoupled-elastic-inv-pendulum-simulator.hh
     include/sot-stabilizer/prototyping/zmp-to-com-algebraic-controller.hh
