@@ -29,6 +29,9 @@ gyr.sin2.value=(0.0,)
 robot.device.accelerometer = acc.sout
 robot.device.gyrometer = gyr.sout
 
+robot.device.forceLLEG.value = (0,0,284,0,0,0)
+robot.device.forceRLEG.value = (0,0,284,0,0,0)
+
 
 
 # --- MAIN LOOP ----------------------------------------------------------------
