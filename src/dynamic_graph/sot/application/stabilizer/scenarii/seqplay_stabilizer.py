@@ -247,6 +247,8 @@ class SeqPlayStabilizer(Application):
 
             self.ccMwaist = self.transformerWaist.gM0 # reference matrix homo in the control frame
             self.ccVwaist = self.transformerWaist.gV0
+            
+            self.transformerWaist.setYawRemoved(True)
 
             ### chest
             self.transformerChest = MovingFrameTransformation('tranformation_chest')
@@ -262,6 +264,7 @@ class SeqPlayStabilizer(Application):
 
             self.ccMchest = self.transformerChest.gM0 # reference matrix homo in the control frame
             self.ccVchest = self.transformerChest.gV0
+            self.transformerChest.setYawRemoved(True)
 
             ### gaze
             self.transformerGaze = MovingFrameTransformation('tranformation_gaze')
@@ -276,7 +279,8 @@ class SeqPlayStabilizer(Application):
             # You need to set up a reference velocity value here: plug( ... ,self.cVhref)
 
             self.ccMgaze = self.transformerGaze.gM0 # reference matrix homo in the control frame
-            self.ccVgaze = self.transformerGaze.gV0            
+            self.ccVgaze = self.transformerGaze.gV0
+            self.transformerGaze.setYawRemoved(True)            
             
 
     def stabilize(self):
