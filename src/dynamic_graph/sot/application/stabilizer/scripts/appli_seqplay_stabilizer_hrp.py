@@ -12,7 +12,9 @@ from dynamic_graph.sot.dynamics.zmp_from_forces import ZmpFromForces
 
 
 #traj = '/home/mbenalle/devel/ros/install/resources/seqplay/walkfwd-resampled'
-traj = '/home/mbenalle/devel/ros/install/resources/seqplay/stand-on-left-foot'
+#traj = '/home/mbenalle/devel/ros/install/resources/seqplay/walkfwd-resampled-30'
+traj = '/home/mbenalle/devel/ros/install/resources/seqplay/walkfwd-shifted'
+#traj = '/home/mbenalle/devel/ros/install/resources/seqplay/stand-on-left-foot'
 
 appli =  SeqPlayStabilizerHRP2(robot, traj , False, False, True)
 appli.withTraces()
