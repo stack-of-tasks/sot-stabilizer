@@ -46,7 +46,7 @@ namespace controller
                 std::cout<<"A :"<< std::endl;
                 std::cout<< A_ <<std::endl;
                 std::cout<<"B :"<< std::endl;
-                std::cout<< B_ <<std::endl;
+                std::cout<< B_.transpose() <<std::endl;
                 std::cout<<"Q :"<< std::endl;
                 std::cout<< Q_ <<std::endl;
                 std::cout<<"R :"<< std::endl;
@@ -73,8 +73,8 @@ namespace controller
 
             computedInput_=true;
 
-            std::cout<< "P " << std::endl;
-            std::cout<< P << std::endl;
+            //std::cout<< "P " << std::endl;
+            //std::cout<< P << std::endl;
             std::cout<<"Gain :"<< std::endl;
             std::cout<< -lastGain_ <<std::endl;
             std::cout<<"State :"<< x_.transpose()<< std::endl;

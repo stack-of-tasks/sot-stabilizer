@@ -38,18 +38,18 @@
 
 namespace sotStabilizer
 {
-using dynamicgraph::sot::TaskAbstract;
-using dynamicgraph::Signal;
-using dynamicgraph::SignalPtr;
-using dynamicgraph::SignalTimeDependent;
-using dynamicgraph::Vector;
-using dynamicgraph::Matrix;
-using dynamicgraph::Entity;
-using dynamicgraph::sot::VectorMultiBound;
-using dynamicgraph::sot::MatrixHomogeneous;
-using dynamicgraph::sot::MatrixRotation;
-using dynamicgraph::sot::VectorUTheta;
-using dynamicgraph::sot::VectorRollPitchYaw;
+  using dynamicgraph::sot::TaskAbstract;
+  using dynamicgraph::Signal;
+  using dynamicgraph::SignalPtr;
+  using dynamicgraph::SignalTimeDependent;
+  using dynamicgraph::Vector;
+  using dynamicgraph::Matrix;
+  using dynamicgraph::Entity;
+  using dynamicgraph::sot::VectorMultiBound;
+  using dynamicgraph::sot::MatrixHomogeneous;
+  using dynamicgraph::sot::MatrixRotation;
+  using dynamicgraph::sot::VectorUTheta;
+  using dynamicgraph::sot::VectorRollPitchYaw;
 
 /// Dynamic balance stabilizer
 ///
@@ -63,10 +63,10 @@ using dynamicgraph::sot::VectorRollPitchYaw;
 /// and provides as output two signals
 /// \li taskSOUT, the desired time derivative of the center of mass,
 /// \li jacobianSOUT, the jacobian of the center of mass
-class HRP2LQRDecoupledStabilizer : public TaskAbstract
-{
+  class HRP2LQRDecoupledStabilizer : public TaskAbstract
+  {
     DYNAMIC_GRAPH_ENTITY_DECL ();
-public:
+  public:
     // Constant values
     static double constm_;
     static double constcomHeight_;
@@ -79,43 +79,43 @@ public:
     /// Documentation of the entity
     virtual std::string getDocString () const
     {
-        std::string doc =
-            "Dynamic balance humanoid robot stabilizer\n"
-            "\n"
-            "This task aims at controlling balance for a walking legged humanoid"
-            " robot.\n"
-            "The entity takes 6 signals as input:\n"
-            "  - deltaCom: the difference between the position of the center of "
-            "mass and the\n"
-            " reference,\n"
-            "  - Jcom: the Jacobian of the center of mass wrt the robot "
-            "configuration,\n"
-            "  - comdot: the reference velocity of the center of mass \n"
-            "  \n"
-            "As any task, the entity provide two output signals:\n"
-            "  - task: the velocity of the center of mass so as to cope with\n"
-            "          perturbations,\n"
-            "  - jacobian: the Jacobian of the center of mass with respect to "
-            "robot\n"
-            "              configuration.\n";
-        return doc;
+      std::string doc =
+        "Dynamic balance humanoid robot stabilizer\n"
+        "\n"
+        "This task aims at controlling balance for a walking legged humanoid"
+        " robot.\n"
+        "The entity takes 6 signals as input:\n"
+        "  - deltaCom: the difference between the position of the center of "
+        "mass and the\n"
+        " reference,\n"
+        "  - Jcom: the Jacobian of the center of mass wrt the robot "
+        "configuration,\n"
+        "  - comdot: the reference velocity of the center of mass \n"
+        "  \n"
+        "As any task, the entity provide two output signals:\n"
+        "  - task: the velocity of the center of mass so as to cope with\n"
+        "          perturbations,\n"
+        "  - jacobian: the Jacobian of the center of mass with respect to "
+        "robot\n"
+        "              configuration.\n";
+      return doc;
     }
 
     /// Start stabilizer
     void start ()
     {
-        on_ = true;
+      on_ = true;
     }
 
     /// Start stabilizer
     void stop ()
     {
-        on_ = false;
+      on_ = false;
     }
 
     void setFixedGains(const bool & b)
     {
-        fixedGains_=b;
+      fixedGains_=b;
     }
 
     /// @}
@@ -125,67 +125,82 @@ public:
     /// \brief Set sampling time period
     void setTimePeriod(const double& inTimePeriod)
     {
-        dt_ = inTimePeriod;
+      dt_ = inTimePeriod;
     }
     /// \brief Get sampling time period
     double getTimePeriod() const
     {
-        return dt_;
+      return dt_;
     }
     /// @}
 
 
     void setStateCost(const Matrix & Q)
     {
-              Q_=sotStateObservation::convertMatrix<stateObservation::Matrix>(Q);
-            controllerLat_.setCostMatrices(Q_,R_);
-    controller2_.setCostMatrices(Q_,R_);
-    controller1_.setCostMatrices(Q_,R_);
+      Q_=sotStateObservation::convertMatrix<stateObservation::Matrix>(Q);
+      controllerLat_.setCostMatrices(Q_,R_);
+      controller2_.setCostMatrices(Q_,R_);
+      controller1_.setCostMatrices(Q_,R_);
     }
 
     void setInputCost(const Matrix & R)
     {
-        R_=sotStateObservation::convertMatrix<stateObservation::Matrix>(R);
-            controllerLat_.setCostMatrices(Q_,R_);
-    controller2_.setCostMatrices(Q_,R_);
-    controller1_.setCostMatrices(Q_,R_);
+      R_=sotStateObservation::convertMatrix<stateObservation::Matrix>(R);
+      controllerLat_.setCostMatrices(Q_,R_);
+      controller2_.setCostMatrices(Q_,R_);
+      controller1_.setCostMatrices(Q_,R_);
 
+    }
+
+    void setZMPMode(const bool & mode)
+    {
+      zmpMode_=mode;
+      if (zmpMode_)
+      {
+        taskSOUT.addDependency(zmpRefSIN_);
+        taskSOUT.removeDependency(comddotRefSIN_);
+      }
+      else
+      {
+        taskSOUT.removeDependency(zmpRefSIN_);
+        taskSOUT.addDependency(comddotRefSIN_);
+      }
     }
 
     Matrix getStateCost() const
     {
-        return sotStateObservation::convertMatrix<Matrix>(Q_);
+      return sotStateObservation::convertMatrix<Matrix>(Q_);
     }
 
     Matrix getInputCost() const
     {
-        return sotStateObservation::convertMatrix<Matrix>(R_);
+      return sotStateObservation::convertMatrix<Matrix>(R_);
     }
 
 
     Matrix getLastGain1() const
     {
-        return sotStateObservation::convertMatrix<Matrix>(controller1_.getLastGain());
+      return sotStateObservation::convertMatrix<Matrix>(controller1_.getLastGain());
     }
 
     Matrix getLastGain2() const
     {
-        return sotStateObservation::convertMatrix<Matrix>(controller2_.getLastGain());
+      return sotStateObservation::convertMatrix<Matrix>(controller2_.getLastGain());
     }
 
     Matrix getLastGainLat() const
     {
-        return sotStateObservation::convertMatrix<Matrix>(controllerLat_.getLastGain());
+      return sotStateObservation::convertMatrix<Matrix>(controllerLat_.getLastGain());
     }
 
     stateObservation::Matrix computeDynamicsMatrix(double comHeight, double kth, double kdth, double mass);
 
 
-private:
+  private:
 
     /// Compute the control law
     VectorMultiBound& computeControlFeedback(VectorMultiBound& comdot,
-            const int& time);
+        const int& time);
 
     Matrix& computeJacobianCom(Matrix& jacobian, const int& time);
 
@@ -196,33 +211,47 @@ private:
     /// Position of center of mass
     SignalPtr < dynamicgraph::Matrix, int> jacobianSIN_;
     /// Reference velocity of the center of mass
-    SignalPtr < dynamicgraph::Vector, int> comdotSIN_;
-    // Position of left foot force sensor in global frame
+    SignalPtr < dynamicgraph::Vector, int> comdotRefSIN_;
+
+    ///Reference com ddot
+    SignalPtr < dynamicgraph::Vector, int> comddotRefSIN_;
+
+    ///Reference ZMP
+    SignalPtr < dynamicgraph::Vector, int> zmpRefSIN_;
+
+    /// Position of left foot force sensor in global frame
     SignalPtr <MatrixHomogeneous, int> leftFootPositionSIN_;
-    // Position of right foot force sensor in global frame
+    /// Position of right foot force sensor in global frame
     SignalPtr <MatrixHomogeneous, int> rightFootPositionSIN_;
-    // Force in left foot sensor
+    /// Force in left foot sensor
     SignalPtr <dynamicgraph::Vector, int> forceLeftFootSIN_;
-    // Force in right foot sensor
+    /// Force in right foot sensor
     SignalPtr <dynamicgraph::Vector, int> forceRightFootSIN_;
-    // State of the flexibility
+    /// State of the flexibility
     SignalPtr <MatrixHomogeneous, int> stateFlexSIN_;
-    // Velocity of the flexibility
+    /// Velocity of the flexibility
     SignalPtr <dynamicgraph::Vector, int> stateFlexDotSIN_;
+
+    /// Velocity of the flexibility
+    SignalPtr <dynamicgraph::Vector, int> stateFlexDDotSIN_;
+
     SignalPtr <double, int> controlGainSIN_;
-    // Acceleration of center of mass
-    SignalTimeDependent <dynamicgraph::Vector, int> d2comSOUT_;
-    // Number of support feet
+    /// Acceleration of center of mass
+    SignalTimeDependent <dynamicgraph::Vector, int> comddotSOUT_;
+
+    /// Acceleration of center of mass
+    SignalTimeDependent <dynamicgraph::Vector, int> comddotRefSOUT_;
+
+    /// Number of support feet
     SignalTimeDependent <unsigned int, int> nbSupportSOUT_;
 
-    // Contact Position
+    /// Contact Position
     SignalTimeDependent <Vector, int> supportPos1SOUT_;
     SignalTimeDependent <Vector, int> supportPos2SOUT_;
 
-    //error output
+    ///error output
     SignalTimeDependent <Vector, int> errorSOUT_;
 
-    //error output
     SignalTimeDependent <Vector, int> debugSOUT_;
 
 
@@ -242,6 +271,10 @@ private:
     unsigned int nbSupport_;
     // Acceleration of the center of mass computed by stabilizer
     Vector d2com_;
+
+    Vector comddotRef_;
+    //jerk of the com computed by the stabilizer
+    Vector d3com_;
     // Deviation of center of mass
     Vector deltaCom_;
 
@@ -253,13 +286,6 @@ private:
     Vector flexVelocityLf_;
     Vector flexVelocityRf_;
     Vector flexVelocityLat_;
-
-    // Observation of vertical flexibility: (\zeta - \zeta_{ref}, Fz)
-    Vector flexZobs_;
-    // Control of lateral flexibility in double support
-    Vector flexLatControl_;
-    // Observation of lateral flexibility in double support
-    Vector flexLatObs_;
 
     double timeBeforeFlyingFootCorrection_;
     unsigned int iterationsSinceLastSupportLf_;
@@ -297,8 +323,10 @@ private:
 
     bool fixedGains_;
 
+    bool zmpMode_;
+
     double hrp2Mass_;
-}; // class Stabilizer
+  }; // class Stabilizer
 } // namespace sotStabiilizer
 
 #endif // SOT_DYNAMIC_STABILIZER_HRP2_LQR_HH

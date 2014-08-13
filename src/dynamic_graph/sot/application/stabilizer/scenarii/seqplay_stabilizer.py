@@ -67,20 +67,15 @@ class SeqPlayStabilizer(Application):
 
         self.seq = Seqplay ('seqplay')
         self.seq.load (sequenceFile)
-
         self.zmpRef = ZmpFromForces('zmpRef')
-        plug (self.seq.forceLeftFoot , self.zmpRef.force_0)
-        plug (self.seq.forceRightFoot, self.zmpRef.force_1)
-        plug (self.robot.frames['leftFootForceSensor'].position , self.zmpRef.sensorPosition_0)
-        plug (self.robot.frames['rightFootForceSensor'].position, self.zmpRef.sensorPosition_1)
-        plug (self.zmpRef.zmp , self.robot.device.zmp)
-
 
         self.createTasks()
         self.initTasks()
         self.initTaskGains()
 
         self.initialStack()
+
+
 
     # --- TASKS --------------------------------------------------------------------
     # --- TASKS --------------------------------------------------------------------
@@ -104,11 +99,12 @@ class SeqPlayStabilizer(Application):
     #to second order controlm the initialization will remain while the creation is 
     #changed
 
+
     def initTasks(self):
         self.initTaskBalance()
         self.initTaskPosture()
         self.initTaskStabilize()
-        #self.initSeqplay()
+        self.initSeqplay()
 
 
     def initTaskBalance(self):
@@ -134,6 +130,15 @@ class SeqPlayStabilizer(Application):
 
     def createStabilizedCoMTask (self):
         raise Exception("createStabilizedCoMTask is not overloaded")
+
+
+    def initSeqplay(self):
+        plug (self.seq.forceLeftFoot , self.zmpRef.force_0)
+        plug (self.seq.forceRightFoot, self.zmpRef.force_1)
+        plug (self.robot.frames['leftFootForceSensor'].position , self.zmpRef.sensorPosition_0)
+        plug (self.robot.frames['rightFootForceSensor'].position, self.zmpRef.sensorPosition_1)
+        plug (self.zmpRef.zmp , self.robot.device.zmp)
+        plug (self.zmpRef.zmp , self.tasks['com-stabilized'].zmpRef)
          
     # --- SOLVER ----------------------------------------------------------------
 
@@ -356,11 +361,14 @@ class SeqPlayStabilizer(Application):
 
         plug (self.seq.comdot, self.comdot)
         plug (self.seq.comdot, self.featureComDes.errordotIN)
-        plug (self.seq.comdot, self.tasks['com-stabilized'].comdot)
+        plug (self.seq.comdot, self.tasks['com-stabilized'].comdotRef)
 
         plug (self.seq.leftAnkleVel, self.leftAnkle.velocity)
         plug (self.seq.rightAnkleVel, self.rightAnkle.velocity)
         plug (self.seq.posture, self.featurePostureDes.errorIN)
+
+        
+
 
     def runSeqplay(self):
         self.seq.start ()

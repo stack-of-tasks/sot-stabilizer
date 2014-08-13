@@ -11,7 +11,7 @@ from dynamic_graph.sot.core.matrix_util import matrixToTuple
 from dynamic_graph.sot.tools import Seqplay
 from dynamic_graph.sot.dynamics.zmp_from_forces import ZmpFromForces
 
-appli =  DSStabilizerHRP2(robot, True, False, True)
+appli =  DSStabilizerHRP2(robot, False, False, True)
 appli.withTraces()
 
 est = appli.taskCoMStabilized.estimator
@@ -109,4 +109,9 @@ est.setVirtualMeasurementsCovariance(1e-10)
 
 
 #stabilizer.start()
+
+#stabilizer.setStateCost(matrixToTuple(np.diag((1e6,100,1e6,10))))
+#stabilizer.setStateCost(matrixToTuple(np.diag((1e1,10000,1e1,10000))))
+
+
 appli.nextStep()

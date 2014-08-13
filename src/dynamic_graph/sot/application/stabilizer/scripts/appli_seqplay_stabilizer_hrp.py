@@ -9,12 +9,14 @@ from dynamic_graph.sot.application.stabilizer.scenarii.seqplay_stabilizer_hrp2 i
 from dynamic_graph.sot.application.stabilizer import VectorPerturbationsGenerator
 from dynamic_graph.sot.core.matrix_util import matrixToTuple
 from dynamic_graph.sot.dynamics.zmp_from_forces import ZmpFromForces
+from dynamic_graph.sot.application.state_observation import PositionStateReconstructor
 
 
 #traj = '/home/mbenalle/devel/ros/install/resources/seqplay/walkfwd-resampled'
 #traj = '/home/mbenalle/devel/ros/install/resources/seqplay/walkfwd-resampled-30'
-traj = '/home/mbenalle/devel/ros/install/resources/seqplay/walkfwd-shifted'
 #traj = '/home/mbenalle/devel/ros/install/resources/seqplay/stand-on-left-foot'
+traj = '/home/mbenalle/devel/ros/install/resources/seqplay/walkfwd-shifted'
+#traj = '/home/mbenalle/devel/ros/install/resources/seqplay/stand-on-left-foot-shifted'
 
 appli =  SeqPlayStabilizerHRP2(robot, traj , True, False, True)
 appli.withTraces()
@@ -22,7 +24,18 @@ appli.withTraces()
 est = appli.taskCoMStabilized.estimator
 stabilizer = appli.taskCoMStabilized
 
+
+
+
 seq = appli.seq
+
+comddotRec=PositionStateReconstructor("comddotRec")
+comddotRec.setFiniteDifferencesInterval(2)
+comddotRec.inputFormat.value = '000001'
+comddotRec.outputFormat.value = '010101'
+plug(seq.com,comddotRec.sin);
+
+
 
 appli.robot.addTrace( est.name,'flexibility' )
 appli.robot.addTrace( est.name,'flexInversePoseThetaU' )
@@ -38,7 +51,8 @@ appli.robot.addTrace( stabilizer.name,'comRef' )
 appli.robot.addTrace( stabilizer.name,'task' )
 appli.robot.addTrace( stabilizer.name,'nbSupport' )
 appli.robot.addTrace( stabilizer.name,'error' )
-appli.robot.addTrace( stabilizer.name,'d2com' )
+appli.robot.addTrace( stabilizer.name,'comddot' )
+appli.robot.addTrace( stabilizer.name,'comddotRefOUT' )
 appli.robot.addTrace( stabilizer.name,'debug' )
 
 appli.robot.addTrace( robot.device.name, 'forceLLEG')
@@ -74,6 +88,8 @@ plug (robot.frames['rightFootForceSensor'].position, zmp.sensorPosition_1)
 appli.robot.addTrace( appli.zmpRef.name, 'zmp')
 appli.robot.addTrace( zmp.name, 'zmp')
 
+appli.robot.addTrace( comddotRec.name,'sout')
+
 
 #stabilizer.setGainLateral((800, -2000, 300, 0))
 #stabilizer.setPoles1((-5,)*4)
@@ -84,6 +100,13 @@ appli.robot.addTrace( zmp.name, 'zmp')
 
 #stabilizer.setKth(395)
 
-#stabilizer.setStateCost(matrixToTuple(np.diag((100,10,100,10))))
+#stabilizer.setStateCost(matrixToTuple(np.diag((10000,1,10000,1))))
+#stabilizer.setStateCost(matrixToTuple(np.diag((20000,1,20000,1,10000,0))))
+#stabilizer.setStateCost(matrixToTuple(np.diag((100,1,100,1,100,0,0))))
+#stabilizer.setStateCost(matrixToTuple(np.diag((100000,10000000,1000,1,100,0,0))))
+#stabilizer.stateFlexDDot.value = (0,0,0)
+
+#appli.runSeqplay()
+
 
 appli.nextStep()

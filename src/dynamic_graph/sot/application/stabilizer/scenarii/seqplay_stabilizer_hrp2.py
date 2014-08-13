@@ -14,7 +14,7 @@ class SeqPlayStabilizerHRP2(SeqPlayStabilizer):
         task = HRP2Stabilizer(self.robot)
         gain = GainAdaptive('gain'+task.name)
         plug(self.comRef,task.comRef)
-        task.comdot.value = (0.0,)*3
+        task.comdotRef.value = (0.0,)*3
         plug(gain.gain, task.controlGain)
         plug(task.error, gain.error) 
         if self.trunkStabilize:

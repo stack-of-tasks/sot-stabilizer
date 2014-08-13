@@ -37,8 +37,8 @@ namespace sotStabilizer
         P[i]= Q + A.transpose() * ( P[i+1] - P[i+1] *B*(R + B.transpose()*P[i+1]*B).inverse()*B.transpose()*P[i+1])*A;
       }
 
-      std::cout << "Riccatti difference "<< std::endl;
-      std::cout << P[0]-P[1] << std::endl;
+//      std::cout << "Riccatti difference "<< std::endl;
+//      std::cout << P[0]-P[1] << std::endl;
 
 
 //      std::cout << "Riccatti solutions "<< std::endl;
