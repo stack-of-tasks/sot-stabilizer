@@ -35,6 +35,14 @@ comddotRec.inputFormat.value = '000001'
 comddotRec.outputFormat.value = '010101'
 plug(seq.com,comddotRec.sin);
 
+comddotfd=PositionStateReconstructor("comddotfd")
+comddotfd.setFiniteDifferencesInterval(1)
+comddotfd.inputFormat.value = '000001'
+comddotfd.outputFormat.value = '010000'
+plug(seq.com,comddotfd.sin);
+plug(comddotfd.sout,stabilizer.comddotRef);
+
+
 
 
 appli.robot.addTrace( est.name,'flexibility' )
@@ -104,7 +112,14 @@ appli.robot.addTrace( comddotRec.name,'sout')
 #stabilizer.setStateCost(matrixToTuple(np.diag((20000,1,20000,1,10000,0))))
 #stabilizer.setStateCost(matrixToTuple(np.diag((100,1,100,1,100,0,0))))
 #stabilizer.setStateCost(matrixToTuple(np.diag((100000,10000000,1000,1,100,0,0))))
+
+#stabilizer.setStateCostLat(matrixToTuple(np.diag((100,0.1,1,0.001,0.1,1))))
+#stabilizer.setStateCost1(matrixToTuple(np.diag((1e4,1,1e2,1,1e2,1))))
+#stabilizer.setStateCost2(matrixToTuple(np.diag((1e4,1,1e2,1,1e2,1))))
+
+
 #stabilizer.stateFlexDDot.value = (0,0,0)
+#stabilizer.setZmpMode(False)
 
 #appli.runSeqplay()
 

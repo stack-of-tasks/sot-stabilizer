@@ -102,7 +102,7 @@ namespace sotStabilizer
     supportPos2SOUT_("HRP2LQRDecoupledStabilizer("+inName+")::output(vector)::supportPos2"),
     prevCom_(3), dcom_ (3), dt_ (.005), on_ (false),
     forceThreshold_ (.036 * constm_*stateObservation::cst::gravityConstant),
-    angularStiffness_ (425.), d2com_ (3), d3com_(3),
+    angularStiffness_ (425.), d2com_ (3),
     deltaCom_ (3),
     flexPosition_ (), flexPositionLf_ (), flexPositionRf_ (),
     flexPositionLat_ (),
@@ -119,7 +119,9 @@ namespace sotStabilizer
     A2_(stateObservation::Matrix::Zero(stateSize_,stateSize_)),
     ALat_(stateObservation::Matrix::Zero(stateSize_,stateSize_)),
     B_(stateObservation::Matrix::Zero(stateSize_,1)),
-    Q_(stateObservation::Matrix::Zero(stateSize_,stateSize_)),
+    Q1_(stateObservation::Matrix::Zero(stateSize_,stateSize_)),
+    Q2_(stateObservation::Matrix::Zero(stateSize_,stateSize_)),
+    Qlat_(stateObservation::Matrix::Zero(stateSize_,stateSize_)),
     R_(stateObservation::Matrix::Zero(1,1))
   {
     // Register signals into the entity.
@@ -174,7 +176,7 @@ namespace sotStabilizer
     nbSupportSOUT_.addDependency (taskSOUT);
 
     d2com_.setZero ();
-    d3com_.setZero ();
+
     dcom_.setZero ();
     deltaCom_.setZero ();
     comddotSOUT_.setConstant (d2com_);
@@ -242,14 +244,47 @@ namespace sotStabilizer
 
     docstring =
       "\n"
-      "    Set the cost Matrix for state\n"
+      "    Set the cost Matrix for state (single support)\n"
       "\n"
       "      input:\n"
       "        Matrix\n"
       "\n";
-    addCommand("setStateCost",
+    addCommand("setStateCost1",
                new dynamicgraph::command::Setter<HRP2LQRDecoupledStabilizer, Matrix>
-               (*this, &HRP2LQRDecoupledStabilizer::setStateCost, docstring));
+               (*this, &HRP2LQRDecoupledStabilizer::setStateCost1, docstring));
+
+    docstring =
+      "\n"
+      "    Set the cost Matrix for state (double support frontal)\n"
+      "\n"
+      "      input:\n"
+      "        Matrix\n"
+      "\n";
+    addCommand("setStateCost2",
+               new dynamicgraph::command::Setter<HRP2LQRDecoupledStabilizer, Matrix>
+               (*this, &HRP2LQRDecoupledStabilizer::setStateCost2, docstring));
+
+    docstring =
+      "\n"
+      "    Set the cost Matrix for state (double support lateral)\n"
+      "\n"
+      "      input:\n"
+      "        Matrix\n"
+      "\n";
+    addCommand("setStateCostLat",
+               new dynamicgraph::command::Setter<HRP2LQRDecoupledStabilizer, Matrix>
+               (*this, &HRP2LQRDecoupledStabilizer::setStateCostLat, docstring));
+
+    docstring =
+      "\n"
+      "    Set if we use zmp reference or CoM acceleration\n"
+      "\n"
+      "      input:\n"
+      "        Bool\n"
+      "\n";
+    addCommand("setZmpMode",
+               new dynamicgraph::command::Setter<HRP2LQRDecoupledStabilizer, bool>
+               (*this, &HRP2LQRDecoupledStabilizer::setZMPMode, docstring));
 
 
     docstring =
@@ -265,14 +300,36 @@ namespace sotStabilizer
 
     docstring =
       "\n"
-      "    Get the cost Matrix for state\n"
+      "    Get the cost Matrix for state (simple support)\n"
       "\n"
       "      output:\n"
       "        Matrix\n"
       "\n";
-    addCommand("getStateCost",
+    addCommand("getStateCost1",
                new dynamicgraph::command::Getter<HRP2LQRDecoupledStabilizer, Matrix>
-               (*this, &HRP2LQRDecoupledStabilizer::getStateCost, docstring));
+               (*this, &HRP2LQRDecoupledStabilizer::getStateCost1, docstring));
+
+    docstring =
+      "\n"
+      "    Get the cost Matrix for state (double support frontal)\n"
+      "\n"
+      "      output:\n"
+      "        Matrix\n"
+      "\n";
+    addCommand("getStateCost2",
+               new dynamicgraph::command::Getter<HRP2LQRDecoupledStabilizer, Matrix>
+               (*this, &HRP2LQRDecoupledStabilizer::getStateCost2, docstring));
+
+    docstring =
+      "\n"
+      "    Get the cost Matrix for state (lateral)\n"
+      "\n"
+      "      output:\n"
+      "        Matrix\n"
+      "\n";
+    addCommand("getStateCostLat",
+               new dynamicgraph::command::Getter<HRP2LQRDecoupledStabilizer, Matrix>
+               (*this, &HRP2LQRDecoupledStabilizer::getStateCostLat, docstring));
 
     docstring =
       "\n"
@@ -349,8 +406,9 @@ namespace sotStabilizer
     kz_= 53200;//150000;
 
     B_(5,0)=1/constcomHeight_;
-    Q_(0,0)=Q_(2,2)=Q_(4,4)=10;
-    Q_(1,1)=Q_(3,3)=3;
+    Q1_(0,0)=Q1_(2,2)=Q1_(4,4)=10;
+    Q1_(1,1)=Q1_(3,3)=3;
+    Q2_ = Qlat_ = Q1_;
     R_(0,0)=1;
 
     debug_.setZero();
@@ -376,9 +434,9 @@ namespace sotStabilizer
 
     controllerLat_.setDynamicsMatrices
     (stateObservation::Matrix::Identity(stateSize_,stateSize_)+ dt_*ALat_,B_);
-    controllerLat_.setCostMatrices(Q_,R_);
-    controller2_.setCostMatrices(Q_,R_);
-    controller1_.setCostMatrices(Q_,R_);
+    controllerLat_.setCostMatrices(Qlat_,R_);
+    controller2_.setCostMatrices(Q2_,R_);
+    controller1_.setCostMatrices(Q1_,R_);
 
     hrp2Mass_ = 58;
   }
@@ -432,7 +490,7 @@ namespace sotStabilizer
 
     double theta0, dtheta0, ddtheta0;
     double theta1, dtheta1, ddtheta1;
-    double xi, dxi, ddxi, dddxi, lat, dlat, ddlat, dddlat;
+    double xi, dxi, ddxi, lat, dlat, ddlat;
     //double thetaz;
     //double dthetaz;
     double fzRef, Zrefx, Zrefy, fz, Zx, Zy;
@@ -537,9 +595,8 @@ namespace sotStabilizer
       if ((!fixedGains_))
       {
         A1_=computeDynamicsMatrix(com(2), kth_, kdth_, constm_);
-        B_(5,0)=1/com(2);
-        controller1_.setDynamicsMatrices
-        (stateObservation::Matrix::Identity(stateSize_,stateSize_) + dt_* A1_, dt_*B_);
+        B_=computeInputMatrix(com(2), kth_, kdth_, constm_);
+        controller1_.setDynamicsMatrices(A1_, B_);
       }
 
 
@@ -585,7 +642,7 @@ namespace sotStabilizer
 
       std::cout << "Simple Support x" << std::endl;
       controller1_.setState(xVector,time);
-      d3com_ (0)= controller1_.getControl(time)[0];
+      d2com_ (0)= controller1_.getControl(time)[0];
 
       // along y
       theta1 = -flexibility (0);
@@ -599,7 +656,7 @@ namespace sotStabilizer
 
       std::cout << "Simple Support y" << std::endl;
       controller1_.setState(xVector,time);
-      d3com_ (1)= controller1_.getControl(time)[0];
+      d2com_ (1)= controller1_.getControl(time)[0];
 
 
       debug_(0)=x;
@@ -608,7 +665,7 @@ namespace sotStabilizer
       debug_(3)=dtheta0;
       debug_(4)=ddx;
       debug_(5)=ddtheta0;
-      debug_(6)=d3com_(0);
+      debug_(6)=d2com_(0);
 
       debug_(7)=y;
       debug_(8)=theta1;
@@ -616,14 +673,12 @@ namespace sotStabilizer
       debug_(10)=dtheta1;
       debug_(11)=ddy;
       debug_(12)=ddtheta1;
-      debug_(13)=d3com_(1);
+      debug_(13)=d2com_(1);
+
+      d2com_ += comddotRef_;
 
       dcom_ (0) += dt_ * d2com_ (0);
       dcom_ (1) += dt_ * d2com_ (1);
-
-      d2com_ (0) += dt_ * d3com_ (0);
-      d2com_ (1) += dt_ * d3com_ (1);
-
 
       // along z
       dcom_ (2) = -gain * z + comdotRef(2);
@@ -658,6 +713,7 @@ namespace sotStabilizer
       }
 
       double ddx = d2com_(0) - com(2)*flexDDot (1) - comddotRef_(0) ;
+
       double ddy = d2com_(1) + com(2)*flexDDot (0) - comddotRef_(1) ;
 
       std::cout << " update x " <<x << " y " <<y << " dx "<< dx <<" dy "<< dy;
@@ -665,24 +721,17 @@ namespace sotStabilizer
       // compute component of angle orthogonal to the line joining the feet
       double delta_x = rfpos (0) - lfpos (0) ;
       double delta_y = rfpos (1) - lfpos (1) ;
+
       double stepLength = sqrt (delta_x*delta_x+delta_y*delta_y);
 
       if ((!fixedGains_))
       {
         A2_=computeDynamicsMatrix(com(2), 2 * kth_, 2*kdth_, constm_);
+        B_ = computeInputMatrix(com(2), 2 * kth_, 2*kdth_, constm_);
         ALat_=computeDynamicsMatrix(com(2), 2*kth_ + 2*kz_*stepLength/2, 2*kdth_, constm_);
 
-        B_(5,0)=1/com(2);
-
-
-
-        controller2_.setDynamicsMatrices
-        (stateObservation::Matrix::Identity(stateSize_,stateSize_)+ dt_*A2_, dt_*B_);
-
-
-
-        controllerLat_.setDynamicsMatrices
-        (stateObservation::Matrix::Identity(stateSize_,stateSize_)+ dt_*ALat_,dt_*B_);
+        controller2_.setDynamicsMatrices (A2_, B_);
+        controllerLat_.setDynamicsMatrices (ALat_, B_);
 
       }
 
@@ -711,7 +760,7 @@ namespace sotStabilizer
 
       std::cout << std::endl << "Double Support Frontal ===" << std::endl;
       controller2_.setState(xVector,time);
-      dddxi= controller2_.getControl(time)[0];
+      ddxi= controller2_.getControl(time)[0];
 
 
       //along the contacts line
@@ -731,23 +780,21 @@ namespace sotStabilizer
 
       std::cout << std::endl << "Double Support Lateral ===" << std::endl;
       controllerLat_.setState(xVector,time);
-      dddlat= controllerLat_.getControl(time)[0];
+      ddlat= controllerLat_.getControl(time)[0];
+
 
 
       //fusion
-      d3com_ (0) = dddxi * u1x_ + dddlat*u2x_;
-      d3com_ (1) = dddxi * u1y_ + dddlat*u2y_;
+
+      d2com_ (0) = ddxi * u1x_ + ddlat*u2x_;
+      d2com_ (1) = ddxi * u1y_ + ddlat*u2y_;
+
+      d2com_ += comddotRef_;
 
       dcom_ (0) += dt_ * d2com_ (0);
       dcom_ (1) += dt_ * d2com_ (1);
 
-      std::cout << " Out: before ddcomx " << d2com_(0)<<" ddcomy " << d2com_(1)<<std::endl;
-      std::cout << " Out: controlx " << d3com_(0)<<" controly " << d3com_(1)<<std::endl;
-
-      d2com_ (0) += dt_ * d3com_ (0);
-      d2com_ (1) += dt_ * d3com_ (1);
-
-      std::cout << " Out: after ddcomx " << d2com_(0)<<" ddcomy " << d2com_(1)<<std::endl;
+      std::cout << " Out: ddcomx " << d2com_(0)<<" ddcomy " << d2com_(1)<<std::endl;
 
 
       // along z
@@ -759,7 +806,7 @@ namespace sotStabilizer
       debug_(3)=dtheta0;
       debug_(4)=ddxi;
       debug_(5)=ddtheta0;
-      debug_(6)=dddxi;
+      debug_(6)=ddxi;
 
       debug_(7)=lat;
       debug_(8)=theta1;
@@ -767,7 +814,7 @@ namespace sotStabilizer
       debug_(10)=dtheta1;
       debug_(11)=ddlat;
       debug_(12)=ddtheta1;
-      debug_(13)=dddlat;
+      debug_(13)=ddlat;
     }
     break;
     };
@@ -806,22 +853,38 @@ namespace sotStabilizer
 
     stateObservation::Matrix A(stateObservation::Matrix::Zero(stateSize_,stateSize_));
 
-    A(0,2)=1;
-    A(1,3)=1;
+    A(0,0)=1;
+    A(0,2)=dt_;
 
-    A(2,4)=1;
-    A(3,5)=1;
+    A(1,1)=1;
+    A(1,3)=dt_;
 
-    A(5,2)= -g/stateObservation::tools::square(comHeight);
-    A(5,3)= -kth/(constm_*stateObservation::tools::square(comHeight));
-    A(5,5)= -kdth /(constm_*stateObservation::tools::square(comHeight));
+    A(2,2)=1;
+    A(2,4)=dt_;
 
-    A(4,2) =-comHeight*A(5,2);
+    A(3,3)=1;
+    A(3,5)=dt_;
+
+    A(5,0)= -g/stateObservation::tools::square(comHeight);
+    A(5,1)= -kth/(constm_*stateObservation::tools::square(comHeight));
+    A(5,3)= 0;//-kdth /(constm_*stateObservation::tools::square(comHeight));
+
+    A(4,0) =-comHeight*A(5,0);
+    A(4,1) =-comHeight*A(5,1);
     A(4,3) =-comHeight*A(5,3);
-    A(4,5) =-comHeight*A(5,5);
 
 
     return A;
+  }
+
+
+  stateObservation::Matrix HRP2LQRDecoupledStabilizer::computeInputMatrix(double comHeight, double kth, double kdth, double mass)
+  {
+    stateObservation::Matrix B(stateObservation::Matrix::Zero(stateSize_,1));
+    B(5,0) = 1/comHeight;
+
+    return B;
+
   }
 
 } // namespace sotStabilizer

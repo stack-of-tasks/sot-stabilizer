@@ -135,20 +135,31 @@ namespace sotStabilizer
     /// @}
 
 
-    void setStateCost(const Matrix & Q)
+    void setStateCost1(const Matrix & Q)
     {
-      Q_=sotStateObservation::convertMatrix<stateObservation::Matrix>(Q);
-      controllerLat_.setCostMatrices(Q_,R_);
-      controller2_.setCostMatrices(Q_,R_);
-      controller1_.setCostMatrices(Q_,R_);
+      Q1_=sotStateObservation::convertMatrix<stateObservation::Matrix>(Q);
+      controller1_.setCostMatrices(Q1_,R_);
+    }
+
+    void setStateCost2(const Matrix & Q)
+    {
+      Q2_=sotStateObservation::convertMatrix<stateObservation::Matrix>(Q);
+      controller2_.setCostMatrices(Q2_,R_);
+    }
+
+    void setStateCostLat(const Matrix & Q)
+    {
+      Qlat_=sotStateObservation::convertMatrix<stateObservation::Matrix>(Q);
+      controllerLat_.setCostMatrices(Qlat_,R_);
+
     }
 
     void setInputCost(const Matrix & R)
     {
       R_=sotStateObservation::convertMatrix<stateObservation::Matrix>(R);
-      controllerLat_.setCostMatrices(Q_,R_);
-      controller2_.setCostMatrices(Q_,R_);
-      controller1_.setCostMatrices(Q_,R_);
+      controllerLat_.setCostMatrices(Qlat_,R_);
+      controller2_.setCostMatrices(Q2_,R_);
+      controller1_.setCostMatrices(Q1_,R_);
 
     }
 
@@ -167,9 +178,19 @@ namespace sotStabilizer
       }
     }
 
-    Matrix getStateCost() const
+    Matrix getStateCost1() const
     {
-      return sotStateObservation::convertMatrix<Matrix>(Q_);
+      return sotStateObservation::convertMatrix<Matrix>(Q1_);
+    }
+
+    Matrix getStateCost2() const
+    {
+      return sotStateObservation::convertMatrix<Matrix>(Q2_);
+    }
+
+    Matrix getStateCostLat() const
+    {
+      return sotStateObservation::convertMatrix<Matrix>(Qlat_);
     }
 
     Matrix getInputCost() const
@@ -193,7 +214,9 @@ namespace sotStabilizer
       return sotStateObservation::convertMatrix<Matrix>(controllerLat_.getLastGain());
     }
 
-    stateObservation::Matrix computeDynamicsMatrix(double comHeight, double kth, double kdth, double mass);
+    inline stateObservation::Matrix computeDynamicsMatrix(double comHeight, double kth, double kdth, double mass);
+
+    inline stateObservation::Matrix computeInputMatrix(double comHeight, double kth, double kdth, double mass);
 
 
   private:
@@ -273,8 +296,7 @@ namespace sotStabilizer
     Vector d2com_;
 
     Vector comddotRef_;
-    //jerk of the com computed by the stabilizer
-    Vector d3com_;
+
     // Deviation of center of mass
     Vector deltaCom_;
 
@@ -303,7 +325,7 @@ namespace sotStabilizer
     double dtheta1Ref_;
     Vector debug_;
 
-    stateObservation::Matrix Q_;
+    stateObservation::Matrix Q1_,Q2_,Qlat_;
     stateObservation::Matrix R_;
 
     stateObservation::Matrix A1_;
