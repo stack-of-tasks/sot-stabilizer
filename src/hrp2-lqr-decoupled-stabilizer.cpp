@@ -344,7 +344,7 @@ namespace sotStabilizer
     prevCom_.fill (0.);
 
 
-    kth_ = 1500;
+    kth_ = 600;
     kdth_ = 65;
     kz_= 53200;//150000;
 
@@ -812,8 +812,8 @@ namespace sotStabilizer
     A(2,4)=1;
     A(3,5)=1;
 
-    A(5,2)=-g/stateObservation::tools::square(comHeight);
-    A(5,3)= (constm_*g*comHeight-kth)/(constm_*stateObservation::tools::square(comHeight));
+    A(5,2)= -g/stateObservation::tools::square(comHeight);
+    A(5,3)= -kth/(constm_*stateObservation::tools::square(comHeight));
     A(5,5)= -kdth /(constm_*stateObservation::tools::square(comHeight));
 
     A(4,2) =-comHeight*A(5,2);
