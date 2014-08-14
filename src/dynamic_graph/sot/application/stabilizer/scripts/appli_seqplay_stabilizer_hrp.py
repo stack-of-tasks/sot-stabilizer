@@ -24,9 +24,6 @@ appli.withTraces()
 est = appli.taskCoMStabilized.estimator
 stabilizer = appli.taskCoMStabilized
 
-
-
-
 seq = appli.seq
 
 comddotRec=PositionStateReconstructor("comddotRec")
@@ -41,9 +38,6 @@ comddotfd.inputFormat.value = '000001'
 comddotfd.outputFormat.value = '010000'
 plug(seq.com,comddotfd.sin);
 plug(comddotfd.sout,stabilizer.comddotRef);
-
-
-
 
 appli.robot.addTrace( est.name,'flexibility' )
 appli.robot.addTrace( est.name,'flexInversePoseThetaU' )
@@ -97,29 +91,22 @@ appli.robot.addTrace( appli.zmpRef.name, 'zmp')
 appli.robot.addTrace( zmp.name, 'zmp')
 
 appli.robot.addTrace( comddotRec.name,'sout')
+appli.robot.addTrace( comddotfd.name,'sout')
 
-
-#stabilizer.setGainLateral((800, -2000, 300, 0))
-#stabilizer.setPoles1((-5,)*4)
-#stabilizer.setPoles2((-8,)*4)
-#stabilizer.setPolesLateral((-10,)*4)
-
-#stabilizer.start()
 
 #stabilizer.setKth(395)
 
 #stabilizer.setStateCost(matrixToTuple(np.diag((10000,1,10000,1))))
-#stabilizer.setStateCost(matrixToTuple(np.diag((20000,1,20000,1,10000,0))))
 #stabilizer.setStateCost(matrixToTuple(np.diag((100,1,100,1,100,0,0))))
-#stabilizer.setStateCost(matrixToTuple(np.diag((100000,10000000,1000,1,100,0,0))))
 
-#stabilizer.setStateCostLat(matrixToTuple(np.diag((100,0.1,1,0.001,0.1,1))))
-#stabilizer.setStateCost1(matrixToTuple(np.diag((1e4,1,1e2,1,1e2,1))))
-#stabilizer.setStateCost2(matrixToTuple(np.diag((1e4,1,1e2,1,1e2,1))))
-
+stabilizer.setStateCostLat(matrixToTuple(np.diag((100,0.1,1,0.001,0.1,1))))
+stabilizer.setStateCostLat(matrixToTuple(np.diag((1e5,1,1e1,1,1e1,10))))
+stabilizer.setStateCost1(matrixToTuple(np.diag((1e4,1,1e2,1,1e2,1))))
+stabilizer.setStateCost2(matrixToTuple(np.diag((1e4,1,1e2,1,1e2,1))))
+stabilizer.setZmpMode(False)
 
 #stabilizer.stateFlexDDot.value = (0,0,0)
-#stabilizer.setZmpMode(False)
+
 
 #appli.runSeqplay()
 
