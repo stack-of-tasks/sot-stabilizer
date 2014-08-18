@@ -154,6 +154,14 @@ namespace sotStabilizer
 
     }
 
+    void setHorizon(const int & horizon)
+    {
+      controller1_.setHorizonLength(horizon);
+      controller2_.setHorizonLength(horizon);
+      controllerLat_.setHorizonLength(horizon);
+    }
+
+
     void setInputCost(const Matrix & R)
     {
       R_=sotStateObservation::convertMatrix<stateObservation::Matrix>(R);

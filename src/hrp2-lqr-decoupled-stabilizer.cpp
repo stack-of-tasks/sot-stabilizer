@@ -320,6 +320,8 @@ namespace sotStabilizer
                new dynamicgraph::command::Getter<HRP2LQRDecoupledStabilizer, Matrix>
                (*this, &HRP2LQRDecoupledStabilizer::getStateCost2, docstring));
 
+
+
     docstring =
       "\n"
       "    Get the cost Matrix for state (lateral)\n"
@@ -364,6 +366,16 @@ namespace sotStabilizer
                new dynamicgraph::command::Getter<HRP2LQRDecoupledStabilizer, Matrix>
                (*this, &HRP2LQRDecoupledStabilizer::getLastGainLat, docstring));
 
+    docstring =
+      "\n"
+      "    Set the horizon for the LQR\n"
+      "\n"
+      "      input:\n"
+      "        int\n"
+      "\n";
+    addCommand("setHorizon",
+               new dynamicgraph::command::Setter<HRP2LQRDecoupledStabilizer, int>
+               (*this, &HRP2LQRDecoupledStabilizer::setHorizon, docstring));
 
 
     addCommand ("getKth",
@@ -423,17 +435,14 @@ namespace sotStabilizer
 
 
     A1_=computeDynamicsMatrix(constcomHeight_, kth_, kdth_, constm_);
-    controller1_.setDynamicsMatrices
-    (stateObservation::Matrix::Identity(stateSize_,stateSize_) + dt_* A1_, dt_*B_);
-
     A2_=computeDynamicsMatrix(constcomHeight_, 2 * kth_, 2*kdth_, constm_);
     ALat_=computeDynamicsMatrix(constcomHeight_, 2*kth_ + 2*kz_*conststepLength_/2, 2*kdth_, constm_);
+    B_=computeInputMatrix(constcomHeight_, kth_, kdth_, constm_);
 
-    controller2_.setDynamicsMatrices
-    (stateObservation::Matrix::Identity(stateSize_,stateSize_)+ dt_*A2_, dt_*B_);
+    controller1_.setDynamicsMatrices(A1_, B_);
+    controller2_.setDynamicsMatrices (A2_, B_);
+    controllerLat_.setDynamicsMatrices (ALat_, B_);
 
-    controllerLat_.setDynamicsMatrices
-    (stateObservation::Matrix::Identity(stateSize_,stateSize_)+ dt_*ALat_,B_);
     controllerLat_.setCostMatrices(Qlat_,R_);
     controller2_.setCostMatrices(Q2_,R_);
     controller1_.setCostMatrices(Q1_,R_);
@@ -584,7 +593,7 @@ namespace sotStabilizer
       break;
     case 1: //single support
     {
-      std::cout << "x " <<x << " y " <<y << " dx "<< dx <<" dy "<< dy;
+//      std::cout << "x " <<x << " y " <<y << " dx "<< dx <<" dy "<< dy;
 
       x -= com(2)*flexibility (1);
       y += com(2)*flexibility (0);
@@ -609,8 +618,8 @@ namespace sotStabilizer
         comddotRef_(1)=(stateObservation::cst::gravityConstant/com(2))*
                    (comref(1) - zmpref(1));
 
-        std::cout << " comddotRefx " <<comddotRef_(0) << " comddotRefy " <<comddotRef_(1) ;
-        std::cout << " ddcomx " << d2com_(0)<<" ddcomy " << d2com_(1)<<std::endl;
+//        std::cout << " comddotRefx " <<comddotRef_(0) << " comddotRefy " <<comddotRef_(1) ;
+//        std::cout << " ddcomx " << d2com_(0)<<" ddcomy " << d2com_(1)<<std::endl;
       }
       else
       {
@@ -620,7 +629,7 @@ namespace sotStabilizer
       double ddx = d2com_(0) - com(2)*flexDDot (1) - comddotRef_(0) ;
       double ddy = d2com_(1) + com(2)*flexDDot (0) - comddotRef_(1) ;
 
-      std::cout << " update x " <<x << " y " <<y << " dx "<< dx <<" dy "<< dy;
+//      std::cout << " update x " <<x << " y " <<y << " dx "<< dx <<" dy "<< dy;
 
 
 
@@ -640,7 +649,7 @@ namespace sotStabilizer
       xVector[4]=ddx;
       xVector[5]=ddtheta0;
 
-      std::cout << "Simple Support x" << std::endl;
+//      std::cout << "Simple Support x" << std::endl;
       controller1_.setState(xVector,time);
       d2com_ (0)= controller1_.getControl(time)[0];
 
@@ -654,7 +663,7 @@ namespace sotStabilizer
       xVector[4]=ddy;
       xVector[5]=ddtheta1;
 
-      std::cout << "Simple Support y" << std::endl;
+//      std::cout << "Simple Support y" << std::endl;
       controller1_.setState(xVector,time);
       d2com_ (1)= controller1_.getControl(time)[0];
 
@@ -688,7 +697,7 @@ namespace sotStabilizer
     default: //double support or more
     {
 
-      std::cout << "x " <<x << " y " <<y << " dx "<< dx <<" dy "<< dy;
+//      std::cout << "x " <<x << " y " <<y << " dx "<< dx <<" dy "<< dy;
       x = x - com(2)*flexibility (1);
       y = y + com(2)*flexibility (0);
 
@@ -704,8 +713,8 @@ namespace sotStabilizer
                    (comref(1) - zmpref(1));
 
 
-        std::cout << " comddotRefx " <<comddotRef_(0) << " comddotRefy " <<comddotRef_(1) ;
-        std::cout << " ddcomx " << d2com_(0)<<" ddcomy " << d2com_(1)<<std::endl;
+//        std::cout << " comddotRefx " <<comddotRef_(0) << " comddotRefy " <<comddotRef_(1) ;
+//        std::cout << " ddcomx " << d2com_(0)<<" ddcomy " << d2com_(1)<<std::endl;
       }
       else
       {
@@ -716,7 +725,7 @@ namespace sotStabilizer
 
       double ddy = d2com_(1) + com(2)*flexDDot (0) - comddotRef_(1) ;
 
-      std::cout << " update x " <<x << " y " <<y << " dx "<< dx <<" dy "<< dy;
+//      std::cout << " update x " <<x << " y " <<y << " dx "<< dx <<" dy "<< dy;
 
       // compute component of angle orthogonal to the line joining the feet
       double delta_x = rfpos (0) - lfpos (0) ;
@@ -758,7 +767,7 @@ namespace sotStabilizer
       xVector[4]=ddxi;
       xVector[5]=ddtheta0;
 
-      std::cout << std::endl << "Double Support Frontal ===" << std::endl;
+//      std::cout << std::endl << "Double Support Frontal ===" << std::endl;
       controller2_.setState(xVector,time);
       ddxi= controller2_.getControl(time)[0];
 
@@ -778,7 +787,7 @@ namespace sotStabilizer
       xVector[4]=ddlat;
       xVector[5]=ddtheta1;
 
-      std::cout << std::endl << "Double Support Lateral ===" << std::endl;
+//      std::cout << std::endl << "Double Support Lateral ===" << std::endl;
       controllerLat_.setState(xVector,time);
       ddlat= controllerLat_.getControl(time)[0];
 
@@ -794,7 +803,7 @@ namespace sotStabilizer
       dcom_ (0) += dt_ * d2com_ (0);
       dcom_ (1) += dt_ * d2com_ (1);
 
-      std::cout << " Out: ddcomx " << d2com_(0)<<" ddcomy " << d2com_(1)<<std::endl;
+//      std::cout << " Out: ddcomx " << d2com_(0)<<" ddcomy " << d2com_(1)<<std::endl;
 
 
       // along z
