@@ -11,7 +11,7 @@ from dynamic_graph.sot.application.state_observation import InputReconstructor
 import time
   
 
-
+# Initialisation de l'appli
 appli = HandCompensater(robot, True, True)
 appli.withTraces()
 
@@ -21,12 +21,8 @@ meas = est1.signal('measurement')
 inputs = est1.signal('input')
 contactNbr = est1.signal('contactNbr')
 
-#addContact(robot.frames['rightFootForceSensor'].position)
-#addContact(robot.frames['leftFootForceSensor'].position)
-
 # Definition des contacts
 contactNbr.value = 2
-
 rFootPos = MatrixHomoToPoseRollPitchYaw('rFootFramePos')
 lFootPos = MatrixHomoToPoseRollPitchYaw('lFootFramePos')
 plug(robot.frames['rightFootForceSensor'].position,rFootPos.sin)
@@ -64,24 +60,31 @@ deriv.outputFormat.value='001000'
 deriv.setSampligPeriod(0.005)
 plug(est1.flexThetaU,deriv.sin)
 
-
 appli.robot.addTrace( est1.name,'flexThetaU' )
 appli.robot.addTrace( est1.name,'flexOmega' )
 appli.robot.addTrace( deriv.name,'sout')
-
-
-
 
 appli.startTracer()
 
 plug(flex,appli.ccMc)
 plug(flexdot,appli.ccVc)
 
-est1.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e4,)*6)))
+est1.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e20,)*6)))
 
 appli.gains['trunk'].setConstant(2)
 
 
+appli.comRef.value=(0.013566999999999999, 0.001536, 0.80771000000000004)
+
+contactNbr.value = 1
+appli.features['left-ankle'].reference.value=((1.0, 0.0, -5.0686451563700001e-17, 0.0094904630937000002), (0.0, 1.0, 0.0, 0.095000000000000001), (5.0686451563700001e-17, 0.0, 1.0, 0.165000198197), (0.0, 0.0, 0.0, 1.0))
+
+
+#time.sleep(120)
+#appli.comRef.value=(0.003566999999999999, 0.031536, 0.80771000000000004)
+#time.sleep(120)
+#appli.comRef.value=(0.003566999999999999, 0.001536, 0.80771000000000004)
+#time.sleep(120)
 
 #appli.comRef.value=(0.00949046, 0.0, 0.80771000000000004)
 #appli.comRef.value=(0.00739606, 0.0, 0.80771000000000004)
@@ -110,3 +113,6 @@ time.sleep(120)
 appli.comRef.value=(0.003566999999999999, -0.031536, 0.80771000000000004)
 time.sleep(120)
 appli.comRef.value=(0.003566999999999999, 0.001536, 0.80771000000000004)
+time.sleep(120)
+
+#appli.comRef.value=(0.003566999999999999, 0.001536, 0.80771000000000004)
