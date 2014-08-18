@@ -35,23 +35,27 @@ namespace controller
         {
 
 
-            std::cout<<"Time :"<< time<< std::endl;
+//            std::cout<<"Time :"<< time<< std::endl;
 
-            if (changedValue_=true)
+            if (changedValue_)
             {
 
                 sotStabilizer::tools::discreteTimeNonAlgRiccatiEqn(A_,B_,Q_,R_,Qn_,Pn_,horizon_);
                 changedValue_=false;
 
-                std::cout<<"A :"<< std::endl;
-                std::cout<< A_ <<std::endl;
-                std::cout<<"B :"<< std::endl;
-                std::cout<< B_.transpose() <<std::endl;
-                std::cout<<"Q :"<< std::endl;
-                std::cout<< Q_ <<std::endl;
-                std::cout<<"R :"<< std::endl;
-                std::cout<< R_ <<std::endl;
+//                std::cout<<"A :"<< std::endl;
+//                std::cout<< A_ <<std::endl;
+//                std::cout<<"B :"<< std::endl;
+//                std::cout<< B_.transpose() <<std::endl;
+//                std::cout<<"Q :"<< std::endl;
+//                std::cout<< Q_ <<std::endl;
+//                std::cout<<"R :"<< std::endl;
+//                std::cout<< R_ <<std::endl;
 
+            }
+            else
+            {
+//                std::cout<<"Gain :"<< -lastGain_ <<std::endl;
             }
 
 
@@ -73,13 +77,13 @@ namespace controller
 
             computedInput_=true;
 
-            //std::cout<< "P " << std::endl;
-            //std::cout<< P << std::endl;
-            std::cout<<"Gain :"<< std::endl;
-            std::cout<< -lastGain_ <<std::endl;
-            std::cout<<"State :"<< x_.transpose()<< std::endl;
-            std::cout<<"control :"<< u_.transpose()<< std::endl;
-            std::cout<<std::endl;
+//            std::cout<< "P " << std::endl;
+//            std::cout<< P << std::endl;
+//            std::cout<<"Gain :"<< std::endl;
+//            std::cout<< -lastGain_ <<std::endl;
+//            std::cout<<"State :"<< x_.transpose()<< std::endl;
+//            std::cout<<"control :"<< u_.transpose()<< std::endl;
+//            std::cout<<std::endl;
 
 
             time_ = time_+1;
@@ -113,6 +117,7 @@ namespace controller
         checkDynamicsMatrices_(A,B);
         A_=A;
         B_=B;
+//        std::cout << "changedValue_ DYNAMICS-----------------------------------"<<std::endl;
         changedValue_=true;
     }
 
@@ -122,6 +127,7 @@ namespace controller
         Q_=Q;
         R_=R;
         Qn_=Qn;
+//        std::cout << "changedValue_ COST-----------------------------------"<<std::endl;
         changedValue_=true;
     }
 
