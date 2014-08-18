@@ -7,7 +7,6 @@ from dynamic_graph.sot.core import Stack_of_vector, OpPointModifier, MatrixHomoT
 from dynamic_graph.sot.application.state_observation.initializations.hrp2_flexibility_estimator import HRP2FlexibilityEstimator 
 from dynamic_graph.sot.application.stabilizer.scenarii.hand_compensater import HandCompensater
 from dynamic_graph.sot.core.matrix_util import matrixToTuple
-import time
 
 appli = HandCompensater(robot, True, True)
 appli.withTraces()
@@ -16,7 +15,6 @@ est = HRP2FlexibilityEstimator(robot)
 
 meas = est.signal('measurement')
 inputs = est.signal('input')
-
 contactNbr = est.signal('contactNbr')
 
 contactNbr.value = 2
@@ -30,7 +28,6 @@ plug(rFootPos.sout,contact1)
 plug(lFootPos.sout,contact2)
 
 flex=est.signal('flexMatrixInverse')
-flexVect=est.signal('flexibility')
 flexdot = est.signal('flexInverseVelocityVector')
 
 appli.robot.addTrace( est.name,'flexibility' )
@@ -39,7 +36,6 @@ appli.robot.addTrace( est.name,'flexMatrixInverse' )
 appli.robot.addTrace( est.name,'input')
 appli.robot.addTrace( est.name,'measurement')
 appli.robot.addTrace( est.name,'simulatedSensors' )
-appli.robot.addTrace( est.name,'inovation' )
 
 appli.robot.addTrace( robot.device.name, 'forceLLEG')
 appli.robot.addTrace( robot.device.name, 'forceRLEG')
@@ -51,26 +47,9 @@ appli.startTracer()
 plug(flex,appli.ccMc)
 plug(flexdot,appli.ccVc)
 
-est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-6,)*6)))
+est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-2,)*6)))
+est.setVirtualMeasurementsCovariance(1e-4)
 
 appli.gains['trunk'].setConstant(2)
 
-#appli.nextStep()
-
-#time.sleep(120)
-time.sleep(10)
-appli.comRef.value=(0.033566999999999999, 0.001536, 0.80771000000000004)
-time.sleep(120)
-appli.comRef.value=(0.003566999999999999, 0.001536, 0.80771000000000004)
-time.sleep(120)
-appli.comRef.value=(-0.01, 0.001536, 0.80771000000000004)
-time.sleep(120)
-appli.comRef.value=(0.003566999999999999, 0.001536, 0.80771000000000004)
-time.sleep(120)
-appli.comRef.value=(0.003566999999999999, 0.031536, 0.80771000000000004)
-time.sleep(120)
-appli.comRef.value=(0.003566999999999999, 0.001536, 0.80771000000000004)
-time.sleep(120)
-appli.comRef.value=(0.003566999999999999, -0.031536, 0.80771000000000004)
-time.sleep(120)
-appli.comRef.value=(0.003566999999999999, 0.001536, 0.80771000000000004)
+appli.nextStep()
