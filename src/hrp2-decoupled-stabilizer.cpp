@@ -625,4 +625,3 @@ Vector HRP2DecoupledStabilizer::computeGainsFromPoles
 
 
 } // namespace sotStabilizer
-
