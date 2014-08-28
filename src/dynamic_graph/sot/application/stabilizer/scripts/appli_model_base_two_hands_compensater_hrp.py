@@ -69,9 +69,34 @@ appli.startTracer()
 plug(flex,appli.ccMc)
 plug(flexdot,appli.ccVc)
 
-est1.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e20,)*6)))
+est1.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-2,)*6)))
 
 appli.gains['trunk'].setConstant(2)
+
+time.sleep(60)
+appli.comRef.value=(0.003566999999999999, 0.031536, 0.80771000000000004)
+time.sleep(60)
+
+
+time.sleep(60)
+appli.comRef.value=(0.033566999999999999, 0.001536, 0.80771000000000004)
+time.sleep(60)
+appli.comRef.value=(0.013566999999999999, 0.001536, 0.80771000000000004)
+time.sleep(60)
+appli.comRef.value=(-0.01, 0.001536, 0.80771000000000004)
+time.sleep(60)
+appli.comRef.value=(0.013566999999999999, 0.001536, 0.80771000000000004)
+time.sleep(60)
+appli.comRef.value=(0.013566999999999999, 0.031536, 0.80771000000000004)
+time.sleep(60)
+appli.comRef.value=(0.013566999999999999, 0.001536, 0.80771000000000004)
+time.sleep(60)
+appli.comRef.value=(0.013566999999999999, -0.031536, 0.80771000000000004)
+time.sleep(60)
+appli.comRef.value=(0.013566999999999999, 0.001536, 0.80771000000000004)
+time.sleep(60)
+
+
 
 
 appli.comRef.value=(0.013566999999999999, 0.001536, 0.80771000000000004)

@@ -29,7 +29,7 @@
 #include <sot-state-observation/tools/definitions.hh>
 
 #include <state-observation/tools/miscellaneous-algorithms.hpp>
-#include <state-observation/dynamical-system/bidim-elastic-inv-pendulum.hpp>
+//#include <state-observation/dynamical-system/bidim-elastic-inv-pendulum.hpp>
 
 
 

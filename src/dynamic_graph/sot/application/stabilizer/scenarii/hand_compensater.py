@@ -190,12 +190,12 @@ class HandCompensater(Application):
         #gotoNd(self.taskLH,(0.3,0.2,1.1,0,-pi/2,0),'111001')
         change6dPositionReference(self.taskRH,self.features['right-wrist'],\
                                     self.gains['right-wrist'],\
-                                    (0.3,-0.2,1.1,0,-pi/2,0),'111111')
+                                    (0.3,-0.25,1.1,0,-pi/2,0),'111111')
         self.push(self.taskRH)
         if self.twoHands:
             change6dPositionReference(self.taskLH,self.features['left-wrist'],\
                                     self.gains['left-wrist'],\
-                                     (0.3,0.2,1.1,0,-pi/2,0),'111111')
+                                     (0.3,0.25,1.1,0,-pi/2,0),'111111')
             self.push(self.taskLH)
         None
 
