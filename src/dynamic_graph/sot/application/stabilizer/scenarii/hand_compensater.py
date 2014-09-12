@@ -250,6 +250,11 @@ class HandCompensater(Application):
         self.ccMrhref = self.transformerR.gM0 # reference matrix homo in the control frame
         self.ccVrhref = self.transformerR.gV0
         
+        self.cMrhref.value = (matrixToTuple(diag([1,1,1,1])))
+        self.cVrhref.value = (0.0 , 0.0 , 0.0 , 0.0 , 0.0 , 0.0)
+        
+        self.tasks['right-wrist'].setWithDerivative (True)
+        
         ######
 
         if self.twoHands:
@@ -265,11 +270,11 @@ class HandCompensater(Application):
             self.symVel = Multiply_matrix_vector('symvel')
             self.symVel.sin1.value =((1,0,0,0,0,0),(0,-1,0,0,0,0),(0,0,0,1,0,0),(0,0,0,1,0,0),(0,0,0,0,-1,0),(0,0,0,0,0,1))
             plug (self.ccVrhref,self.symVel.sin2)
-            
+	    self.tasks['left-wrist'].setWithDerivative (True)
+       
         
 
-            self.cMrhref.value = (matrixToTuple(diag([1,1,1,1])))
-            self.cVrhref.value = (0.0 , 0.0 , 0.0 , 0.0 , 0.0 , 0.0)
+
 
         if self.trunkStabilize:
             ### waist
@@ -329,7 +334,6 @@ class HandCompensater(Application):
         plug(self.ccVrhref,self.features['right-wrist'].velocity)
         
         self.gains['right-wrist'].setByPoint(4,0.2,0.01,0.8)        
-        self.tasks['right-wrist'].setWithDerivative (True)
         self.features['right-wrist'].frame('desired')
 
         print matrix(self.cMrhref.value)
@@ -340,7 +344,6 @@ class HandCompensater(Application):
             plug (self.sym.sout,self.features['left-wrist'].reference)
             plug (self.symVel.sout,self.features['left-wrist'].velocity)
             self.features['left-wrist'].selec.value='000111'
-            self.tasks['left-wrist'].setWithDerivative (True)
             self.features['left-wrist'].frame('desired')
         
                

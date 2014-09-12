@@ -7,37 +7,31 @@ from dynamic_graph.sot.core import Stack_of_vector, OpPointModifier, MatrixHomoT
 from dynamic_graph.sot.application.state_observation.initializations.hrp2_flexibility_estimator import HRP2FlexibilityEstimator 
 from dynamic_graph.sot.application.stabilizer.scenarii.seqplay_stabilizer_hrp2 import SeqPlayStabilizerHRP2
 from dynamic_graph.sot.application.stabilizer import VectorPerturbationsGenerator
-from dynamic_graph.sot.core.matrix_util import matrixToTuple
+from dynamic_graph.sot.core.matrix_util import matrixToTuple 
+from dynamic_graph.sot.core import Multiply_matrixHomo_vector
 from dynamic_graph.sot.dynamics.zmp_from_forces import ZmpFromForces
-from dynamic_graph.sot.application.state_observation import PositionStateReconstructor
+from dynamic_graph.sot.application.state_observation import PositionStateReconstructor, MovingFrameTransformation
 
-
+forceSeqplay = True
 #traj = '/home/mbenalle/devel/ros/install/resources/seqplay/walkfwd-resampled'
 #traj = '/home/mbenalle/devel/ros/install/resources/seqplay/walkfwd-resampled-30'
 #traj = '/home/mbenalle/devel/ros/install/resources/seqplay/stand-on-left-foot'
 traj = '/home/mbenalle/devel/ros/install/resources/seqplay/walkfwd-shifted'
-#traj = '/home/mbenalle/devel/ros/install/resources/seqplay/stand-on-left-foot-shifted'
+traj = '/home/mbenalle/devel/ros/install/resources/seqplay/stand-on-left-foot-shifted' 
+traj = '/home/mbenalle/devel/ros/install/resources/seqplay/onspot16s'; forceSeqplay = False
+#traj = '/home/mbenalle/devel/ros/install/resources/seqplay/onspot'; forceSeqplay = False
+#traj = '/home/mbenalle/devel/ros/install/resources/seqplay/walkstraight10cmperstep'; forceSeqplay = False
+trunkCompensate = True
+handsTask = False
+postureTask = True
 
-appli =  SeqPlayStabilizerHRP2(robot, traj , True, False, True)
+appli =  SeqPlayStabilizerHRP2(robot, traj , trunkCompensate, handsTask, postureTask,forceSeqplay)
 appli.withTraces()
 
 est = appli.taskCoMStabilized.estimator
 stabilizer = appli.taskCoMStabilized
 
 seq = appli.seq
-
-comddotRec=PositionStateReconstructor("comddotRec")
-comddotRec.setFiniteDifferencesInterval(2)
-comddotRec.inputFormat.value = '000001'
-comddotRec.outputFormat.value = '010101'
-plug(seq.com,comddotRec.sin);
-
-comddotfd=PositionStateReconstructor("comddotfd")
-comddotfd.setFiniteDifferencesInterval(1)
-comddotfd.inputFormat.value = '000001'
-comddotfd.outputFormat.value = '010000'
-plug(seq.com,comddotfd.sin);
-plug(comddotfd.sout,stabilizer.comddotRef);
 
 appli.robot.addTrace( est.name,'flexibility' )
 appli.robot.addTrace( est.name,'flexInversePoseThetaU' )
@@ -69,6 +63,7 @@ appli.robot.addTrace( seq.name, 'leftAnkle')
 appli.robot.addTrace( seq.name, 'rightAnkle')
 appli.robot.addTrace( seq.name, 'com')
 appli.robot.addTrace( seq.name, 'comdot')
+appli.robot.addTrace( seq.name, 'comddot')
 appli.robot.addTrace( seq.name, 'leftAnkleVel')
 appli.robot.addTrace( seq.name, 'rightAnkleVel')
 
@@ -78,8 +73,9 @@ appli.startTracer()
 
 appli.gains['trunk'].setConstant(10)
 
-est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-1,)*6)))
+est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-4,)*6)))
 est.setVirtualMeasurementsCovariance(1e-10)
+
 
 zmp = ZmpFromForces('zmp')
 plug (robot.device.forceLLEG , zmp.force_0)
@@ -87,27 +83,42 @@ plug (robot.device.forceRLEG, zmp.force_1)
 plug (robot.frames['leftFootForceSensor'].position , zmp.sensorPosition_0)
 plug (robot.frames['rightFootForceSensor'].position, zmp.sensorPosition_1)
 
-appli.robot.addTrace( appli.zmpRef.name, 'zmp')
 appli.robot.addTrace( zmp.name, 'zmp')
+appli.robot.addTrace( appli.zmpRef.name, 'zmp')
 
-appli.robot.addTrace( comddotRec.name,'sout')
-appli.robot.addTrace( comddotfd.name,'sout')
+realcom = MovingFrameTransformation('comreal')
+realcom.setPointMode(True)
+plug(est.flexTransformationMatrix, realcom.gMl)
+plug(robot.dynamic.com, realcom.lP0)
+plug(est.flexVelocityVector, realcom.gVl)
+plug(stabilizer.comdot, realcom.lV0)
+plug(est.flexAccelerationVector, realcom.gAl)
+plug(stabilizer.comddot, realcom.lA0)
+
+appli.robot.addTrace( robot.dynamic.name, 'com')
+appli.robot.addTrace( realcom.name, 'gP0')
+appli.robot.addTrace( realcom.name, 'gA0')
 
 
 #stabilizer.setKth(395)
 
-#stabilizer.setStateCost(matrixToTuple(np.diag((10000,1,10000,1))))
-#stabilizer.setStateCost(matrixToTuple(np.diag((100,1,100,1,100,0,0))))
+stabilizer.setStateCost2(matrixToTuple(np.diag((5e9,100,1e8,1e7,1e2,2e6))))
 
+stabilizer.setStateCostLat(matrixToTuple(np.diag((1e2,1,1,1,1,1))))
+#stabilizer.setStateCostLat(matrixToTuple(np.diag((100000,0,1000,0.00,0,200))))
+stabilizer.setStateCost2(matrixToTuple(np.diag((1e3,1,1e3,1,1e3,100))))
 stabilizer.setStateCostLat(matrixToTuple(np.diag((100,0.1,1,0.001,0.1,1))))
+
 stabilizer.setStateCostLat(matrixToTuple(np.diag((1e5,1,1e1,1,1e1,10))))
 stabilizer.setStateCost1(matrixToTuple(np.diag((1e4,1,1e2,1,1e2,1))))
-stabilizer.setStateCost2(matrixToTuple(np.diag((1e4,1,1e2,1,1e2,1))))
+stabilizer.setStateCost2(matrixToTuple(np.diag((1e6,1,1e2,1,1e2,100))))
 stabilizer.setZmpMode(False)
+
+#stabilizer.setFixedGains(True)
 
 #stabilizer.stateFlexDDot.value = (0,0,0)
 
-
+#q=[1e8 1 1e2 1 1e2 2000 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]'; lqr(q)
 #appli.runSeqplay()
 
 

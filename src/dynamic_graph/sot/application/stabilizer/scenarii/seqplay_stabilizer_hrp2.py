@@ -7,8 +7,8 @@ from numpy import diag
 
 
 class SeqPlayStabilizerHRP2(SeqPlayStabilizer):
-    def __init__(self,robot,sequenceFilename,trunkStabilize = True, hands = True, posture =True):
-        SeqPlayStabilizer.__init__(self,robot,sequenceFilename,trunkStabilize,hands,posture)
+    def __init__(self,robot,sequenceFilename,trunkStabilize = True, hands = True, posture =True,forceSeqplay=True):
+        SeqPlayStabilizer.__init__(self,robot,sequenceFilename,trunkStabilize,hands,posture,forceSeqplay)
 
     def createStabilizedCoMTask (self):
         task = HRP2Stabilizer(self.robot)

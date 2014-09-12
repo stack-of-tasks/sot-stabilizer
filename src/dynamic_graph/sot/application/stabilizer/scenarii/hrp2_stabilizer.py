@@ -35,6 +35,6 @@ class HRP2Stabilizer(HRP2LQRDecoupledStabilizer):
         plug(self.supportPos1,self.estimator.contact1)
         plug(self.supportPos2,self.estimator.contact2)
         
-        plug(self.estimator.flexMatrixInverse, self.stateFlex )        
-        plug(self.estimator.flexInverseOmega, self.stateFlexDot )
-        plug(self.estimator.flexInverseOmegaDot, self.stateFlexDDot )
+        plug(self.estimator.flexTransformationMatrix, self.stateFlex )        
+        plug(self.estimator.flexOmega, self.stateFlexDot )
+        plug(self.estimator.flexOmegaDot, self.stateFlexDDot )
