@@ -591,8 +591,8 @@ namespace sotStabilizer
       debug_(0)=x;
       debug_(2)=dcom_(0);
 
-      debug_(5)=y;
-      debug_(7)=dcom_(1);
+      debug_(7)=y;
+      debug_(9)=dcom_(1);
       break;
     case 1: //single support
     {
@@ -818,7 +818,7 @@ namespace sotStabilizer
       debug_(3)=dtheta0;
       debug_(4)=ddxi;
       debug_(5)=ddtheta0;
-      debug_(6)=ddxi;
+      debug_(6)=ddcomi;
 
       debug_(7)=lat;
       debug_(8)=theta1;
@@ -826,7 +826,7 @@ namespace sotStabilizer
       debug_(10)=dtheta1;
       debug_(11)=ddlat;
       debug_(12)=ddtheta1;
-      debug_(13)=ddlat;
+      debug_(13)=ddcomlat;
     }
     break;
     };
