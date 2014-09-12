@@ -267,6 +267,10 @@ namespace sotStabilizer
     SignalPtr <dynamicgraph::Vector, int> stateFlexDDotSIN_;
 
     SignalPtr <double, int> controlGainSIN_;
+
+    /// Acceleration of center of mass
+    SignalTimeDependent <dynamicgraph::Vector, int> comdotSOUT_;
+
     /// Acceleration of center of mass
     SignalTimeDependent <dynamicgraph::Vector, int> comddotSOUT_;
 

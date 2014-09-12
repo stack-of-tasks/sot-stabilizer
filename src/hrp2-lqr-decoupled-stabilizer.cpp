@@ -92,6 +92,7 @@ namespace sotStabilizer
     (NULL, "HRP2LQRDecoupledStabilizer("+inName+")::input(vector)::stateFlexDDot"),
     controlGainSIN_
     (NULL, "HRP2LQRDecoupledStabilizer("+inName+")::input(double)::controlGain"),
+    comdotSOUT_ ("HRP2LQRDecoupledStabilizer("+inName+")::output(vector)::comdot"),
     comddotSOUT_ ("HRP2LQRDecoupledStabilizer("+inName+")::output(vector)::comddot"),
     comddotRefSOUT_ ("HRP2LQRDecoupledStabilizer("+inName+")::output(vector)::comddotRefOUT"),
     nbSupportSOUT_
@@ -135,6 +136,7 @@ namespace sotStabilizer
                         << forceRightFootSIN_ << forceLeftFootSIN_);
     signalRegistration (stateFlexSIN_ << stateFlexDotSIN_ << stateFlexDDotSIN_);
     signalRegistration (controlGainSIN_);
+    signalRegistration (comdotSOUT_);
     signalRegistration (comddotSOUT_ <<comddotRefSOUT_);
     signalRegistration (nbSupportSOUT_ << supportPos1SOUT_ << supportPos2SOUT_);
     signalRegistration (errorSOUT_);
@@ -180,6 +182,7 @@ namespace sotStabilizer
     dcom_.setZero ();
     deltaCom_.setZero ();
     comddotSOUT_.setConstant (d2com_);
+    comdotSOUT_.setConstant (d2com_);
     comddotRefSOUT_.setConstant (d2com_);
     flexVelocity_.setZero ();
     flexVelocityLat_.setZero ();
@@ -835,6 +838,9 @@ namespace sotStabilizer
 
     comddotRefSOUT_.setConstant (comddotRef_);
     comddotRefSOUT_.setTime (time);
+
+    comdotSOUT_.setConstant (dcom_);
+    comdotSOUT_.setTime (time);
 
     comddotSOUT_.setConstant (d2com_);
     comddotSOUT_.setTime (time);
