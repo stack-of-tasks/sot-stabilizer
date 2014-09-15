@@ -256,6 +256,7 @@ class HandCompensater(Application):
         self.cVrhref.value = (0.0 , 0.0 , 0.0 , 0.0 , 0.0 , 0.0)
         
         self.tasks['right-wrist'].setWithDerivative (True)
+        self.features['right-wrist'].velocity.value = (0,0,0,0,0,0)
         
         ######
 
@@ -271,7 +272,7 @@ class HandCompensater(Application):
             self.symVel.sin1.value =((1,0,0,0,0,0),(0,-1,0,0,0,0),(0,0,1,0,0,0),(0,0,0,1,0,0),(0,0,0,0,-1,0),(0,0,0,0,0,1))
             plug (self.ccVrhref,self.symVel.sin2)
 	    self.tasks['left-wrist'].setWithDerivative (True)
-       
+        self.features['left-wrist'].velocity.value = (0,0,0,0,0,0)
         
 
 

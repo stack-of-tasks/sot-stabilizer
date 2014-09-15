@@ -13,7 +13,6 @@ import time
 
 # Initialisation de l'appli
 appli = HandCompensater(robot, True, True)
-appli.tasks['left-wrist'].setWithDerivative (False)
 appli.withTraces()
 
 est1 = HRP2ModelBaseFlexEstimator(robot)
