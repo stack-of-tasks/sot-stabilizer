@@ -56,7 +56,7 @@ class SeqPlayStabilizer(Application):
     threePhaseScrew = True
     tracesRealTime = True
 
-    def __init__(self,robot,sequenceFile,trunkStabilize = True, hands = True, posture=True):
+    def __init__(self,robot,sequenceFile,trunkStabilize=True, hands=True, posture=True, forceSeqplay=True):
         Application.__init__(self,robot)
         self.hands =hands
         self.posture = posture
@@ -67,7 +67,13 @@ class SeqPlayStabilizer(Application):
 
         self.seq = Seqplay ('seqplay')
         self.seq.load (sequenceFile)
-        self.zmpRef = ZmpFromForces('zmpRef')
+
+        self.forceSeqplay = forceSeqplay
+
+        if self.forceSeqplay:
+            self.zmpRef = ZmpFromForces('zmpRef')
+        else:
+            self.zmpRef = self.seq
 
         self.createTasks()
         self.initTasks()
@@ -133,10 +139,12 @@ class SeqPlayStabilizer(Application):
 
 
     def initSeqplay(self):
-        plug (self.seq.forceLeftFoot , self.zmpRef.force_0)
-        plug (self.seq.forceRightFoot, self.zmpRef.force_1)
-        plug (self.robot.frames['leftFootForceSensor'].position , self.zmpRef.sensorPosition_0)
-        plug (self.robot.frames['rightFootForceSensor'].position, self.zmpRef.sensorPosition_1)
+        if self.forceSeqplay:
+            plug (self.seq.forceLeftFoot , self.zmpRef.force_0)
+            plug (self.seq.forceRightFoot, self.zmpRef.force_1)
+            plug (self.robot.frames['leftFootForceSensor'].position , self.zmpRef.sensorPosition_0)
+            plug (self.robot.frames['rightFootForceSensor'].position, self.zmpRef.sensorPosition_1)
+
         plug (self.zmpRef.zmp , self.robot.device.zmp)
         plug (self.zmpRef.zmp , self.tasks['com-stabilized'].zmpRef)
          
@@ -362,6 +370,8 @@ class SeqPlayStabilizer(Application):
         plug (self.seq.comdot, self.comdot)
         plug (self.seq.comdot, self.featureComDes.errordotIN)
         plug (self.seq.comdot, self.tasks['com-stabilized'].comdotRef)
+
+        plug (self.seq.comddot, self.tasks['com-stabilized'].comddotRef)
 
         plug (self.seq.leftAnkleVel, self.leftAnkle.velocity)
         plug (self.seq.rightAnkleVel, self.rightAnkle.velocity)

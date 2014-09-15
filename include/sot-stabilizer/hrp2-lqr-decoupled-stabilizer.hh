@@ -138,7 +138,8 @@ namespace sotStabilizer
     void setStateCost1(const Matrix & Q)
     {
       Q1_=sotStateObservation::convertMatrix<stateObservation::Matrix>(Q);
-      controller1_.setCostMatrices(Q1_,R_);
+      controller1x_.setCostMatrices(Q1_,R_);
+      controller1y_.setCostMatrices(Q1_,R_);
     }
 
     void setStateCost2(const Matrix & Q)
@@ -156,7 +157,8 @@ namespace sotStabilizer
 
     void setHorizon(const int & horizon)
     {
-      controller1_.setHorizonLength(horizon);
+      controller1x_.setHorizonLength(horizon);
+      controller1y_.setHorizonLength(horizon);
       controller2_.setHorizonLength(horizon);
       controllerLat_.setHorizonLength(horizon);
     }
@@ -167,7 +169,8 @@ namespace sotStabilizer
       R_=sotStateObservation::convertMatrix<stateObservation::Matrix>(R);
       controllerLat_.setCostMatrices(Qlat_,R_);
       controller2_.setCostMatrices(Q2_,R_);
-      controller1_.setCostMatrices(Q1_,R_);
+      controller1x_.setCostMatrices(Q1_,R_);
+      controller1y_.setCostMatrices(Q1_,R_);
 
     }
 
@@ -207,9 +210,14 @@ namespace sotStabilizer
     }
 
 
-    Matrix getLastGain1() const
+    Matrix getLastGain1x() const
     {
-      return sotStateObservation::convertMatrix<Matrix>(controller1_.getLastGain());
+      return sotStateObservation::convertMatrix<Matrix>(controller1x_.getLastGain());
+    }
+
+    Matrix getLastGain1y() const
+    {
+      return sotStateObservation::convertMatrix<Matrix>(controller1y_.getLastGain());
     }
 
     Matrix getLastGain2() const
@@ -222,9 +230,11 @@ namespace sotStabilizer
       return sotStateObservation::convertMatrix<Matrix>(controllerLat_.getLastGain());
     }
 
-    inline stateObservation::Matrix computeDynamicsMatrix(double comHeight, double kth, double kdth, double mass);
+    inline stateObservation::Matrix computeDynamicsMatrix
+      (double comHeight, double x, double xdot, double kth, double kdth, double mass);
 
-    inline stateObservation::Matrix computeInputMatrix(double comHeight, double kth, double kdth, double mass);
+    inline stateObservation::Matrix computeInputMatrix
+      (double comHeight, double x, double kth, double kdth, double mass);
 
 
   private:
@@ -267,6 +277,10 @@ namespace sotStabilizer
     SignalPtr <dynamicgraph::Vector, int> stateFlexDDotSIN_;
 
     SignalPtr <double, int> controlGainSIN_;
+
+    /// Acceleration of center of mass
+    SignalTimeDependent <dynamicgraph::Vector, int> comdotSOUT_;
+
     /// Acceleration of center of mass
     SignalTimeDependent <dynamicgraph::Vector, int> comddotSOUT_;
 
@@ -336,13 +350,16 @@ namespace sotStabilizer
     stateObservation::Matrix Q1_,Q2_,Qlat_;
     stateObservation::Matrix R_;
 
-    stateObservation::Matrix A1_;
+    stateObservation::Matrix A1x_;
+    stateObservation::Matrix A1y_;
     stateObservation::Matrix A2_;
     stateObservation::Matrix ALat_;
 
-    stateObservation::Matrix B_;
+    stateObservation::Matrix Bx_;
+    stateObservation::Matrix By_;
 
-    controller::DiscreteTimeLTILQR controller1_;
+    controller::DiscreteTimeLTILQR controller1x_;
+    controller::DiscreteTimeLTILQR controller1y_;
     controller::DiscreteTimeLTILQR controller2_;
     controller::DiscreteTimeLTILQR controllerLat_;
 

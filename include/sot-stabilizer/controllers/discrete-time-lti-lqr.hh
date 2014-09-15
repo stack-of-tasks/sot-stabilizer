@@ -49,14 +49,17 @@ public:
 
     virtual void setHorizonLength(int h);
 
-    virtual void setDynamicsMatrices (stateObservation::Matrix A, stateObservation::Matrix B);
+    virtual void setDynamicsMatrices (const stateObservation::Matrix & A,
+                                      const stateObservation::Matrix & B);
 
-    virtual void setCostMatrices (stateObservation::Matrix Q,
-                                  stateObservation::Matrix R,
-                                  stateObservation::Matrix Qn);
+    virtual void setCostMatrices (const stateObservation::Matrix & Q,
+                                  const stateObservation::Matrix & R,
+                                  const stateObservation::Matrix & Qn);
 
-    virtual void setCostMatrices (stateObservation::Matrix Q,
-                                  stateObservation::Matrix R );
+    virtual void setCostMatrices (const stateObservation::Matrix & Q,
+                                  const stateObservation::Matrix & R );
+
+    virtual void setGains ( const stateObservation::Matrix & k);
 
     virtual stateObservation::Matrix getLastGain() const ;
 

@@ -34,24 +34,25 @@ namespace controller
         if (time==time_)
         {
 
-
-//            std::cout<<"Time :"<< time<< std::endl;
+#ifndef NDEBUG
+            std::cout<<"Time :"<< time<< std::endl;
+#endif // NDEBUG
 
             if (changedValue_)
             {
 
                 sotStabilizer::tools::discreteTimeNonAlgRiccatiEqn(A_,B_,Q_,R_,Qn_,Pn_,horizon_);
                 changedValue_=false;
-
-//                std::cout<<"A :"<< std::endl;
-//                std::cout<< A_ <<std::endl;
-//                std::cout<<"B :"<< std::endl;
-//                std::cout<< B_.transpose() <<std::endl;
-//                std::cout<<"Q :"<< std::endl;
-//                std::cout<< Q_ <<std::endl;
-//                std::cout<<"R :"<< std::endl;
-//                std::cout<< R_ <<std::endl;
-
+#ifndef NDEBUG
+                std::cout<<"A :"<< std::endl;
+                std::cout<< A_ <<std::endl;
+                std::cout<<"B :"<< std::endl;
+                std::cout<< B_.transpose() <<std::endl;
+                std::cout<<"Q :"<< std::endl;
+                std::cout<< Q_ <<std::endl;
+                std::cout<<"R :"<< std::endl;
+                std::cout<< R_ <<std::endl;
+#endif
             }
             else
             {
@@ -77,13 +78,16 @@ namespace controller
 
             computedInput_=true;
 
-//            std::cout<< "P " << std::endl;
-//            std::cout<< P << std::endl;
-//            std::cout<<"Gain :"<< std::endl;
-//            std::cout<< -lastGain_ <<std::endl;
-//            std::cout<<"State :"<< x_.transpose()<< std::endl;
-//            std::cout<<"control :"<< u_.transpose()<< std::endl;
-//            std::cout<<std::endl;
+#ifndef NDEBUG
+
+//          std::cout<< "P " << std::endl;
+//          std::cout<< P << std::endl;
+            std::cout<<"Gain :"<< std::endl;
+            std::cout<< -lastGain_ <<std::endl;
+            std::cout<<"State :"<< x_.transpose()<< std::endl;
+            std::cout<<"control :"<< u_.transpose()<< std::endl;
+            std::cout<<std::endl;
+#endif
 
 
             time_ = time_+1;
@@ -112,7 +116,8 @@ namespace controller
         horizon_ = h;
     }
 
-    void DiscreteTimeLTILQR::setDynamicsMatrices(stateObservation::Matrix A, stateObservation::Matrix B)
+    void DiscreteTimeLTILQR::setDynamicsMatrices(const stateObservation::Matrix & A,
+                                                const stateObservation::Matrix & B)
     {
         checkDynamicsMatrices_(A,B);
         A_=A;
@@ -121,7 +126,9 @@ namespace controller
         changedValue_=true;
     }
 
-    void DiscreteTimeLTILQR::setCostMatrices (stateObservation::Matrix Q, stateObservation::Matrix R, stateObservation::Matrix Qn)
+    void DiscreteTimeLTILQR::setCostMatrices ( const stateObservation::Matrix & Q,
+                                                const stateObservation::Matrix & R,
+                                                const stateObservation::Matrix & Qn)
     {
         checkCostMatrices_(Q,R,Qn);
         Q_=Q;
@@ -131,7 +138,8 @@ namespace controller
         changedValue_=true;
     }
 
-    void DiscreteTimeLTILQR::setCostMatrices (stateObservation::Matrix Q, stateObservation::Matrix R )
+    void DiscreteTimeLTILQR::setCostMatrices (const stateObservation::Matrix& Q,
+                                              const stateObservation::Matrix& R )
     {
         setCostMatrices(Q,R,Q);
     }
@@ -139,6 +147,11 @@ namespace controller
     stateObservation::Matrix DiscreteTimeLTILQR::getLastGain() const
     {
         return lastGain_;
+    }
+
+    void DiscreteTimeLTILQR::setGains (const stateObservation::Matrix & k)
+    {
+        lastGain_=k;
     }
 }
 }
