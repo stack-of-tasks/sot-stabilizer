@@ -14,6 +14,8 @@ from dynamic_graph.tracer_real_time import *
 from dynamic_graph.sot.application.state_observation import MovingFrameTransformation
 from dynamic_graph.sot.application.velocity.precomputed_tasks import Application
 
+from dynamic_graph.sot.core import MatrixHomoToPoseRollPitchYaw 
+
 toList = lambda sot: map(lambda x: x[2:],sot.display().split('\n')[3:-2])
 
 def change6dPositionReference(task,feature,gain,position,selec=None,ingain=None,resetJacobian=True):
@@ -264,11 +266,9 @@ class HandCompensater(Application):
 
             self.sym.sin1.value =((1, 0, 0, 0), (0, -1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))
             plug (self.ccMrhref,self.sym.sin2)
-            
-
 
             self.symVel = Multiply_matrix_vector('symvel')
-            self.symVel.sin1.value =((1,0,0,0,0,0),(0,-1,0,0,0,0),(0,0,0,1,0,0),(0,0,0,1,0,0),(0,0,0,0,-1,0),(0,0,0,0,0,1))
+            self.symVel.sin1.value =((1,0,0,0,0,0),(0,-1,0,0,0,0),(0,0,1,0,0,0),(0,0,0,1,0,0),(0,0,0,0,-1,0),(0,0,0,0,0,1))
             plug (self.ccVrhref,self.symVel.sin2)
 	    self.tasks['left-wrist'].setWithDerivative (True)
        
@@ -335,6 +335,7 @@ class HandCompensater(Application):
         
         self.gains['right-wrist'].setByPoint(4,0.2,0.01,0.8)        
         self.features['right-wrist'].frame('desired')
+
 
         print matrix(self.cMrhref.value)
 
