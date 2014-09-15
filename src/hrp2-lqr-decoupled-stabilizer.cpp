@@ -506,8 +506,8 @@ namespace sotStabilizer
     flexibility.fromMatrix(flexibilityRot);
 
     Vector realcom(com);
-    realcom(0)-= com(2)*flexibility (1);
-    realcom(1)+= com(2)*flexibility (0);
+
+    flexibilityMatrix.multiply(com,realcom);
 
     deltaCom_ = com - comref;
 
@@ -621,11 +621,11 @@ namespace sotStabilizer
     {
 //      std::cout << "x " <<x << " y " <<y << " dx "<< dx <<" dy "<< dy;
 
-      x -= com(2)*flexibility (1);
-      y += com(2)*flexibility (0);
+      x += com(2)*flexibility (1);
+      y -= com(2)*flexibility (0);
 
-      dx -= com(2)*flexDot (1);
-      dy += com(2)*flexDot (0);
+      dx += com(2)*flexDot (1);
+      dy -= com(2)*flexDot (0);
 
       if ((!fixedGains_))
       {
@@ -657,15 +657,15 @@ namespace sotStabilizer
         comddotRef_ = comddotRefSIN_(time);
       }
 
-      double ddx = d2com_(0) - com(2)*flexDDot (1) - comddotRef_(0) ;
-      double ddy = d2com_(1) + com(2)*flexDDot (0) - comddotRef_(1) ;
+      double ddx = d2com_(0) + com(2)*flexDDot (1) - comddotRef_(0) ;
+      double ddy = d2com_(1) - com(2)*flexDDot (0) - comddotRef_(1) ;
 
 //      std::cout << " update x " <<x << " y " <<y << " dx "<< dx <<" dy "<< dy;
 
       //along x
-      theta0 = flexibility (1);
-      dtheta0 = flexDot (1);
-      ddtheta0 = flexDDot (1);
+      theta0 = -flexibility (1);
+      dtheta0 = -flexDot (1);
+      ddtheta0 = -flexDDot (1);
 
 
       stateObservation::Vector xVector (stateSize_);
@@ -683,9 +683,9 @@ namespace sotStabilizer
       d2com_ (0)= controller1x_.getControl(time)[0];
 
       // along y
-      theta1 = -flexibility (0);
-      dtheta1 = -flexDot (0);
-      ddtheta1 = -flexDDot (0);
+      theta1 = +flexibility (0);
+      dtheta1 = +flexDot (0);
+      ddtheta1 = +flexDDot (0);
       xVector[0]=y;
       xVector[1]=theta1;
       xVector[2]=dy;
@@ -723,6 +723,7 @@ namespace sotStabilizer
       dcom_ (1) += dt_ * d2com_ (1);
 
       // along z
+      z=realcom(2) - comref (2);
       dcom_ (2) = -gain * z + comdotRef(2);
 
     }
@@ -731,11 +732,11 @@ namespace sotStabilizer
     {
 
 //      std::cout << "x " <<x << " y " <<y << " dx "<< dx <<" dy "<< dy;
-      x = x - com(2)*flexibility (1);
-      y = y + com(2)*flexibility (0);
+      x = x + com(2)*flexibility (1);
+      y = y - com(2)*flexibility (0);
 
-      dx = dx - com(2)*flexDot (1);
-      dy = dy + com(2)*flexDot (0);
+      dx = dx + com(2)*flexDot (1);
+      dy = dy - com(2)*flexDot (0);
 
       if (zmpMode_) //computing the reference acceleration of the CoM
       {
@@ -754,9 +755,9 @@ namespace sotStabilizer
         comddotRef_ = comddotRefSIN_(time);
       }
 
-      double ddx = d2com_(0) - com(2)*flexDDot (1) - comddotRef_(0) ;
+      double ddx = d2com_(0) + com(2)*flexDDot (1) - comddotRef_(0) ;
 
-      double ddy = d2com_(1) + com(2)*flexDDot (0) - comddotRef_(1) ;
+      double ddy = d2com_(1) - com(2)*flexDDot (0) - comddotRef_(1) ;
 
 #ifndef NDEBUG
       std::cout << " update x " <<x << " y " <<y << " dx "<< dx <<" dy "<< dy;
@@ -796,9 +797,9 @@ namespace sotStabilizer
 
 
       //along the orthogonal to the contacts line
-      theta0 = + u1x_ * flexibility (1) - u1y_ * flexibility (0);
-      dtheta0 = + u1x_ * flexDot (1) - u1y_ * flexDot (0);
-      ddtheta0 = + u1x_ * flexDDot (1) - u1y_ * flexDDot (0);
+      theta0 = - u1x_ * flexibility (1) + u1y_ * flexibility (0);
+      dtheta0 = - u1x_ * flexDot (1) + u1y_ * flexDot (0);
+      ddtheta0 = - u1x_ * flexDDot (1) + u1y_ * flexDDot (0);
 //      zmpRef =
       xi = u1x_*x + u1y_*y;
       dxi = u1x_*dx + u1y_*dy;
@@ -823,9 +824,9 @@ namespace sotStabilizer
 
 
       //along the contacts line
-      theta1 = + u2x_ * flexibility (1) - u2y_ * flexibility (0);
-      dtheta1 = + u2x_ * flexDot (1) - u2y_ * flexDot (0);
-      ddtheta1 = + u2x_ * flexDDot (1) - u2y_ * flexDDot (0);
+      theta1 = - u2x_ * flexibility (1) + u2y_ * flexibility (0);
+      dtheta1 = - u2x_ * flexDot (1) + u2y_ * flexDot (0);
+      ddtheta1 = - u2x_ * flexDDot (1) + u2y_ * flexDDot (0);
       lat = u2x_*x + u2y_*y;
       dlat = u2x_*dx + u2y_*dy;
       ddlat = u2x_*ddx + u2y_*ddy;
@@ -860,6 +861,7 @@ namespace sotStabilizer
       std::cout << " Out: ddcomx " << d2com_(0)<<" ddcomy " << d2com_(1)<<std::endl;
 #endif // NDEBUG
       // along z
+      z=realcom(2) - comref (2);
       dcom_ (2) = -gain * z + comdotRef(2);
 
       supportPos1SOUT_.setConstant ((rfpos+lfpos)*0.5);
