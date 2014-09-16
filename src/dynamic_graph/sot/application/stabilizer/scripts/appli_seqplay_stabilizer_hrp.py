@@ -18,7 +18,7 @@ forceSeqplay = True
 #traj = '/home/mbenalle/devel/ros/install/resources/seqplay/stand-on-left-foot'
 traj = '/home/mbenalle/devel/ros/install/resources/seqplay/walkfwd-shifted'
 traj = '/home/mbenalle/devel/ros/install/resources/seqplay/stand-on-left-foot-shifted' 
-traj = '/home/mbenalle/devel/ros/install/resources/seqplay/onspot16s'; forceSeqplay = False
+#traj = '/home/mbenalle/devel/ros/install/resources/seqplay/onspot16s'; forceSeqplay = False
 #traj = '/home/mbenalle/devel/ros/install/resources/seqplay/onspot'; forceSeqplay = False
 #traj = '/home/mbenalle/devel/ros/install/resources/seqplay/walkstraight10cmperstep'; forceSeqplay = False
 trunkCompensate = True
@@ -99,6 +99,12 @@ appli.robot.addTrace( robot.dynamic.name, 'com')
 appli.robot.addTrace( realcom.name, 'gP0')
 appli.robot.addTrace( realcom.name, 'gA0')
 
+Q = (((200000, 5000,   0,   0,  0,  0),
+      (  5000,    1,   0,   0,  0,  0),
+      (     0,    0,  10, 100,  0,  0),
+      (     0,    0, 100,   1,  0,  0),
+      (     0,    0,   0,   0,  1, 25),
+      (     0,    0,   0,   0, 25, 10)))
 
 #stabilizer.setKth(395)
 
