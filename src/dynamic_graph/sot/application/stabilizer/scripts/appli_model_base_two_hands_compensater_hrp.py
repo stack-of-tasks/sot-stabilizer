@@ -37,6 +37,17 @@ est1.contacts.selec2 (0, 6)
 plug(est1.contacts.sout,est1.inputVector.contactsPosition)
 
 
+# Stifness and damping
+kfe=40000
+kfv=600
+kte=600
+ktv=60
+est1.setKfe(np.diag((kfe,kfe,kfe))
+est1.setKfv(np.diag((kfv,kfv,kfv))
+est1.setKte(np.diag((kte,kte,kte))
+est1.setKtv(np.diag((ktv,ktv,ktv))
+
+
 flexVect=est1.signal('flexibility')
 flex=est1.signal('flexMatrixInverse')
 flexdot = est1.signal('flexInverseVelocityVector')
