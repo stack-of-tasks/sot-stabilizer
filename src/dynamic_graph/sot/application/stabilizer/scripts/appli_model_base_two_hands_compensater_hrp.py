@@ -37,15 +37,21 @@ est1.contacts.selec2 (0, 6)
 plug(est1.contacts.sout,est1.inputVector.contactsPosition)
 
 
-# Stifness and damping
+# Simulation: Stifness and damping
 kfe=40000
 kfv=600
 kte=600
 ktv=60
-est1.setKfe(np.diag((kfe,kfe,kfe))
-est1.setKfv(np.diag((kfv,kfv,kfv))
-est1.setKte(np.diag((kte,kte,kte))
-est1.setKtv(np.diag((ktv,ktv,ktv))
+est1.setKfe(matrixToTuple(np.diag((kfe,kfe,kfe))))
+est1.setKfv(matrixToTuple(np.diag((kfv,kfv,kfv))))
+est1.setKte(matrixToTuple(np.diag((kte,kte,kte))))
+est1.setKtv(matrixToTuple(np.diag((ktv,ktv,ktv))))
+
+# Robot: Stifness and damping
+#est1.setKfe(matrixToTuple(np.diag((kfe,kfe,kfe))))
+#est1.setKfv(matrixToTuple(np.diag((kfv,kfv,kfv))))
+#est1.setKte(matrixToTuple(np.diag((320,475,400))) # random z
+#est1.setKtv(matrixToTuple(np.diag((40,3,40)))) # random z
 
 
 flexVect=est1.signal('flexibility')
@@ -109,14 +115,12 @@ appli.robot.addTrace( est1.name,'flexThetaU' )
 appli.robot.addTrace( est1.name,'flexOmega' )
 appli.robot.addTrace( deriv.name,'sout')
 appli.robot.addTrace( integr.name,'sout')
-
 appli.startTracer()
 
 plug(flex,appli.ccMc)
 plug(flexdot,appli.ccVc)
 
 est1.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-2,)*3+(1e-6,)*3)))
-
 appli.gains['trunk'].setConstant(2)
 
 time.sleep(60)
