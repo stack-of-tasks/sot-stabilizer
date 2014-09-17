@@ -73,6 +73,8 @@ appli.robot.addTrace( robot.device.name, 'forceRLEG')
 appli.robot.addTrace( robot.device.name, 'accelerometer')
 appli.robot.addTrace( robot.device.name,  'gyrometer')
 
+appli.robot.addTrace( est1.name,  'flexibilityComputationTime')
+
 # Position main droite
 RHand = MatrixHomoToPoseRollPitchYaw('HomotoPoseRH')
 plug(robot.dynamic.signal('right-wrist'),RHand.sin)
