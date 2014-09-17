@@ -97,6 +97,7 @@ namespace sotStabilizer
     comddotRefSOUT_ ("HRP2LQRDecoupledStabilizer("+inName+")::output(vector)::comddotRefOUT"),
     nbSupportSOUT_
     ("HRP2LQRDecoupledStabilizer("+inName+")::output(unsigned)::nbSupport"),
+    zmpRefSOUT_("HRP2LQRDecoupledStabilizer("+inName+")::output(vector)::zmpRefOUT"),
     errorSOUT_ ("HRP2LQRDecoupledStabilizer("+inName+")::output(vector)::error"),
     debugSOUT_ ("HRP2LQRDecoupledStabilizer("+inName+")::output(vector)::debug"),
     supportPos1SOUT_("HRP2LQRDecoupledStabilizer("+inName+")::output(vector)::supportPos1"),
@@ -143,6 +144,7 @@ namespace sotStabilizer
     signalRegistration (comddotSOUT_ <<comddotRefSOUT_);
     signalRegistration (nbSupportSOUT_ << supportPos1SOUT_ << supportPos2SOUT_);
     signalRegistration (errorSOUT_);
+    signalRegistration (zmpRefSOUT_);
     signalRegistration (debugSOUT_);
 
 
@@ -425,6 +427,11 @@ namespace sotStabilizer
                                   docDirectSetter
                                   ("Set angular viscosity","float")));
 
+    addCommand ("setRFOffset",
+                makeDirectSetter (*this, &kdth_,
+                                  docDirectSetter
+                                  ("Set angular viscosity","float")));
+
 
 
     prevCom_.fill (0.);
@@ -511,7 +518,8 @@ namespace sotStabilizer
 
     deltaCom_ = com - comref;
 
-    Vector zmpref;
+    Vector zmpref(3);
+    zmpref.setZero();
 
 
 
@@ -573,7 +581,7 @@ namespace sotStabilizer
       leftFootPosition.extract(rfpos);
       nbSupport_++;
       supportCandidateLf_++;
-      if (nbSupport_==0)
+      if (nbSupport_==1)
       {
         supportPos1SOUT_.setConstant (rfpos);
         supportPos1SOUT_.setTime (time);
@@ -655,6 +663,9 @@ namespace sotStabilizer
       else
       {
         comddotRef_ = comddotRefSIN_(time);
+        zmpref(0) = comref(0) - comddotRef_(0)*comref(2)/stateObservation::cst::gravityConstant;
+        zmpref(1) = comref(1) - comddotRef_(1)*comref(2)/stateObservation::cst::gravityConstant;
+
       }
 
       double ddx = d2com_(0) + com(2)*flexDDot (1) - comddotRef_(0) ;
@@ -753,6 +764,8 @@ namespace sotStabilizer
       else
       {
         comddotRef_ = comddotRefSIN_(time);
+        zmpref(0) = comref(0) - comddotRef_(0)*comref(2)/stateObservation::cst::gravityConstant;
+        zmpref(1) = comref(1) - comddotRef_(1)*comref(2)/stateObservation::cst::gravityConstant;
       }
 
       double ddx = d2com_(0) + com(2)*flexDDot (1) - comddotRef_(0) ;
@@ -864,7 +877,7 @@ namespace sotStabilizer
       z=realcom(2) - comref (2);
       dcom_ (2) = -gain * z + comdotRef(2);
 
-      supportPos1SOUT_.setConstant ((rfpos+lfpos)*0.5);
+      supportPos1SOUT_.setConstant (zmpref);
       supportPos1SOUT_.setTime (time);
       nbSupportSOUT_.setConstant (1);
 
@@ -903,6 +916,9 @@ namespace sotStabilizer
 
     errorSOUT_.setConstant (deltaCom_);
     errorSOUT_.setTime (time);
+
+    zmpRefSOUT_.setConstant(zmpref);
+    zmpRefSOUT_.setTime (time);
 
     debugSOUT_.setConstant (debug_);
     debugSOUT_.setTime (time);

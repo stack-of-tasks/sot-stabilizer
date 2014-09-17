@@ -260,6 +260,8 @@ namespace sotStabilizer
     ///Reference ZMP
     SignalPtr < dynamicgraph::Vector, int> zmpRefSIN_;
 
+
+
     /// Position of left foot force sensor in global frame
     SignalPtr <MatrixHomogeneous, int> leftFootPositionSIN_;
     /// Position of right foot force sensor in global frame
@@ -296,6 +298,9 @@ namespace sotStabilizer
 
     ///error output
     SignalTimeDependent <Vector, int> errorSOUT_;
+
+    ///Reference ZMP
+    SignalTimeDependent <Vector, int> zmpRefSOUT_;
 
     SignalTimeDependent <Vector, int> debugSOUT_;
 
@@ -363,6 +368,8 @@ namespace sotStabilizer
     controller::DiscreteTimeLTILQR controller2_;
     controller::DiscreteTimeLTILQR controllerLat_;
 
+    Vector rfOffset;
+    Vector lfOffset;
 
     double kth_;
     double kdth_;
