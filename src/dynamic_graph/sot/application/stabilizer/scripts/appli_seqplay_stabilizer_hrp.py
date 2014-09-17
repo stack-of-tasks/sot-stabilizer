@@ -115,6 +115,9 @@ stabilizer.setStateCostLat(matrixToTuple(np.diag((1e2,1,1,1,1,1))))
 stabilizer.setStateCost2(matrixToTuple(np.diag((1e3,1,1e3,1,1e3,100))))
 stabilizer.setStateCostLat(matrixToTuple(np.diag((100,0.1,1,0.001,0.1,1))))
 
+#robot
+stabilizer.setStateCost2(matrixToTuple(np.diag((1e3,1,1e2,1,1e2,10))))
+
 stabilizer.setStateCostLat(matrixToTuple(np.diag((1e5,1,1e1,1,1e1,10))))
 stabilizer.setStateCost1(matrixToTuple(np.diag((1e4,1,1e2,1,1e2,1))))
 stabilizer.setStateCost2(matrixToTuple(np.diag((1e6,1,1e2,1,1e2,100))))
