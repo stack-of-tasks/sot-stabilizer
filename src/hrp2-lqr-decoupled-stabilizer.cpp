@@ -193,6 +193,28 @@ namespace sotStabilizer
     flexVelocityLat_.setZero ();
 
 
+    Vector rfconf(6);
+    rfconf.setZero();
+
+    Vector lfconf(6);
+    lfconf.setZero();
+
+    rfconf(0) = 0.009490463094;
+    rfconf(1) = -0.095000000000;
+
+    lfconf(0) = 0.009490463094;
+    lfconf(1) = 0.095000000000;
+
+    supportPos1SOUT_.setConstant (lfconf);
+    supportPos1SOUT_.setTime (0);
+    supportPos2SOUT_.setConstant (rfconf);
+    supportPos2SOUT_.setTime (0);
+
+    nbSupportSOUT_.setConstant (2);
+    nbSupportSOUT_.setTime (0);
+
+
+
 
 
     std::string docstring;
@@ -512,7 +534,7 @@ namespace sotStabilizer
     VectorUTheta flexibility;
     flexibility.fromMatrix(flexibilityRot);
 
-    Vector realcom(com);
+    Vector realcom(com);//real position of the com according to the observer
 
     flexibilityMatrix.multiply(com,realcom);
 
@@ -544,9 +566,30 @@ namespace sotStabilizer
     Vector rfpos(3);
     Vector lfpos(3);
 
-    leftFootPosition.extract(rfpos);
-    rightFootPosition.extract(lfpos);
+    MatrixRotation rfrot;
+    MatrixRotation lfrot;
 
+    VectorUTheta rfuth;
+    VectorUTheta lfuth;
+
+    rightFootPosition.extract(rfpos);
+    rightFootPosition.extract(rfrot);
+    rfuth.fromMatrix(rfrot);
+
+    leftFootPosition.extract(lfpos);
+    leftFootPosition.extract(lfrot);
+    lfuth.fromMatrix(lfrot);
+
+    Vector rfconf(6);
+    Vector lfconf(6);
+
+    for (size_t i=0; i<3; ++i)
+    {
+      rfconf(i)   = rfpos(i);
+      rfconf(i+3) = rfuth(i);
+      lfconf(i)   = lfpos(i);
+      lfconf(i+3) = lfuth(i);
+    }
 
     // Express vertical component of force in global basis
     double flz = leftFootPosition (2,0) * forceLf (0) +
@@ -559,38 +602,13 @@ namespace sotStabilizer
 
     //compute the number of supports
     nbSupport_ = 0;
-    if (frz >= forceThreshold_)
-    {
-      rightFootPosition.extract(rfpos);
-      nbSupport_++;
-      supportCandidateRf_++;
-      supportPos1SOUT_.setConstant (rfpos);
-      nbSupportSOUT_.setTime (time);
-      if (supportCandidateRf_ >= 3)
-      {
-        iterationsSinceLastSupportRf_ = 0;
-      }
-    }
-    else
-    {
-      supportCandidateRf_ = 0;
-      iterationsSinceLastSupportRf_ ++;
-    }
     if (flz >= forceThreshold_)
     {
-      leftFootPosition.extract(rfpos);
       nbSupport_++;
       supportCandidateLf_++;
-      if (nbSupport_==1)
-      {
-        supportPos1SOUT_.setConstant (rfpos);
-        supportPos1SOUT_.setTime (time);
-      }
-      else
-      {
-        supportPos2SOUT_.setConstant (rfpos);
-        supportPos2SOUT_.setTime (time);
-      }
+      supportPos1SOUT_.setConstant (lfconf);
+      supportPos1SOUT_.setTime (time);
+
       if (supportCandidateLf_ >= 3)
       {
         iterationsSinceLastSupportLf_ = 0;
@@ -599,7 +617,31 @@ namespace sotStabilizer
     else
     {
       supportCandidateLf_ = 0;
-      iterationsSinceLastSupportLf_++;
+      iterationsSinceLastSupportLf_ ++;
+    }
+    if (frz >= forceThreshold_)
+    {
+      nbSupport_++;
+      supportCandidateRf_++;
+      if (nbSupport_==1)
+      {
+        supportPos1SOUT_.setConstant (rfconf);
+        supportPos1SOUT_.setTime (time);
+      }
+      else
+      {
+        supportPos2SOUT_.setConstant (rfconf);
+        supportPos2SOUT_.setTime (time);
+      }
+      if (supportCandidateRf_ >= 3)
+      {
+        iterationsSinceLastSupportRf_ = 0;
+      }
+    }
+    else
+    {
+      supportCandidateRf_ = 0;
+      iterationsSinceLastSupportRf_++;
     }
     nbSupportSOUT_.setConstant (nbSupport_);
     nbSupportSOUT_.setTime (time);
@@ -734,7 +776,8 @@ namespace sotStabilizer
       dcom_ (1) += dt_ * d2com_ (1);
 
       // along z
-      z=realcom(2) - comref (2);
+      //z=realcom(2) - comref (2);
+      z= com(2) - comref (2);
       dcom_ (2) = -gain * z + comdotRef(2);
 
     }
@@ -874,12 +917,9 @@ namespace sotStabilizer
       std::cout << " Out: ddcomx " << d2com_(0)<<" ddcomy " << d2com_(1)<<std::endl;
 #endif // NDEBUG
       // along z
-      z=realcom(2) - comref (2);
+      //z=realcom(2) - comref (2);
+      z= com(2) - comref (2);
       dcom_ (2) = -gain * z + comdotRef(2);
-
-      supportPos1SOUT_.setConstant (zmpref);
-      supportPos1SOUT_.setTime (time);
-      nbSupportSOUT_.setConstant (1);
 
       debug_(0)=xi;
       debug_(1)=theta0;

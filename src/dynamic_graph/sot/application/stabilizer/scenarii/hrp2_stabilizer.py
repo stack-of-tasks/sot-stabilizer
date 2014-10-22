@@ -15,7 +15,7 @@ class HRP2Stabilizer(HRP2LQRDecoupledStabilizer):
     
     def __init__(self,robot,taskname = 'com-stabilized'):
         
-        from dynamic_graph.sot.application.state_observation.initializations.hrp2_flexibility_estimator import HRP2FlexibilityEstimator
+        from dynamic_graph.sot.application.state_observation.initializations.hrp2_model_base_flex_estimator import HRP2ModelBaseFlexEstimator
 
         HRP2LQRDecoupledStabilizer.__init__(self,taskname)
         robot.dynamic.com.recompute(0)
@@ -29,12 +29,47 @@ class HRP2Stabilizer(HRP2LQRDecoupledStabilizer):
         plug (robot.frames['leftFootForceSensor'].position,self.leftFootPosition)
         #TODO ///// SELEC ??
 
-        self.estimator = HRP2FlexibilityEstimator(robot, taskname+"Estimator")
+        self.estimator = HRP2ModelBaseFlexEstimator(robot, taskname+"Estimator")
         plug (self.nbSupport,self.estimator.contactNbr)
+
+
+        self.contacts = Stack_of_vector (taskname+'contacts')
+
+        plug(self.supportPos1,self.contacts.sin1)
+        plug(self.supportPos2,self.contacts.sin2)
         
-        plug(self.supportPos1,self.estimator.contact1)
-        plug(self.supportPos2,self.estimator.contact2)
+        self.contacts.selec1 (0, 6)
+        self.contacts.selec2 (0, 6)
+        plug(self.contacts.sout, self.estimator.inputVector.contactsPosition)
         
         plug(self.estimator.flexTransformationMatrix, self.stateFlex )        
         plug(self.estimator.flexOmega, self.stateFlexDot )
         plug(self.estimator.flexOmegaDot, self.stateFlexDDot )
+
+        self.comVectorPV = Stack_of_vector (taskname+'ComVectorPV')
+        self.comVector = Stack_of_vector (taskname+'ComVector')
+        
+        self.comVectorPV.selec1 (0, 3)
+        self.comVectorPV.selec2 (0, 3)        
+        self.comVector.selec1 (0, 6)
+        self.comVector.selec2 (0, 3)        
+        
+
+        plug(robot.dynamic.com,     self.comVectorPV.sin1)
+        plug(self.comdot,           self.comVectorPV.sin2)
+        plug(self.comVectorPV.sout, self.comVector.sin1)
+        plug(self.comddot,          self.comVector.sin2)
+        
+
+
+    def start(self):
+        plug(self.comVector.sout,self.inputVector.comVector)
+        HRP2LQRDecoupledStabilizer.start()
+        
+
+    def stop(self):
+        for i in range(1,self.inputVector.getFiniteDifferencesInterval()):
+            self.inputVector.comVector.recompute(self.inputVector.comVector.time + 1)
+        plug(self.estimator.comVector.sout,self.inputVector.comVector)
+        HRP2LQRDecoupledStabilizer.stop()
+        
