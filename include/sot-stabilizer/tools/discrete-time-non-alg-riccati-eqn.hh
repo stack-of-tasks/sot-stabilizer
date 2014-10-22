@@ -31,7 +31,7 @@ namespace tools {
 void discreteTimeNonAlgRiccatiEqn (
        const stateObservation::Matrix & A, const stateObservation::Matrix & B,
        const stateObservation::Matrix & Q, const stateObservation::Matrix & R,
-       const stateObservation::Matrix & Qn, stateObservation::DiscreteTimeArray &P,
+       const stateObservation::Matrix & Qn, stateObservation::IndexedMatrixArray &P,
        unsigned n);
 }
 }

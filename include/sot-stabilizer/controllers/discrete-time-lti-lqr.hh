@@ -98,7 +98,7 @@ protected:
 
     stateObservation::Matrix Q_,Qn_,R_;
     stateObservation::Matrix A_,B_;
-    stateObservation::DiscreteTimeArray Pn_;
+    stateObservation::IndexedMatrixArray Pn_;
 
     bool computedInput_;
     int remainingTime_;
