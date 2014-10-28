@@ -52,7 +52,9 @@ SET(${PROJECT_NAME}_HEADERS
     include/sot-stabilizer/perturbations-generator.hh
     include/sot-stabilizer/controllers/controller-base.hh
     include/sot-stabilizer/controllers/discrete-time-lti-lqr.hh
+    include/sot-stabilizer/controllers/state-space-linear-controller.hh
     include/sot-stabilizer/tools/discrete-time-non-alg-riccati-eqn.hh
+    include/sot-stabilizer/tools/hrp2.hpp
     include/sot-stabilizer/prototyping/decoupled-elastic-inv-pendulum-simulator.hh
     include/sot-stabilizer/prototyping/zmp-to-com-algebraic-controller.hh
     include/sot-stabilizer/prototyping/linearized-table-cart-device.hh

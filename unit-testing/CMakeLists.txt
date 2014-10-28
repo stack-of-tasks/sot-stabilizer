@@ -33,6 +33,7 @@ SET(${PROJECT_NAME}_test_CXXFLAGS "-I${PROJECT_SOURCE_DIR}/include/ ${${PROJECT_
 include_directories(${Boost_INCLUDE_DIR} ${PROJECT_INCLUDE_DIR})
 
 SET(tests
+    test_state-space-linear-controller
   )
 
 FOREACH(test ${tests})

@@ -108,6 +108,18 @@ namespace sotStabilizer {
 	 @}
       */
 
+      /**
+         \brief Compute the evolution of the state of the pendulum
+      */
+      dynamicgraph::Vector computeDynamics(const dynamicgraph::Vector& inState,
+                             const dynamicgraph::Vector& inControl,
+                             const double& inForce,
+                             double inTimeStep,
+                 dynamicgraph::Vector & flexddot,
+                                 dynamicgraph::Vector & realcom,
+                                 dynamicgraph::Vector & zmp,
+                             dynamicgraph::Vector& output);
+
     private:
       /// Perturbation force acting on the table cart
       dynamicgraph::SignalPtr< double, int > forceSIN_;
@@ -136,17 +148,17 @@ namespace sotStabilizer {
       double viscosity_;
       /// Moment of inertia around y axis
       double Iyy_;
-      /**
-	 \brief Compute the evolution of the state of the pendulum
-      */
-      dynamicgraph::Vector computeDynamics(const dynamicgraph::Vector& inState,
-			     const dynamicgraph::Vector& inControl,
-			     const double& inForce,
-			     double inTimeStep,
-                 dynamicgraph::Vector & flexddot,
-				 dynamicgraph::Vector & realcom,
-				 dynamicgraph::Vector & zmp,
-			     dynamicgraph::Vector& output);
+//      /**
+//	 \brief Compute the evolution of the state of the pendulum
+//      */
+//      dynamicgraph::Vector computeDynamics(const dynamicgraph::Vector& inState,
+//			     const dynamicgraph::Vector& inControl,
+//			     const double& inForce,
+//			     double inTimeStep,
+//                 dynamicgraph::Vector & flexddot,
+//				 dynamicgraph::Vector & realcom,
+//				 dynamicgraph::Vector & zmp,
+//			     dynamicgraph::Vector& output);
       dynamicgraph::Matrix A_;
       dynamicgraph::Matrix B_;
     };

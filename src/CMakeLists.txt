@@ -39,6 +39,7 @@ ADD_LIBRARY(${LIBRARY_NAME}
   perturbations-generator.cpp
   discrete-time-non-alg-riccati-eqn.cpp  
   discrete-time-lti-lqr.cpp
+  state-space-linear-controller.cpp
   prototyping/decoupled-elastic-inv-pendulum-simulator.cpp
   prototyping/zmp-to-com-algebraic-controller.cpp
   prototyping/linearized-table-cart-device.cc
