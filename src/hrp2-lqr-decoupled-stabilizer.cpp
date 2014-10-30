@@ -671,6 +671,7 @@ namespace sotStabilizer
     {
 //      std::cout << "x " <<x << " y " <<y << " dx "<< dx <<" dy "<< dy;
 
+
       x += com(2)*flexibility (1);
       y -= com(2)*flexibility (0);
 
@@ -679,7 +680,8 @@ namespace sotStabilizer
 
       if ((!fixedGains_))
       {
-        Vector dxpendulum = comref - supportPos1SOUT_(time); //distance between the contact point and the com
+
+        Vector dxpendulum = comref - sotStateObservation::getSubvector(supportPos1SOUT_(time),0,3); //distance between the contact point and the com
 
         A1x_=computeDynamicsMatrix(com(2),dxpendulum(0), comdotRef(0), kth_, kdth_, constm_);
         A1y_=computeDynamicsMatrix(com(2),dxpendulum(1), comdotRef(1), kth_, kdth_, constm_);
@@ -688,8 +690,6 @@ namespace sotStabilizer
         controller1x_.setDynamicsMatrices(A1x_, Bx_);
         controller1y_.setDynamicsMatrices(A1y_, By_);
       }
-
-
 
       if (zmpMode_) //computing the reference acceleration of the CoM
       {
@@ -719,7 +719,6 @@ namespace sotStabilizer
       theta0 = -flexibility (1);
       dtheta0 = -flexDot (1);
       ddtheta0 = -flexDDot (1);
-
 
       stateObservation::Vector xVector (stateSize_);
       xVector[0]=x;
@@ -762,6 +761,7 @@ namespace sotStabilizer
       debug_(5)=ddtheta0;
       debug_(6)=d2com_(0);
 
+
       debug_(7)=y;
       debug_(8)=theta1;
       debug_(9)=dy;
@@ -772,6 +772,7 @@ namespace sotStabilizer
 
       d2com_ += comddotRef_;
 
+
       dcom_ (0) += dt_ * d2com_ (0);
       dcom_ (1) += dt_ * d2com_ (1);
 
@@ -779,7 +780,6 @@ namespace sotStabilizer
       //z=realcom(2) - comref (2);
       z= com(2) - comref (2);
       dcom_ (2) = -gain * z + comdotRef(2);
-
     }
     break;
     default: //double support or more
