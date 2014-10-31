@@ -58,7 +58,7 @@ public:
     /// new methods
 
     virtual void setCaracteristicPolynomial(const stateObservation::Vector &a);
-    virtual void setCaracteristicPolynomialFromPoles(const stateObservation::Vector &p);
+    virtual void setCaracteristicPolynomialFromPoles(const stateObservation::Matrix &p);
     virtual stateObservation::Vector getCaracteristicPolynomial();
 
 protected:

@@ -1,7 +1,7 @@
 #include <sot-stabilizer/controllers/state-space-linear-controller.hh>
 #include <sot-stabilizer/tools/hrp2.hpp>
 
-#include <iostream>
+//#include <iostream>
 
 
 namespace sotStabilizer
@@ -26,6 +26,7 @@ namespace controller
 
     stateObservation::Vector StateSpaceLinearController::getControl(int time)
     {
+
         if (time==time_)
         {
 
@@ -37,8 +38,8 @@ namespace controller
             double g=9.81;
             double comz=hrp2::H; //0.807;
             double mu=ktheta/(m*comz)-g;
-            stateObservation::Vector4 c;
-
+            stateObservation::Vector c;
+            c.resize(stateSize_);
             double ctheta=m*comz/ktheta*(a_(2)*mu*comz-mu*mu-a_(0)*comz*comz);
             double cksi=m*comz/ktheta*(a_(0)*comz+a_(2)*g-g/comz);
             double cdtheta=m*comz*comz/ktheta*(a_(3)*mu-a_(1)*comz);
@@ -47,7 +48,6 @@ namespace controller
                     ctheta,
                     cdksi,
                     cdtheta;
-
 
             checkState_(x_);
             u_ = - c.transpose()*x_;
@@ -64,7 +64,7 @@ namespace controller
              "Input is not initalized, try requesting for current time.");
         }
 
-        return u_;
+ return u_;
     }
 
     stateObservation::Vector StateSpaceLinearController::getTheoricalState(stateObservation::Vector &u, const double dt){
@@ -91,11 +91,11 @@ namespace controller
         a_=a;
     }
 
-    void StateSpaceLinearController::setCaracteristicPolynomialFromPoles(const stateObservation::Vector &p){
+    void StateSpaceLinearController::setCaracteristicPolynomialFromPoles(const stateObservation::Matrix &p){
 
         stateObservation::Vector temp;
         temp.resize(4);
-        temp << p[0]*p[1]*p[2]*p[3],
+        temp << p(0)*p(1)*p(2)*p(3),
               -(p(0)*p(1)*p(2)+p(0)*p(1)*p(3)+p(0)*p(2)*p(3)+p(1)*p(2)*p(3)),
               (p(0)*p(1)+p(0)*p(2)+p(0)*p(3)+p(1)*p(2)+p(1)*p(3)+p(2)*p(3)),
               -(p(0)+p(1)+p(2)+p(3));

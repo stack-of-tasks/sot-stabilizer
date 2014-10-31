@@ -102,6 +102,16 @@ namespace sotStabilizer
     }
     /// @}
 
+    void setController0Poles(const Matrix &p){
+
+            controller0_.setCaracteristicPolynomialFromPoles(sotStateObservation::convertMatrix<stateObservation::Matrix>(p));
+    }
+
+    void setController1Poles(const Matrix &p){
+
+            controller1_.setCaracteristicPolynomialFromPoles(sotStateObservation::convertMatrix<stateObservation::Matrix>(p));
+    }
+
 
   private:
 
@@ -143,6 +153,9 @@ namespace sotStabilizer
 
     ///error output
     SignalTimeDependent <Vector, int> errorSOUT_;
+
+    /// Velocity of center of mass
+    SignalTimeDependent <dynamicgraph::Vector, int> comdotSOUT_;
 
     SignalPtr <double, int> controlGainSIN_;
 

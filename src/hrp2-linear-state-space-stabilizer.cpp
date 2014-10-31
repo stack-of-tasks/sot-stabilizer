@@ -50,7 +50,7 @@ namespace sotStabilizer
 
   double HRP2LinearStateSpaceStabilizer::constm_ = 59.8;
 
-  const unsigned stateSize_=6;
+  const unsigned stateSize_=4;
 
   DYNAMICGRAPH_FACTORY_ENTITY_PLUGIN (HRP2LinearStateSpaceStabilizer, "HRP2LinearStateSpaceStabilizer");
 
@@ -79,11 +79,12 @@ namespace sotStabilizer
     supportPos2SOUT_("HRP2LinearStateSpaceStabilizer("+inName+")::output(vector)::supportPos2"),
     nbSupportSOUT_
     ("HRP2LinearStateSpaceStabilizer("+inName+")::output(unsigned)::nbSupport"),
+    comdotSOUT_ ("HRP2LQRDecoupledStabilizer("+inName+")::output(vector)::comdot"),
     errorSOUT_ ("HRP2LQRDecoupledStabilizer("+inName+")::output(vector)::error"),
     deltaCom_ (3), dcom_ (3), d2com_ (3), dt_ (.005), on_ (false),
     forceThreshold_ (.036 * constm_*stateObservation::cst::gravityConstant),
     supportCandidateLf_ (0), supportCandidateRf_ (0),
-    controller0_(stateSize_,1),controller1_(stateSize_,1)
+    controller0_(stateSize_,1),controller1_(stateSize_,1),comdotRef_(3)
   {
     /// Register signals into the entity.
     signalRegistration (comSIN_); // position of the com in the loàcal frame
@@ -92,7 +93,7 @@ namespace sotStabilizer
     signalRegistration (jacobianSIN_); // Jacobian of the com
     signalRegistration (stateFlexSIN_); // state of the flexibility from the estimator
     signalRegistration (stateFlexDotSIN_); // derivative of the state of the flexibility from the estimator
-
+    signalRegistration (comdotSOUT_);
     signalRegistration (nbSupportSOUT_ << supportPos1SOUT_ << supportPos2SOUT_);
     signalRegistration (leftFootPositionSIN_ << rightFootPositionSIN_ << forceRightFootSIN_ << forceLeftFootSIN_);
     signalRegistration (nbSupportSOUT_ << supportPos1SOUT_ << supportPos2SOUT_);
@@ -116,6 +117,9 @@ namespace sotStabilizer
                                           this,_1,_2));
 
     deltaCom_.setZero ();
+    comdotRef_.setZero();
+
+    comdotSOUT_.setConstant (d2com_);
 
     std::string docstring;
     docstring =
@@ -149,7 +153,25 @@ namespace sotStabilizer
                 makeCommandVoid0 (*this, &HRP2LinearStateSpaceStabilizer::stop,
                                   docCommandVoid0 ("Stop stabilizer")));
 
+    docstring =
+      "\n"
+      "    Set poles for the controllers\n"
+      "\n"
+      "      input:\n"
+      "        the number of the controller\n"
+      "        a vector containing the poles\n"
+      "\n";
+    addCommand ("setController0Poles",
+                new dynamicgraph::command::Setter<HRP2LinearStateSpaceStabilizer, Matrix>
+                (*this, &HRP2LinearStateSpaceStabilizer::setController0Poles, docstring));
+    addCommand ("setController1Poles",
+                new dynamicgraph::command::Setter<HRP2LinearStateSpaceStabilizer, Matrix>
+                (*this, &HRP2LinearStateSpaceStabilizer::setController1Poles,
+                                  docCommandVoid0 (docstring)));
+
   }
+
+
 
   /// Determine number of support : to be put in stateObervation in my opinion
   unsigned int HRP2LinearStateSpaceStabilizer::computeNbSupport(const int& time)//const MatrixHomogeneous& leftFootPosition, const MatrixHomogeneous& rightFootPosition, const Vector& forceLf, const Vector& forceRf, const int& time)
@@ -242,18 +264,19 @@ namespace sotStabilizer
     // Control gain
     const double& gain = controlGainSIN_.access (time);
 
+    // Determination of the number of support
+    nbSupport_=computeNbSupport(time);
+
     // From global frame to local frame
     const MatrixHomogeneous& flexibilityMatrix = stateFlexSIN_.access(time);
     const Vector& flexDot = stateFlexDotSIN_.access(time);
-    const Vector & comrefg = comRefSIN_ (time);
-    const Vector & com = comSIN_ (time);
-
+    const Vector& comrefg = comRefSIN_ (time);
+    const Vector& com = comSIN_ (time);
     Vector flexibilityPos(3);
     VectorUTheta flexibility;
     MatrixRotation flexibilityRot;
     Vector comref;
     stateObservation::Vector3 theta, dtheta;
-
     flexibilityMatrix.extract(flexibilityRot);
     flexibility.fromMatrix(flexibilityRot);
     flexibilityMatrix.extract(flexibilityPos);    
@@ -267,10 +290,7 @@ namespace sotStabilizer
     deltaCom_=comref-com;
     Vector ddeltaCom=dcom_-comdotRef_;
 
-    // Determination of the number of support
-    nbSupport_=computeNbSupport(time);
-
-    // Compute acceleration of the state
+    // Compute velocity of the state
     if(nbSupport_ < 3 && nbSupport_ !=0){ // rotation around y (double and simple support)
         theta[0]= -flexibility(1);
         dtheta[0] = -flexDot (1);
@@ -283,10 +303,11 @@ namespace sotStabilizer
 
         controller0_.setState(x0Vector,time);
         d2com_ (0)= controller0_.getControl(time)[0];
-        dcom_ (0) = dt_ * d2com_ (0); // + conditions initiales
+        dcom_ (0) = dt_ * d2com_ (0);
 
         // Along z
         dcom_ (2) = -gain * deltaCom_(3);
+std::cout << "coucou5" << std::endl;
     }
 
     if(nbSupport_ < 2 && nbSupport_ !=0){ // rotation around x (simple support only)
@@ -319,6 +340,7 @@ namespace sotStabilizer
     comdot [0].setSingleBound (dcom_ (0));
     comdot [1].setSingleBound (dcom_ (1));
     comdot [2].setSingleBound (dcom_ (2));
+
     return comdot;
   }
 
