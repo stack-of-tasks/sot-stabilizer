@@ -17,7 +17,7 @@ forceSeqplay = True
 #traj = '/home/mbenalle/devel/ros/install/resources/seqplay/walkfwd-resampled-30'
 #traj = '/home/mbenalle/devel/ros/install/resources/seqplay/stand-on-left-foot'
 traj = '/home/mbenalle/devel/ros/install/resources/seqplay/walkfwd-shifted'
-traj = '/home/mbenalle/devel/ros/install/resources/seqplay/stand-on-left-foot-shifted' 
+#traj = '/home/mbenalle/devel/ros/install/resources/seqplay/stand-on-left-foot-shifted' 
 #traj = '/home/mbenalle/devel/ros/install/resources/seqplay/onspot16s'; forceSeqplay = False
 #traj = '/home/mbenalle/devel/ros/install/resources/seqplay/onspot'; forceSeqplay = False
 #traj = '/home/mbenalle/devel/ros/install/resources/seqplay/walkstraight10cmperstep'; forceSeqplay = False
@@ -100,26 +100,33 @@ appli.robot.addTrace( robot.dynamic.name, 'com')
 appli.robot.addTrace( realcom.name, 'gP0')
 appli.robot.addTrace( realcom.name, 'gA0')
 
-Q = (((200000, 5000,   0,   0,  0,  0),
-      (  5000,    1,   0,   0,  0,  0),
-      (     0,    0,  10, 100,  0,  0),
-      (     0,    0, 100,   1,  0,  0),
-      (     0,    0,   0,   0,  1, 25),
-      (     0,    0,   0,   0, 25, 10)))
-
 #stabilizer.setKth(395)
 
 
 
 #robot
 
+stabilizer.setHorizon(250)
+
 stabilizer.setStateCostLat(matrixToTuple(np.diag((1e5,1,1e1,1,1e1,10))))
 stabilizer.setStateCost1(matrixToTuple(np.diag((1e4,1,1e2,1,1e2,1))))
 stabilizer.setStateCost2(matrixToTuple(np.diag((1e6,1,1e2,1,1e2,100))))
 stabilizer.setZmpMode(False)
 
-stabilizer.setStateCost2(matrixToTuple(np.diag((1e5,1,1e2,1,1e4,10))))
-stabilizer.setStateCostLat(matrixToTuple(np.diag((1e5,1,1e2,1,1e4,10))))
+stabilizer.setStateCost1(matrixToTuple(np.diag((1e5,1,1e2,1,1e2,1))))
+stabilizer.setStateCost2(matrixToTuple(np.diag((1e6,1,1e1,1,1e1,100))))
+stabilizer.setStateCostLat(matrixToTuple(np.diag((1e7,1,1,1,1,100))))
+
+#high gains
+stabilizer.setStateCostLat(matrixToTuple(np.diag((1e7,1,1,1,1e3,100))))
+stabilizer.setStateCost1(matrixToTuple(np.diag((1e5,1,1e2,1,1e4,10))))
+
+#low gains
+#stabilizer.setStateCost1(matrixToTuple(np.diag((1e2,1,1e2,1,1e4,10))))
+#stabilizer.setStateCostLat(matrixToTuple(np.diag((1e3,1,1,1,1e6,1e4))))
+
+
+stabilizer.setStateCostLat(matrixToTuple(np.diag((1e5,1,1e0,1,1e5,100))))
 #stabilizer.setFixedGains(True)
 
 #stabilizer.stateFlexDDot.value = (0,0,0)
