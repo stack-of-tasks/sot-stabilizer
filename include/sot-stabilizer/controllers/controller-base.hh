@@ -42,6 +42,10 @@ public:
         time_=time;
     }
 
+    virtual stateObservation::Vector& getState(){
+        return x_;
+    }
+
     virtual int getTime() const
     {
         return time_;
