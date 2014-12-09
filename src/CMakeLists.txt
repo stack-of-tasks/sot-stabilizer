@@ -144,6 +144,7 @@ INSTALL(FILES
 INSTALL(FILES
   dynamic_graph/sot/application/stabilizer/scripts/appli_hands_compensater_chicken.py
   dynamic_graph/sot/application/stabilizer/scripts/appli_two_hands_compensater_hrp.py
+  dynamic_graph/sot/application/stabilizer/scripts/appli_model_base_elast_pendulum_two_hands_compensater_hrp.py
   dynamic_graph/sot/application/stabilizer/scripts/appli_model_base_two_hands_compensater_hrp.py
   dynamic_graph/sot/application/stabilizer/scripts/appli_two_hands_compensater_oscillator_hrp.py
   dynamic_graph/sot/application/stabilizer/scripts/appli_ds_stabilizer_hrp.py

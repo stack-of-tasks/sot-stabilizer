@@ -23,6 +23,7 @@ contactNbr = est1.signal('contactNbr')
 
 # Definition des contacts
 contactNbr.value = 2
+est1.setContactModelNumber(1)
 rFootPos = MatrixHomoToPoseRollPitchYaw('rFootFramePos')
 lFootPos = MatrixHomoToPoseRollPitchYaw('lFootFramePos')
 plug(robot.frames['rightFootForceSensor'].position,rFootPos.sin)

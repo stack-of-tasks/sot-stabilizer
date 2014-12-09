@@ -15,16 +15,18 @@ appli.withTraces()
 est = appli.taskCoMStabilized.estimator
 stabilizer = appli.taskCoMStabilized
 
-perturbator = VectorPerturbationsGenerator('comref')
-comRef = perturbator.sin
-comRef.value = appli.comRef.value
-plug (perturbator.sout,appli.comRef)
-perturbator.perturbation.value=(-0.5,0,0)
-perturbator.selec.value = '111'
+appli.refCom=
 
-realcom = Multiply_matrixHomo_vector('real-com')
-plug(est.flexTransformationMatrix, realcom.sin1)
-plug(appli.com, realcom.sin2)
+#perturbator = VectorPerturbationsGenerator('comref')
+#comRef = perturbator.sin
+#comRef.value = appli.comRef.value
+#plug (perturbator.sout,appli.comRef)
+#perturbator.perturbation.value=(-0.5,0,0)
+#perturbator.selec.value = '111'
+
+#realcom = Multiply_matrixHomo_vector('real-com')
+#plug(est.flexTransformationMatrix, realcom.sin1)
+#plug(appli.com, realcom.sin2)
 
 appli.robot.addTrace( est.name,'flexibility' )
 appli.robot.addTrace( est.name,'flexThetaU' )
@@ -39,8 +41,6 @@ appli.robot.addTrace( realcom.name,'sout' )
 appli.robot.addTrace( stabilizer.name,'task' )
 appli.robot.addTrace( stabilizer.name,'nbSupport' )
 appli.robot.addTrace( stabilizer.name,'error' )
-#appli.robot.addTrace( stabilizer.name,'d2com' )
-#appli.robot.addTrace( stabilizer.name,'debug' )
 appli.robot.addTrace( perturbator.name, 'sout')
 appli.robot.addTrace( robot.device.name, 'forceLLEG')
 appli.robot.addTrace( robot.device.name, 'forceRLEG')
@@ -52,17 +52,16 @@ appli.startTracer()
 appli.gains['trunk'].setConstant(2)
 
 est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-1,)*6)))
-est.setVirtualMeasurementsCovariance(1e-4)
 
 stabilizer.setController0Poles(((-5,)*4,))
 stabilizer.setController1Poles(((-5,)*4,))
 
 stabilizer.start()
 
-#comRef.value = (0.0,0.0,0.8)
-#perturbator.perturbation.value=(0.001,0,0)
-#perturbator.setMode(1)
-#perturbator.setPeriod(3200)
-#perturbator.activate(True)
+comRef.value = (0.0,0.0,0.8)
+perturbator.perturbation.value=(0.001,0,0)
+perturbator.setMode(1)
+perturbator.setPeriod(3200)
+perturbator.activate(True)
 
 appli.nextStep()

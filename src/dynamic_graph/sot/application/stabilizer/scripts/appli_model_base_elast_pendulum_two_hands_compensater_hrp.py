@@ -8,6 +8,7 @@ from dynamic_graph.sot.application.state_observation.initializations.hrp2_model_
 from dynamic_graph.sot.application.stabilizer.scenarii.hand_compensater import HandCompensater
 from dynamic_graph.sot.core.matrix_util import matrixToTuple
 from dynamic_graph.sot.application.state_observation import InputReconstructor
+from dynamic_graph.sot.application.state_observation import MovingFrameTransformation
 import time
   
 
@@ -21,9 +22,38 @@ meas = est1.signal('measurement')
 inputs = est1.signal('input')
 contactNbr = est1.signal('contactNbr')
 
+flexVect=est1.signal('flexibility')
+flex=est1.signal('flexMatrixInverse')
+flexdot = est1.signal('flexInverseVelocityVector')
+
 # Definition des contacts
-contactNbr.value = 1
-est1.inputVector.contactsPosition.value=(0.013,0.0015,4.6,0,0,0,0)
+contactNbr.value = 2
+est1.setContactModelNumber(2)
+	# Position of the anchorage in the global frame
+Peg = (0,0,4.60)
+	# Positions of the contacts on the robot (in the local frame)
+Prl1 = (0,0,0)
+Prl2 = (0,0,0)
+
+# Construction of contacts informations
+contact1 = Stack_of_vector ('contact1')
+contact1.sin1.value = Peg
+contact1.sin2.value = Prl1
+contact1.selec1 (0, 3)
+contact1.selec2 (0, 3)
+
+contact2 = Stack_of_vector ('contact2')
+contact2.sin1.value = Peg
+contact2.sin2.value = Prl2
+contact2.selec1 (0, 3)
+contact2.selec2 (0, 3)
+
+est1.contacts = Stack_of_vector ('contacts')
+plug(contact1.sout,est1.contacts.sin1)
+plug(contact2.sout,est1.contacts.sin2)
+est1.contacts.selec1 (0, 6)
+est1.contacts.selec2 (0, 6)
+plug(est1.contacts.sout,est1.inputVector.contactsPosition)
 
 
 # Simulation: Stifness and damping
@@ -33,12 +63,8 @@ kte=600
 ktv=60
 est1.setKfe(matrixToTuple(np.diag((kfe,kfe,kfe))))
 est1.setKfv(matrixToTuple(np.diag((kfv,kfv,kfv))))
-est1.setKte(matrixToTuple(np.diag((0,0,600))))
+est1.setKte(matrixToTuple(np.diag((kte,kte,kte))))
 est1.setKtv(matrixToTuple(np.diag((ktv,ktv,ktv))))
-
-flexVect=est1.signal('flexibility')
-flex=est1.signal('flexMatrixInverse')
-flexdot = est1.signal('flexInverseVelocityVector')
 
 appli.robot.addTrace( est1.name,'flexibility' )
 appli.robot.addTrace( est1.name,'input' )
@@ -54,7 +80,6 @@ appli.robot.addTrace( robot.device.name, 'forceLLEG')
 appli.robot.addTrace( robot.device.name, 'forceRLEG')
 appli.robot.addTrace( robot.device.name, 'accelerometer')
 appli.robot.addTrace( robot.device.name,  'gyrometer')
-
 appli.robot.addTrace( est1.name,  'flexibilityComputationTime')
 
 # Position main droite
@@ -107,71 +132,4 @@ plug(flexdot,appli.ccVc)
 est1.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-2,)*3+(1e-6,)*3)))
 appli.gains['trunk'].setConstant(2)
 
-time.sleep(60)
-appli.comRef.value=(0.003566999999999999, 0.031536, 0.80771000000000004)
-time.sleep(60)
 
-
-time.sleep(60)
-appli.comRef.value=(0.033566999999999999, 0.001536, 0.80771000000000004)
-time.sleep(60)
-appli.comRef.value=(0.013566999999999999, 0.001536, 0.80771000000000004)
-time.sleep(60)
-appli.comRef.value=(-0.01, 0.001536, 0.80771000000000004)
-time.sleep(60)
-appli.comRef.value=(0.013566999999999999, 0.001536, 0.80771000000000004)
-time.sleep(60)
-appli.comRef.value=(0.013566999999999999, 0.031536, 0.80771000000000004)
-time.sleep(60)
-appli.comRef.value=(0.013566999999999999, 0.001536, 0.80771000000000004)
-time.sleep(60)
-appli.comRef.value=(0.013566999999999999, -0.031536, 0.80771000000000004)
-time.sleep(60)
-appli.comRef.value=(0.013566999999999999, 0.001536, 0.80771000000000004)
-time.sleep(60)
-
-
-
-
-appli.comRef.value=(0.013566999999999999, 0.001536, 0.80771000000000004)
-
-contactNbr.value = 1
-appli.features['left-ankle'].reference.value=((1.0, 0.0, -5.0686451563700001e-17, 0.0094904630937000002), (0.0, 1.0, 0.0, 0.095000000000000001), (5.0686451563700001e-17, 0.0, 1.0, 0.165000198197), (0.0, 0.0, 0.0, 1.0))
-
-
-#time.sleep(120)
-#appli.comRef.value=(0.003566999999999999, 0.031536, 0.80771000000000004)
-#time.sleep(120)
-#appli.comRef.value=(0.003566999999999999, 0.001536, 0.80771000000000004)
-#time.sleep(120)(1e+4,)*3
-
-#appli.comRef.value=(0.00949046, 0.0, 0.80771000000000004)
-#appli.comRef.value=(0.00739606, 0.0, 0.80771000000000004)
-
-
-#appli.nextStep()
-#appli.comRef.value=(0.0, 0.0, 0.80771000000000004)
-#time.sleep(60)
-#est1.setOn(True)
-
-
-
-time.sleep(120)
-appli.comRef.value=(0.033566999999999999, 0.001536, 0.80771000000000004)
-time.sleep(120)
-appli.comRef.value=(0.003566999999999999, 0.001536, 0.80771000000000004)
-time.sleep(120)
-appli.comRef.value=(-0.01, 0.001536, 0.80771000000000004)
-time.sleep(120)
-appli.comRef.value=(0.003566999999999999, 0.001536, 0.80771000000000004)
-time.sleep(120)
-appli.comRef.value=(0.003566999999999999, 0.031536, 0.80771000000000004)
-time.sleep(120)
-appli.comRef.value=(0.003566999999999999, 0.001536, 0.80771000000000004)
-time.sleep(120)
-appli.comRef.value=(0.003566999999999999, -0.031536, 0.80771000000000004)
-time.sleep(120)
-appli.comRef.value=(0.003566999999999999, 0.001536, 0.80771000000000004)
-time.sleep(120)
-
-#appli.comRef.value=(0.003566999999999999, 0.001536, 0.80771000000000004)

@@ -207,8 +207,7 @@ class DSStabilizer(Application):
         from dynamic_graph.sot.application.state_observation import MovingFrameTransformation
 
         if self.trunkStabilize:
-            ### waist
-            
+            ### waist           
             
             self.transformerWaist = MovingFrameTransformation('tranformation_waist')
             plug(self.ccMc,self.transformerWaist.gMl) # inverted flexibility
