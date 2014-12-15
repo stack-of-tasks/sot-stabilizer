@@ -14,16 +14,10 @@
 #include <dynamic-graph/command-direct-getter.h>
 #include <sot-stabilizer/prototyping/linearized-rotational-table-cart-device.hh>
 #include <dynamic-graph/command-bind.h>
-
-#include <state-observation/tools/definitions.hpp>
-
 #include "command-increment.hh"
 
-
-using namespace sotStabilizer;
-using dynamicgraph::command::makeDirectSetter;
-using dynamicgraph::command::makeDirectGetter;
-
+namespace sotStabilizer
+{
 DYNAMICGRAPH_FACTORY_ENTITY_PLUGIN(LinearizedRotationalTableCartDevice, "LinearizedRotationalTableCartDevice");
 
 LinearizedRotationalTableCartDevice::LinearizedRotationalTableCartDevice(const std::string& inName) :
@@ -34,12 +28,21 @@ LinearizedRotationalTableCartDevice::LinearizedRotationalTableCartDevice(const s
   outputSOUT_ ("LinearizedRotationalTableCartDevice("+inName+")::output(vector)::output"),
   comrealposSOUT_ ("LinearizedRotationalTableCartDevice("+inName+")::output(vector)::comreal"),
   flexcomddotSOUT_ ("LinearizedRotationalTableCartDevice("+inName+")::output(vector)::flexcomddot"),
-  comHeightSOUT_("LinearizedRotationalTableCartDevice("+inName+")::output(vector)::comHeight"),
+  clSOUT_("LinearizedRotationalTableCartDevice("+inName+")::output(vector)::cl"),
   zmpSOUT_("LinearizedRotationalTableCartDevice("+inName+")::output(vector)::zmp"),
-  cartMass_(58.0), stiffness_ (100.), viscosity_(0.1), Iyy_ (0.),
-  A_ (18, 18), B_ (18, 2)
+  cartMass_(58.0), I_ (3,3)
 {
-  A_.setZero (); B_.setZero ();
+  A_.resize(18,18); B_.resize(18,18);
+  A_.setZero (); B_.setZero (); I_.setZero();
+
+  stiffness_ <<  100,0,0,
+                0,100,0,
+                0,0,100;
+
+  viscosity_ <<     0.1,0,0,
+                    0,0.1,0,
+                    0,0,0.1;
+
   // Register signals into the entity.
   signalRegistration (forceSIN_);
   signalRegistration (controlSIN_);
@@ -47,7 +50,7 @@ LinearizedRotationalTableCartDevice::LinearizedRotationalTableCartDevice(const s
   signalRegistration (outputSOUT_);
   signalRegistration (comrealposSOUT_);
   signalRegistration (flexcomddotSOUT_);
-  signalRegistration (comHeightSOUT_);
+  signalRegistration (clSOUT_);
   signalRegistration (zmpSOUT_);
 
   // Set signals as constant to size them
@@ -63,22 +66,12 @@ LinearizedRotationalTableCartDevice::LinearizedRotationalTableCartDevice(const s
   comrealposSOUT_.setConstant(zeroV);
   flexcomddotSOUT_.setConstant (zeroV);
   zmpSOUT_.setConstant(zeroV);
-  dynamicgraph::Vector height (1); height(0)=cartHeight_;
-  comHeightSOUT_ = height;
+//  dynamicgraph::Vector height (1); height(0)=cartHeight_;
+//  comHeightSOUT_ = height;
 
 
   // Commands
   std::string docstring;
-
-//  // Incr
-//  docstring =
-//    "\n"
-//    "    Integrate dynamics for time step provided as input\n"
-//    "\n"
-//    "      take one floating point number as input\n"
-//    "\n";
-//  addCommand(std::string("incr"),
-//             new command::Increment(*this, docstring));
 
   // setCartMass
   docstring =
@@ -97,30 +90,15 @@ LinearizedRotationalTableCartDevice::LinearizedRotationalTableCartDevice(const s
   addCommand(std::string("getCartMass"),
              new ::dynamicgraph::command::Getter<LinearizedRotationalTableCartDevice, double>
              (*this, &LinearizedRotationalTableCartDevice::getCartMass, docstring));
-  // setCartHeight
-  docstring =
-    "\n"
-    "    Set cart height\n"
-    "\n";
-  addCommand(std::string("setCartHeight"),
-             new ::dynamicgraph::command::Setter<LinearizedRotationalTableCartDevice, double>
-             (*this, &LinearizedRotationalTableCartDevice::setCartHeight, docstring));
 
-  // getCartHeight
-  docstring =
-    "\n"
-    "    Get cart height\n"
-    "\n";
-  addCommand(std::string("getCartHeight"),
-             new ::dynamicgraph::command::Getter<LinearizedRotationalTableCartDevice, double>
-             (*this, &LinearizedRotationalTableCartDevice::getCartHeight, docstring));
+
   // setStiffness
   docstring =
     "\n"
     "    Set stiffness of the flexibility\n"
     "\n";
   addCommand(std::string("setStiffness"),
-             new ::dynamicgraph::command::Setter<LinearizedRotationalTableCartDevice, double>
+             new ::dynamicgraph::command::Setter<LinearizedRotationalTableCartDevice, dynamicgraph::Matrix>
              (*this, &LinearizedRotationalTableCartDevice::setStiffness, docstring));
 
   // getStiffness
@@ -129,7 +107,7 @@ LinearizedRotationalTableCartDevice::LinearizedRotationalTableCartDevice(const s
     "    Get cart stiffness of the flexibility\n"
     "\n";
   addCommand(std::string("getStiffness"),
-             new ::dynamicgraph::command::Getter<LinearizedRotationalTableCartDevice, double>
+             new ::dynamicgraph::command::Getter<LinearizedRotationalTableCartDevice, dynamicgraph::Matrix>
              (*this, &LinearizedRotationalTableCartDevice::getStiffness, docstring));
   // setViscosity
   docstring =
@@ -137,7 +115,7 @@ LinearizedRotationalTableCartDevice::LinearizedRotationalTableCartDevice(const s
     "    Set viscosity of the flexibility\n"
     "\n";
   addCommand(std::string("setViscosity"),
-             new ::dynamicgraph::command::Setter<LinearizedRotationalTableCartDevice, double>
+             new ::dynamicgraph::command::Setter<LinearizedRotationalTableCartDevice, dynamicgraph::Matrix>
              (*this, &LinearizedRotationalTableCartDevice::setViscosity, docstring));
 
   // getViscosity
@@ -146,7 +124,7 @@ LinearizedRotationalTableCartDevice::LinearizedRotationalTableCartDevice(const s
     "    Get cart viscosity of the flexibility\n"
     "\n";
   addCommand(std::string("getViscosity"),
-             new ::dynamicgraph::command::Getter<LinearizedRotationalTableCartDevice, double>
+             new ::dynamicgraph::command::Getter<LinearizedRotationalTableCartDevice, dynamicgraph::Matrix>
              (*this, &LinearizedRotationalTableCartDevice::getViscosity, docstring));
 
   // setMomentOfInertia
@@ -154,16 +132,20 @@ LinearizedRotationalTableCartDevice::LinearizedRotationalTableCartDevice(const s
     "\n"
     "    Set moment of inertia around y axis\n"
     "\n";
-  addCommand ("setMomentOfInertia",
-              makeDirectSetter (*this, &Iyy_, docstring));
+
+    addCommand(std::string("setMomentOfInertia"),
+               new ::dynamicgraph::command::Setter<LinearizedRotationalTableCartDevice, dynamicgraph::Matrix>
+               (*this, &LinearizedRotationalTableCartDevice::setMomentOfInertia, docstring));
 
   // setMomentOfInertia
   docstring =
     "\n"
     "    Get moment of inertia around y axis\n"
     "\n";
-  addCommand ("getMomentOfInertia",
-              makeDirectGetter (*this, &Iyy_, docstring));
+
+    addCommand(std::string("getMomentOfInertia"),
+               new ::dynamicgraph::command::Getter<LinearizedRotationalTableCartDevice, dynamicgraph::Matrix>
+               (*this, &LinearizedRotationalTableCartDevice::getMomentOfInertia, docstring));
 
     // recomputeMatrices
   docstring =
@@ -183,47 +165,63 @@ void LinearizedRotationalTableCartDevice::recomputeMatrices()
 
   double g = stateObservation::cst::gravityConstant;
   double m = cartMass_;
-  double kth = stiffness_;
-  double kdth = viscosity_;
-  double Iyy = Iyy_;
-  double zeta = cartHeight_;
+  stateObservation::Matrix3 Kth = stiffness_;
+  stateObservation::Matrix Kdth = viscosity_;
+  stateObservation::Matrix I = I_;
+  stateObservation::Vector cl = cl_;
 
-//  A_ (0, 2) = 1.;
-//  A_ (1, 3) = 1.;
-//  A_ (3, 0) = - m*g/(m*zeta*zeta + Iyy);
-//  A_ (3, 1) = (m*g*zeta - kth)/(m*zeta*zeta + Iyy);
-//  A_ (3, 3) = -kdth/(m*zeta*zeta + Iyy);
-//  B_ (2, 0) = 1.; B_ (3, 0) = m*zeta/(m*zeta*zeta + Iyy);
+  A_ (0, 10) = 1.;
+  A_ (1, 11) = 1.;
+  A_ (2, 12) = 1.;
+
+  A_ (3, 13) = 1.;
+  A_ (4, 14) = 1.;
+  A_ (5, 15) = 1.;
+
+  A_ (6, 16) = 1.;
+  A_ (7, 17) = 1.;
+  A_ (8, 18) = 1.;
+
+  B_(10,0) = 1.;
+  B_(11,1) = 1.;
+  B_(12,2) = 1.;
+
+  B_(13,3) = 1.;
+  B_(14,4) = 1.;
+  B_(15,5) = 1.;
+
+
 }
 
 LinearizedRotationalTableCartDevice::~LinearizedRotationalTableCartDevice()
 {
 }
 
-dynamicgraph::Vector LinearizedRotationalTableCartDevice::computeDynamics(
-                  const dynamicgraph::Vector& inState,
+stateObservation::Vector LinearizedRotationalTableCartDevice::computeDynamics(
+                                    const dynamicgraph::Vector& inState,
                                   const dynamicgraph::Vector& inControl,
                                   const double&,
                                   double inTimeStep,
-                                  dynamicgraph::Vector & flexcomddot,
-                                  dynamicgraph::Vector & realCom,
-                                  dynamicgraph::Vector & zmp,
-                                  dynamicgraph::Vector& output)
+                                  stateObservation::Vector & flexcomddot,
+                                  stateObservation::Vector & realCom,
+                                  stateObservation::Vector & zmp,
+                                  stateObservation::Vector& output)
 {
-//  if (inState.size() != 4)
+//  if (inState.size() != 18)
 //    throw dynamicgraph::ExceptionSignal(dynamicgraph::ExceptionSignal::GENERIC,
 //                                        "state signal size is ",
-//                                        "%d, should be 4.",
+//                                        "%d, should be 18.",
 //                                        inState.size());
-//
-//  double dt = inTimeStep;
-//  double g = stateObservation::cst::gravityConstant;
-//  double m = cartMass_;
-//  double kth = stiffness_;
-//  double kdth = viscosity_;
-//  double Iyy = Iyy_;
-//  double zeta = cartHeight_;
-//
+
+  double dt = inTimeStep;
+  double g = stateObservation::cst::gravityConstant;
+  double m = cartMass_;
+  stateObservation::Matrix Kth = stiffness_;
+  stateObservation::Matrix Kdth = viscosity_;
+  stateObservation::Matrix I = I_;
+
+  stateObservation::Vector cl=cl_;
+
 //  A_ (0, 2) = 1.;
 //  A_ (1, 3) = 1.;
 //  A_ (3, 0) = - m*g/(m*zeta*zeta + Iyy);
@@ -245,7 +243,7 @@ dynamicgraph::Vector LinearizedRotationalTableCartDevice::computeDynamics(
 //
 //  dynamicgraph::Vector dx = k1* dt;
 //
-  dynamicgraph::Vector nextState;// = xn + dx;
+  stateObservation::Vector nextState;// = xn + dx;
 //
 //  double testconst = - g * xn(0) + zeta * inControl(0);
 //
@@ -275,28 +273,31 @@ dynamicgraph::Vector LinearizedRotationalTableCartDevice::computeDynamics(
 void LinearizedRotationalTableCartDevice::incr(double inTimeStep)
 {
   int t = stateSOUT_.getTime();
-  dynamicgraph::Vector output;
-  dynamicgraph::Vector realCom;
-  dynamicgraph::Vector flexcomddot;
-  dynamicgraph::Vector comheight;
-  dynamicgraph::Vector zmp;
+  stateObservation::Vector output;
+  stateObservation::Vector realCom;
+  stateObservation::Vector flexcomddot;
+  stateObservation::Vector cl;
+  stateObservation::Vector zmp;
 
-  dynamicgraph::Vector nextState = computeDynamics (stateSOUT_ (t), controlSIN_ (t),
+  stateObservation::Vector nextState = computeDynamics (stateSOUT_ (t), controlSIN_ (t),
                                       forceSIN_ (t), inTimeStep, flexcomddot, realCom, zmp,
                                       output);
-  comheight.resize(1);
-  comheight(0) = cartHeight_;
-  stateSOUT_.setConstant (nextState);
+
+  cl.resize(3);
+  cl=cl_;
+  stateSOUT_.setConstant(convertVector<dynamicgraph::Vector>(nextState));
   stateSOUT_.setTime (t+1);
-  comrealposSOUT_.setConstant(realCom);
+  comrealposSOUT_.setConstant(convertVector<dynamicgraph::Vector>(realCom));
   comrealposSOUT_.setTime (t+1);
-  flexcomddotSOUT_.setConstant(flexcomddot);
+  flexcomddotSOUT_.setConstant(convertVector<dynamicgraph::Vector>(flexcomddot));
   flexcomddotSOUT_.setTime (t+1);
-  outputSOUT_.setConstant (output);
+  outputSOUT_.setConstant (convertVector<dynamicgraph::Vector>(output));
   outputSOUT_.setTime (t+1);
-  comHeightSOUT_.setConstant(comheight);
-  comHeightSOUT_.setTime(t+1);
-  zmpSOUT_.setConstant(zmp);
+  clSOUT_.setConstant(convertVector<dynamicgraph::Vector>(cl));
+  clSOUT_.setTime(t+1);
+  zmpSOUT_.setConstant(convertVector<dynamicgraph::Vector>(zmp));
   zmpSOUT_.setTime(t+1);
   forceSIN_.setTime (t+1);
+}
+
 }
