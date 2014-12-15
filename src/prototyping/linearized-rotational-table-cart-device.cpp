@@ -235,54 +235,22 @@ stateObservation::Vector LinearizedRotationalTableCartDevice::computeDynamics(
                                         "%d, should be 18.",
                                         inState.size());
 
-//  double dt = inTimeStep;
-//  double g = stateObservation::cst::gravityConstant;
-//  double m = cartMass_;
-//  stateObservation::Matrix Kth = stiffness_;
-//  stateObservation::Matrix Kdth = viscosity_;
-//  stateObservation::Matrix I = I_;
-//  stateObservation::Vector cl=cl_;
+  double dt = inTimeStep;
 
   recomputeMatrices();
 
-//  double xi = inState (0);
-//  double th = inState (1);
-//  double dth = inState (3);
-//
-//  const dynamicgraph::Vector& xn = inState;
-//  const dynamicgraph::Vector& k1 = A_*xn + B_*inControl;
-//
-//  //const dynamicgraph::Vector& k2 = A_*(xn + k1*(dt/2)) + B_*inControl;
-//  //const dynamicgraph::Vector& k3 = A_*(xn + k2*(dt/2)) + B_*inControl;
-//  //const dynamicgraph::Vector& k4 = A_*(xn + k3*dt) + B_*inControl;
-//  //dynamicgraph::Vector dx = (k1 + k2*2 + k3*2 + k4)*(dt/6.);//Runge Kutta 4
-//
-//  dynamicgraph::Vector dx = k1* dt;
-//
-  stateObservation::Vector nextState;// = xn + dx;
-//
-//  double testconst = - g * xn(0) + zeta * inControl(0);
-//
-//  th = nextState (1);
-//  dth = nextState (3);
-//
-//  double My = kth*th + kdth*dth;
-//
-//  realCom.resize(1);
-//  realCom(0) = nextState(0)-nextState(1)*zeta;
-//
-//  flexcomddot.resize(1);
-//  flexcomddot(0) = dx(3)*cartHeight_;
-//
-//  zmp.resize(1);
-//  zmp(0) = -My / (g*m);
-//
-//  double zmpnoflex = xn(0)-
-//                    zeta/stateObservation::cst::gravityConstant*inControl(0);
-//
-//  output.resize (2);
-//  output (0) = xi;
-//  output (1) = My;
+  const stateObservation::Vector & xn = convertVector<stateObservation::Vector>(inState);
+  const stateObservation::Vector & un = convertVector<stateObservation::Vector>(inControl);
+  const stateObservation::Vector & xn1 = A_*xn + B_*un;
+
+  //const dynamicgraph::Vector& k2 = A_*(xn + k1*(dt/2)) + B_*inControl;
+  //const dynamicgraph::Vector& k3 = A_*(xn + k2*(dt/2)) + B_*inControl;
+  //const dynamicgraph::Vector& k4 = A_*(xn + k3*dt) + B_*inControl;
+  //dynamicgraph::Vector dx = (k1 + k2*2 + k3*2 + k4)*(dt/6.);//Runge Kutta 4
+
+  stateObservation::Vector dx = xn1* dt;
+  stateObservation::Vector nextState = xn + dx;
+
   return nextState;
 }
 
