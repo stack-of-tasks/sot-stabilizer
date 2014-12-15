@@ -70,6 +70,7 @@ appli.robot.addTrace( est1.name,'inovation' )
 appli.robot.addTrace( est1.name,'prediction' )
 appli.robot.addTrace( robot.device.name, 'forceLLEG')
 appli.robot.addTrace( robot.device.name, 'forceRLEG')
+appli.robot.addTrace( est1.name,  'forcesAndMoments')
 appli.robot.addTrace( robot.device.name, 'accelerometer')
 appli.robot.addTrace( robot.device.name,  'gyrometer')
 

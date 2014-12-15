@@ -21,33 +21,49 @@ est1 = HRP2ModelBaseFlexEstimator(robot)
 meas = est1.signal('measurement')
 inputs = est1.signal('input')
 contactNbr = est1.signal('contactNbr')
-
 flexVect=est1.signal('flexibility')
 flex=est1.signal('flexMatrixInverse')
 flexdot = est1.signal('flexInverseVelocityVector')
 
-# Definition des contacts
+# contacts definition
 contactNbr.value = 2
 est1.setContactModelNumber(2)
 	# Position of the anchorage in the global frame
 Peg = (0,0,4.60)
-	# Positions of the contacts on the robot (in the local frame)
-Prl1 = (0,0,0)
-Prl2 = (0,0,0)
+	# Positions of the contacts on the robot (in the local frame) with respect to the chest
+Prl1 = np.matrix([[1,0,0,0-3.19997004e-02],[0,1,0,0.15-0],[0,0,1,1.28-1],[0,0,0,1]])
+Prl2 = np.matrix([[1,0,0,0-3.19997004e-02],[0,1,0,-0.15-0],[0,0,1,1.28-1],[0,0,0,1]])
 
-# Construction of contacts informations
+	# contact 1
+contact1OpPoint = OpPointModifier('contact1_oppoint')
+contact1OpPoint.setEndEffector(False)
+contact1OpPoint.setTransformation(matrixToTuple(Prl1))
+plug (robot.dynamic.chest,contact1OpPoint.positionIN)
+contact1Pos = MatrixHomoToPose('contact1Pos')
+plug(contact1OpPoint.position, contact1Pos.sin)
 contact1 = Stack_of_vector ('contact1')
 contact1.sin1.value = Peg
-contact1.sin2.value = Prl1
+#plug(contact1Pos.sout,contact1.sin2)
+contact1.sin2.value = (0,-0.15,1.28)
 contact1.selec1 (0, 3)
 contact1.selec2 (0, 3)
 
+
+	# contact 2
+contact2OpPoint = OpPointModifier('contact2_oppoint')
+contact2OpPoint.setEndEffector(False)
+contact2OpPoint.setTransformation(matrixToTuple(Prl2))
+plug (robot.dynamic.chest,contact2OpPoint.positionIN)
+contact2Pos = MatrixHomoToPose('contact2Pos')
+plug(contact2OpPoint.position, contact2Pos.sin)
 contact2 = Stack_of_vector ('contact2')
 contact2.sin1.value = Peg
-contact2.sin2.value = Prl2
+contact2.sin2.value = (0,0.15,1.28)
+#plug(contact2Pos.sout,contact2.sin2)
 contact2.selec1 (0, 3)
 contact2.selec2 (0, 3)
 
+	# concatenation
 est1.contacts = Stack_of_vector ('contacts')
 plug(contact1.sout,est1.contacts.sin1)
 plug(contact2.sout,est1.contacts.sin2)
@@ -57,8 +73,8 @@ plug(est1.contacts.sout,est1.inputVector.contactsPosition)
 
 
 # Simulation: Stifness and damping
-kfe=40000
-kfv=600
+kfe=4000
+kfv=600 #600
 kte=600
 ktv=60
 est1.setKfe(matrixToTuple(np.diag((kfe,kfe,kfe))))
@@ -80,6 +96,7 @@ appli.robot.addTrace( robot.device.name, 'forceLLEG')
 appli.robot.addTrace( robot.device.name, 'forceRLEG')
 appli.robot.addTrace( robot.device.name, 'accelerometer')
 appli.robot.addTrace( robot.device.name,  'gyrometer')
+appli.robot.addTrace( est1.name,  'forcesAndMoments')
 appli.robot.addTrace( est1.name,  'flexibilityComputationTime')
 
 # Position main droite
