@@ -66,9 +66,6 @@ LinearizedRotationalTableCartDevice::LinearizedRotationalTableCartDevice(const s
   comrealposSOUT_.setConstant(zeroV);
   flexcomddotSOUT_.setConstant (zeroV);
   zmpSOUT_.setConstant(zeroV);
-//  dynamicgraph::Vector height (1); height(0)=cartHeight_;
-//  comHeightSOUT_ = height;
-
 
   // Commands
   std::string docstring;
@@ -166,31 +163,56 @@ void LinearizedRotationalTableCartDevice::recomputeMatrices()
   double g = stateObservation::cst::gravityConstant;
   double m = cartMass_;
   stateObservation::Matrix3 Kth = stiffness_;
-  stateObservation::Matrix Kdth = viscosity_;
+  stateObservation::Matrix3 Kdth = viscosity_;
   stateObservation::Matrix I = I_;
   stateObservation::Vector cl = cl_;
 
-  A_ (0, 10) = 1.;
-  A_ (1, 11) = 1.;
-  A_ (2, 12) = 1.;
+  stateObservation::Matrix3 identity;
+  identity.setIdentity();
 
-  A_ (3, 13) = 1.;
-  A_ (4, 14) = 1.;
-  A_ (5, 15) = 1.;
+  stateObservation::Matrix3 ddomega_cl, ddomega_omegach, ddomega_omega, ddomega_dcl,
+                            ddomega_domegach, ddomega_domega, ddomega_ddcl, ddomega_ddomegach;
 
-  A_ (6, 16) = 1.;
-  A_ (7, 17) = 1.;
-  A_ (8, 18) = 1.;
+  // usefull variables for code factorisation  
+  stateObservation::Vector3 uz;
+  uz <<     0,
+            0,
+            1;
 
-  B_(10,0) = 1.;
-  B_(11,1) = 1.;
-  B_(12,2) = 1.;
+  stateObservation::Matrix Inertia;
+  Inertia = I;
+  Inertia -= m * kine::skewSymmetric(cl)*kine::skewSymmetric(cl);
+  Inertia = Inertia.inverse();
 
-  B_(13,3) = 1.;
-  B_(14,4) = 1.;
-  B_(15,5) = 1.;
+  stateObservation::Vector3 v;
+  v=-g*m*Inertia*kine::skewSymmetric(cl)*uz;
 
+  // Caracteristic polynomial
+  ddomega_cl=Inertia*(m*(-kine::skewSymmetric(kine::skewSymmetric(cl)*v)-kine::skewSymmetric(cl)*kine::skewSymmetric(v))+g*m*kine::skewSymmetric(uz));
+  ddomega_omegach=-Inertia*(-kine::skewSymmetric(I*v)+I*kine::skewSymmetric(v));
+  ddomega_omega=-kine::skewSymmetric(v)+Inertia*(-Kth-Kdth-g*m*kine::skewSymmetric(cl)*kine::skewSymmetric(uz));
+  ddomega_dcl.setZero();
+  ddomega_domegach.setZero();
+  ddomega_domega=-Inertia*Kdth;
 
+  ddomega_ddcl=-m*Inertia*kine::skewSymmetric(cl);
+  ddomega_ddomegach=Inertia*I;
+
+  // A_ and B_ computation
+  A_.block(0,9,2,2)=identity;
+  A_.block(3,12,2,2)=identity;
+  A_.block(6,15,2,2)=identity;
+  A_.block(15,0,2,2)=ddomega_cl;
+  A_.block(15,3,2,2)=ddomega_omegach;
+  A_.block(15,6,2,2)=ddomega_omega;
+  A_.block(15,9,2,2)=ddomega_dcl;
+  A_.block(15,12,2,2)=ddomega_domegach;
+  A_.block(15,15,2,2)=ddomega_domega;
+
+  B_.block(9,0,2,2)=identity;
+  B_.block(12,3,2,2)=identity;
+  B_.block(15,0,2,2)=ddomega_ddcl;
+  B_.block(15,3,2,2)=ddomega_ddomegach;
 }
 
 LinearizedRotationalTableCartDevice::~LinearizedRotationalTableCartDevice()
@@ -207,28 +229,22 @@ stateObservation::Vector LinearizedRotationalTableCartDevice::computeDynamics(
                                   stateObservation::Vector & zmp,
                                   stateObservation::Vector& output)
 {
-//  if (inState.size() != 18)
-//    throw dynamicgraph::ExceptionSignal(dynamicgraph::ExceptionSignal::GENERIC,
-//                                        "state signal size is ",
-//                                        "%d, should be 18.",
-//                                        inState.size());
+  if (inState.size() != 18)
+    throw dynamicgraph::ExceptionSignal(dynamicgraph::ExceptionSignal::GENERIC,
+                                        "state signal size is ",
+                                        "%d, should be 18.",
+                                        inState.size());
 
-  double dt = inTimeStep;
-  double g = stateObservation::cst::gravityConstant;
-  double m = cartMass_;
-  stateObservation::Matrix Kth = stiffness_;
-  stateObservation::Matrix Kdth = viscosity_;
-  stateObservation::Matrix I = I_;
+//  double dt = inTimeStep;
+//  double g = stateObservation::cst::gravityConstant;
+//  double m = cartMass_;
+//  stateObservation::Matrix Kth = stiffness_;
+//  stateObservation::Matrix Kdth = viscosity_;
+//  stateObservation::Matrix I = I_;
+//  stateObservation::Vector cl=cl_;
 
-  stateObservation::Vector cl=cl_;
+  recomputeMatrices();
 
-//  A_ (0, 2) = 1.;
-//  A_ (1, 3) = 1.;
-//  A_ (3, 0) = - m*g/(m*zeta*zeta + Iyy);
-//  A_ (3, 1) = (m*g*zeta - kth)/(m*zeta*zeta + Iyy);
-//  A_ (3, 3) = -kdth/(m*zeta*zeta + Iyy);
-//  B_ (2, 0) = 1.; B_ (3, 0) = m*zeta/(m*zeta*zeta + Iyy);
-//
 //  double xi = inState (0);
 //  double th = inState (1);
 //  double dth = inState (3);
