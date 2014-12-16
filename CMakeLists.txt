@@ -59,6 +59,7 @@ SET(${PROJECT_NAME}_HEADERS
     include/sot-stabilizer/prototyping/decoupled-elastic-inv-pendulum-simulator.hh
     include/sot-stabilizer/prototyping/zmp-to-com-algebraic-controller.hh
     include/sot-stabilizer/prototyping/linearized-table-cart-device.hh
+    include/sot-stabilizer/prototyping/linearized-rotational-table-cart-device.hh
 )
 
 

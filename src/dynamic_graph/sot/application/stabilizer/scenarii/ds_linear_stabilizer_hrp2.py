@@ -13,7 +13,8 @@ class DSLinearStabilizerHRP2(DSStabilizer):
     def createStabilizedCoMTask (self):
         task = HRP2LinearStabilizer(self.robot)
         gain = GainAdaptive('gain'+task.name)
-        plug(self.comRef,task.comRef)
+	self.refCom.value=self.comRef.value # initialization of the reference of com in the global frame
+        plug(self.refCom,task.comRef)
         task.comdot.value = (0.0,)*3
         plug(gain.gain, task.controlGain)
         plug(task.error, gain.error) 

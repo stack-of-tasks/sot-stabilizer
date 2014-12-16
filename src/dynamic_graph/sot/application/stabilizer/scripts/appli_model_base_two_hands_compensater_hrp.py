@@ -23,6 +23,7 @@ contactNbr = est1.signal('contactNbr')
 
 # Definition des contacts
 contactNbr.value = 2
+est1.setContactModelNumber(1)
 rFootPos = MatrixHomoToPoseRollPitchYaw('rFootFramePos')
 lFootPos = MatrixHomoToPoseRollPitchYaw('lFootFramePos')
 plug(robot.frames['rightFootForceSensor'].position,rFootPos.sin)
@@ -69,6 +70,7 @@ appli.robot.addTrace( est1.name,'inovation' )
 appli.robot.addTrace( est1.name,'prediction' )
 appli.robot.addTrace( robot.device.name, 'forceLLEG')
 appli.robot.addTrace( robot.device.name, 'forceRLEG')
+appli.robot.addTrace( est1.name,  'forcesAndMoments')
 appli.robot.addTrace( robot.device.name, 'accelerometer')
 appli.robot.addTrace( robot.device.name,  'gyrometer')
 

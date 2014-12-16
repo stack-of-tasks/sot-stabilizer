@@ -218,6 +218,7 @@ namespace sotStabilizer
         supportCandidateRf_ = 0;
         iterationsSinceLastSupportRf_ ++;
       }
+
       if (flz >= forceThreshold_)
       {
         leftFootPosition.extract(rfpos);
@@ -307,7 +308,7 @@ namespace sotStabilizer
 
         // Along z
         dcom_ (2) = -gain * deltaCom_(3);
-std::cout << "coucou5" << std::endl;
+
     }
 
     if(nbSupport_ < 2 && nbSupport_ !=0){ // rotation around x (simple support only)
