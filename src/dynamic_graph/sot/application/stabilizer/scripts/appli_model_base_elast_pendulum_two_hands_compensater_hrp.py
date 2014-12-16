@@ -43,8 +43,8 @@ contact1Pos = MatrixHomoToPose('contact1Pos')
 plug(contact1OpPoint.position, contact1Pos.sin)
 contact1 = Stack_of_vector ('contact1')
 contact1.sin1.value = Peg
-#plug(contact1Pos.sout,contact1.sin2)
-contact1.sin2.value = (0,-0.15,1.28)
+plug(contact1Pos.sout,contact1.sin2)
+#contact1.sin2.value = (0,-0.15,1.28)
 contact1.selec1 (0, 3)
 contact1.selec2 (0, 3)
 
@@ -58,8 +58,8 @@ contact2Pos = MatrixHomoToPose('contact2Pos')
 plug(contact2OpPoint.position, contact2Pos.sin)
 contact2 = Stack_of_vector ('contact2')
 contact2.sin1.value = Peg
-contact2.sin2.value = (0,0.15,1.28)
-#plug(contact2Pos.sout,contact2.sin2)
+plug(contact2Pos.sout,contact2.sin2)
+#contact2.sin2.value = (0,0.15,1.28)
 contact2.selec1 (0, 3)
 contact2.selec2 (0, 3)
 
@@ -74,7 +74,7 @@ plug(est1.contacts.sout,est1.inputVector.contactsPosition)
 
 # Simulation: Stifness and damping
 kfe=4000
-kfv=600 #600
+kfv=250 #600
 kte=600
 ktv=60
 est1.setKfe(matrixToTuple(np.diag((kfe,kfe,kfe))))
@@ -147,6 +147,7 @@ plug(flex,appli.ccMc)
 plug(flexdot,appli.ccVc)
 
 est1.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-2,)*3+(1e-6,)*3)))
+#est1.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e0,)*3+(1e0,)*3)))
 appli.gains['trunk'].setConstant(2)
 
 
