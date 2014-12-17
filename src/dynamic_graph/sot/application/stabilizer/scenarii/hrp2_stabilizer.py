@@ -31,6 +31,7 @@ class HRP2Stabilizer(HRP2LQRDecoupledStabilizer):
 
         self.estimator = HRP2ModelBaseFlexEstimator(robot, taskname+"Estimator")
         plug (self.nbSupport,self.estimator.contactNbr)
+        self.estimator.setContactModel(1)
 
 
         self.contacts = Stack_of_vector (taskname+'contacts')
@@ -59,6 +60,8 @@ class HRP2Stabilizer(HRP2LQRDecoupledStabilizer):
         plug(self.comdot,           self.comVectorPV.sin2)
         plug(self.comVectorPV.sout, self.comVector.sin1)
         plug(self.comddot,          self.comVector.sin2)
+
+
         
 
 
