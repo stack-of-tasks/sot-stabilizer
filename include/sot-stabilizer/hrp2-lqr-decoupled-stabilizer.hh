@@ -71,6 +71,7 @@ namespace sotStabilizer
     static double constm_;
     static double constcomHeight_;
     static double conststepLength_;
+    static double comddotBound;
 
     /// Constructor by name
     HRP2LQRDecoupledStabilizer(const std::string& inName);

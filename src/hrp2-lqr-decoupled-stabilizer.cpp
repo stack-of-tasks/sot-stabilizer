@@ -51,6 +51,8 @@ namespace sotStabilizer
   double HRP2LQRDecoupledStabilizer::constm_ = 59.8;
   double HRP2LQRDecoupledStabilizer::constcomHeight_ = 0.807;
   double HRP2LQRDecoupledStabilizer::conststepLength_ = 0.19;
+  double HRP2LQRDecoupledStabilizer::comddotBound = stateObservation::cst::gravityConstant*0.60/constcomHeight_; // A limit for the com acceleration (considering ZMP should never be beyond 0.6m from com)
+
 
   const unsigned stateSize_=6;
 
@@ -733,6 +735,8 @@ namespace sotStabilizer
 
       controller1x_.setState(xVector,time);
       d2com_ (0)= controller1x_.getControl(time)[0];
+      if (abs(d2com_ (0))>comddotBound)
+        d2com_ (0) = stateObservation::tools::signum(d2com_ (0)*comddotBound);
 
       // along y
       theta1 = +flexibility (0);
@@ -751,6 +755,8 @@ namespace sotStabilizer
 
       controller1y_.setState(xVector,time);
       d2com_ (1)= controller1y_.getControl(time)[0];
+      if (abs(d2com_ (1))>comddotBound)
+        d2com_ (1) = stateObservation::tools::signum(d2com_ (1)*comddotBound);
 
 
       debug_(0)=x;
@@ -877,6 +883,8 @@ namespace sotStabilizer
 
       controller2_.setState(xVector,time);
       ddcomi= controller2_.getControl(time)[0];
+      if (abs(ddcomi)>comddotBound)
+        ddcomi = stateObservation::tools::signum(ddcomi*comddotBound);
 
 
       //along the contacts line
@@ -900,6 +908,8 @@ namespace sotStabilizer
 
       controllerLat_.setState(xVector,time);
       ddcomlat= controllerLat_.getControl(time)[0];
+      if (abs(ddcomlat)>comddotBound)
+        ddcomlat = stateObservation::tools::signum(ddcomlat*comddotBound);
 
 
 
