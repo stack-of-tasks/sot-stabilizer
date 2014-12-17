@@ -126,7 +126,7 @@ stabilizer.setStateCost1(matrixToTuple(np.diag((1e5,1,1e2,1,1e4,10))))
 #stabilizer.setStateCostLat(matrixToTuple(np.diag((1e3,1,1,1,1e6,1e4))))
 
 
-stabilizer.setStateCostLat(matrixToTuple(np.diag((1e5,1,1e0,1,1e5,100))))
+#stabilizer.setStateCostLat(matrixToTuple(np.diag((1e5,1,1e0,1,1e5,100))))
 #stabilizer.setFixedGains(True)
 
 #stabilizer.stateFlexDDot.value = (0,0,0)
