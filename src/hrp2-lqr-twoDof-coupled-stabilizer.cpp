@@ -112,6 +112,7 @@ namespace sotStabilizer
     zmpRefSOUT_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::zmpRefOUT"),
     errorSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::error"),
     stateSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::state"),
+    controlSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::control"),
     supportPos1SOUT_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::supportPos1"),
     supportPos2SOUT_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::supportPos2"),
     dt_ (.005), on_ (false),
@@ -143,6 +144,7 @@ namespace sotStabilizer
     signalRegistration (nbSupportSOUT_ << supportPos1SOUT_ << supportPos2SOUT_);
     signalRegistration (errorSOUT_);
     signalRegistration (stateSOUT_);
+    signalRegistration (controlSOUT_);
     signalRegistration (zmpRefSOUT_);
     signalRegistration (inertiaSIN);
 
@@ -582,6 +584,7 @@ namespace sotStabilizer
     errorSOUT_.setTime (time);
 
     stateSOUT_.setConstant (convertVector<dynamicgraph::Vector>(xk));
+    controlSOUT_.setConstant (convertVector<dynamicgraph::Vector>(u));
 
     return task;
   }

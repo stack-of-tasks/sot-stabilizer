@@ -45,6 +45,8 @@ appli.robot.addTrace( robot.device.name, 'accelerometer')
 appli.robot.addTrace( robot.device.name, 'gyrometer')
 appli.robot.addTrace( realcom.name, 'sout')
 appli.robot.addTrace ( appli.waistMatrixToUTheta.name, 'sout')
+appli.robot.addTrace ( stabilizer.name,'state')
+appli.robot.addTrace ( stabilizer.name,'control')
 
 appli.startTracer()
 
