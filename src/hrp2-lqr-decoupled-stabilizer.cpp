@@ -533,10 +533,9 @@ namespace sotStabilizer
     const Vector& forceLf = forceLeftFootSIN_.access (time);
     const Vector& forceRf = forceRightFootSIN_.access (time);
 
+
     Vector forcetorque(6*2);
     forcetorque.setZero();
-
-
 
     Vector flexibilityPos(3);
     MatrixRotation flexibilityRot;

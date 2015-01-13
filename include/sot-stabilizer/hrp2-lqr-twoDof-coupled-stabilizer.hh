@@ -199,7 +199,7 @@ namespace sotStabilizer
     }
 
 
-    inline void computeDynamicsMatrix(const stateObservation::Vector cl, const stateObservation::Matrix Kth, const stateObservation::Matrix Kdth, const int& time);
+    inline void computeDynamicsMatrix(const stateObservation::Vector3 cl, const stateObservation::Matrix Kth, const stateObservation::Matrix Kdth, const int& time);
 
   private:
 
@@ -301,10 +301,7 @@ namespace sotStabilizer
     // Number of feet in support
     unsigned int nbSupport_;
     double forceThreshold_; // Threshold on normal force above which the foot is considered in contact
-    unsigned int iterationsSinceLastSupportLf_;
-    unsigned int iterationsSinceLastSupportRf_;
-    unsigned int supportCandidateLf_;
-    unsigned int supportCandidateRf_;
+    Vector supportPos1_, supportPos2_;
 
     Vector zmp_;
 

@@ -115,6 +115,7 @@ namespace sotStabilizer
     supportPos2SOUT_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::supportPos2"),
     dt_ (.005), on_ (false),
     forceThreshold_ (.036 * constm_*stateObservation::cst::gravityConstant),
+    supportPos1_(3), supportPos2_(3),
     fixedGains_(false), zmpMode_(true),
     zmp_ (3),
     controller_(stateSize_,controlSize_),
@@ -202,8 +203,10 @@ namespace sotStabilizer
 
     supportPos1SOUT_.setConstant (lfconf);
     supportPos1SOUT_.setTime (0);
+    supportPos1_=lfconf;
     supportPos2SOUT_.setConstant (rfconf);
     supportPos2SOUT_.setTime (0);
+    supportPos2_=rfconf;
 
     nbSupportSOUT_.setConstant (2);
     nbSupportSOUT_.setTime (0);
@@ -389,9 +392,7 @@ namespace sotStabilizer
     cl.setZero();
     computeDynamicsMatrix(cl,Kth_,Kdth_,0);
 
-
     controller_.setDynamicsMatrices(A_, B_);
-
     controller_.setCostMatrices(Q_,R_);
 
     hrp2Mass_ = 58;
@@ -411,9 +412,6 @@ namespace sotStabilizer
       Vector rfpos(3);
       Vector lfpos(3);
 
-      leftFootPosition.extract(rfpos);
-      rightFootPosition.extract(lfpos);
-
       // Express vertical component of force in global basis
       double flz = leftFootPosition (2,0) * forceLf (0) +
                    leftFootPosition(2,1) * forceLf (1) +
@@ -422,7 +420,6 @@ namespace sotStabilizer
                    rightFootPosition(2,1) * forceRf (1) +
                    rightFootPosition (2,2) * forceRf (2);
 
-
       //compute the number of supports
       nbSupport_ = 0;
       if (frz >= forceThreshold_)
@@ -430,21 +427,25 @@ namespace sotStabilizer
         rightFootPosition.extract(rfpos);
         nbSupport_++;
         supportPos1SOUT_.setConstant (rfpos);
+        supportPos1SOUT_.setTime (time);
+        supportPos1_=rfpos;
       }
 
       if (flz >= forceThreshold_)
       {
-        leftFootPosition.extract(rfpos);
+        leftFootPosition.extract(lfpos);
         nbSupport_++;
         if (nbSupport_==0)
         {
-          supportPos1SOUT_.setConstant (rfpos);
+          supportPos1SOUT_.setConstant (lfpos);
           supportPos1SOUT_.setTime (time);
+          supportPos1_=lfpos;
         }
         else
         {
-          supportPos2SOUT_.setConstant (rfpos);
+          supportPos2SOUT_.setConstant (lfpos);
           supportPos2SOUT_.setTime (time);
+          supportPos2_=lfpos;
         }
       }
 
@@ -522,7 +523,7 @@ namespace sotStabilizer
         break;
         case 1: // Single support
         {
-             computeDynamicsMatrix(com,Kth_,Kdth_,time);
+             computeDynamicsMatrix(comRefg,Kth_,Kdth_,time);
              controller_.setDynamicsMatrices(A_,B_);
              controller_.setState(xk,time);
              u=controller_.getControl(time);
@@ -540,11 +541,10 @@ namespace sotStabilizer
 
               // TODO: when feet are not aligned along the y axis
 
-              computeDynamicsMatrix(com,Kth,Kdth,time);
+              computeDynamicsMatrix(comRefg,Kth,Kdth,time);
               controller_.setDynamicsMatrices(A_,B_);
               controller_.setState(xk,time);
               u=controller_.getControl(time);
-
               preTask=dt_*u;
         }
         break;
@@ -593,7 +593,7 @@ namespace sotStabilizer
   }
 
 
-  void HRP2LQRTwoDofCoupledStabilizer::computeDynamicsMatrix(const stateObservation::Vector cl, const stateObservation::Matrix Kth, const stateObservation::Matrix Kdth, const int& time)
+  void HRP2LQRTwoDofCoupledStabilizer::computeDynamicsMatrix(const stateObservation::Vector3 cl, const stateObservation::Matrix Kth, const stateObservation::Matrix Kdth, const int& time)
   {
     double g = stateObservation::cst::gravityConstant;
     double m = hrp2Mass_;
