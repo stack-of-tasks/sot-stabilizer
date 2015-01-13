@@ -109,6 +109,11 @@ namespace sotStabilizer
             */
             dynamicgraph::SignalPtr < dynamicgraph::sot::Flags, int> selecSIN;
 
+            /**
+            \brief selection matrix
+            */
+            dynamicgraph::SignalPtr < dynamicgraph::Vector, int> selecVectorSIN;
+
             double perturbationMode_;
             double perturbationPeriod_;
 

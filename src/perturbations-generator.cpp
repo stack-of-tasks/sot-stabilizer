@@ -26,6 +26,8 @@ namespace sotStabilizer
         soutSOUT( "VectorPerturbationsGenerator("+inName+")::output(vector)::sout"),
         selecSIN(0x0 ,
                 "VectorPerturbationsGenerator("+inName+")::input(flags)::selec"),
+        selecVectorSIN(0x0 ,
+                        "VectorPerturbationsGenerator("+inName+")::input(Vector)::selecVector"),
         on_(false),
         currentTime_(0)
     {
@@ -33,6 +35,7 @@ namespace sotStabilizer
         signalRegistration (soutSOUT);
         signalRegistration (perturbationSIN);
         signalRegistration (selecSIN);
+        signalRegistration (selecVectorSIN);
 
         iterationNumber_ = 0;
 
@@ -182,7 +185,6 @@ namespace sotStabilizer
 
                     ++timeSinceLast_;
                 }
-
 
             }
             else
