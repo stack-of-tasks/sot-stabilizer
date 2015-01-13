@@ -199,7 +199,7 @@ namespace sotStabilizer
     }
 
 
-    inline void computeDynamicsMatrix(const stateObservation::Matrix Kth, const stateObservation::Matrix Kdth, const int& time);
+    inline void computeDynamicsMatrix(const stateObservation::Vector cl, const stateObservation::Matrix Kth, const stateObservation::Matrix Kdth, const int& time);
 
   private:
 

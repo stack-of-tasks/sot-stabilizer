@@ -387,7 +387,9 @@ namespace sotStabilizer
 
     controller_.setHorizonLength(horizon);
 
-    computeDynamicsMatrix(Kth_,Kdth_,0);
+    stateObservation::Vector3 cl;
+    cl.setZero();
+    computeDynamicsMatrix(cl,Kth_,Kdth_,0);
 
 
     controller_.setDynamicsMatrices(A_, B_);
@@ -544,7 +546,7 @@ namespace sotStabilizer
         break;
         case 1: // Single support
         {
-             computeDynamicsMatrix(Kth_,Kdth_,time);
+             computeDynamicsMatrix(com,Kth_,Kdth_,time);
              controller_.setDynamicsMatrices(A_,B_);
              controller_.setState(xk,time);
              u=controller_.getControl(time);
@@ -562,7 +564,7 @@ namespace sotStabilizer
 
               // TODO: when feet are not aligned along the y axis
 
-              computeDynamicsMatrix(Kth,Kdth,time);
+              computeDynamicsMatrix(com,Kth,Kdth,time);
               controller_.setDynamicsMatrices(A_,B_);
               controller_.setState(xk,time);
               u=controller_.getControl(time);
@@ -615,11 +617,10 @@ namespace sotStabilizer
   }
 
 
-  void HRP2LQRTwoDofCoupledStabilizer::computeDynamicsMatrix(const stateObservation::Matrix Kth, const stateObservation::Matrix Kdth, const int& time)
+  void HRP2LQRTwoDofCoupledStabilizer::computeDynamicsMatrix(const stateObservation::Vector cl, const stateObservation::Matrix Kth, const stateObservation::Matrix Kdth, const int& time)
   {
     double g = stateObservation::cst::gravityConstant;
     double m = hrp2Mass_;
-    stateObservation::Vector cl = convertVector<stateObservation::Vector>(comSIN_ (time));
 
     stateObservation::Matrix I = computeInert(cl,time);
     stateObservation::Matrix3 identity;
