@@ -14,25 +14,32 @@ class DSLqrTwoDofCoupledStabilizerHRP2(DSStabilizer):
     def createStabilizedCoMTask (self):
         task = HRP2LqrTwoDofCoupledStabilizer(self.robot)
         gain = GainAdaptive('gain'+task.name)
-	self.refCom=self.comRef.value # initialization of the reference of com in the global frame
-	waistHomoToMatrix = HomoToRotation ('waistHomoToMatrix')
-	plug(self.robot.dynamic.waist,waistHomoToMatrix.sin)
-	#waistHomoToMatrix.sin.value = self.robot.dynamic.waist.value
-	self.waistMatrixToUTheta = MatrixToUTheta('waistMatrixToUTheta')
-	plug(waistHomoToMatrix.sout,self.waistMatrixToUTheta.sin)
-	#waistMatrixToUTheta.sin.value = waistHomoToMatrix.sout.value
 
-        self.DCom = Multiply_matrix_vector('DCom')
+        self.DCom = Multiply_matrix_vector('DCom') # Com velocity: self.DCom.sout
         plug(self.robot.dynamic.Jcom,self.DCom.sin1)
         plug(self.robot.device.velocity,self.DCom.sin2)
+
+	waistHomoToMatrix = HomoToRotation ('waistHomoToMatrix') # Waist orientation: self.waistMatrixToUTheta.sout
+	plug(self.robot.dynamic.waist,waistHomoToMatrix.sin)
+	self.waistMatrixToUTheta = MatrixToUTheta('waistMatrixToUTheta')
+	plug(waistHomoToMatrix.sout,self.waistMatrixToUTheta.sin)
+
+        self.DWaist = Multiply_matrix_vector('DWaist') # Waist angulat velocity: self.DWaist.sout
+        plug(self.robot.dynamic.Jwaist,self.DWaist.sin1)
+        plug(self.robot.device.velocity,self.DWaist.sin2)
 	
+	# References
 	task.waistOriRefg.value=self.waistMatrixToUTheta.sout.value
+
+	task.comRefg.value[0] = 0.5*(stabilizer.supportPos1[0]+stabilizer.supportPos2[0])
+	task.comRefg.value[1] = 0.5*(stabilizer.supportPos1[1]+stabilizer.supportPos2[1])
+	task.comRefg.value[2] = self.comRef.value[2]
+
+	# Control state
 	plug(self.waistMatrixToUTheta.sout,task.waistOri)
-	task.comRefg.value = self.refCom
-        #plug(self.refCom,task.comRef)
 	plug(self.DCom.sout,task.comDot)
-        task.comdot.value = (0.0,)*3
-	task.waistAngVel.value = (0.0,)*3
+	plug(self.DWaist.sout,task.waistVel)
+
         plug(gain.gain, task.controlGain)
         plug(task.error, gain.error) 
         return (task, gain)

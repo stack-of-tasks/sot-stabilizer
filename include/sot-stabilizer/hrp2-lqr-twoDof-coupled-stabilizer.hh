@@ -235,7 +235,7 @@ namespace sotStabilizer
     // Orientation of the waist
     SignalPtr < dynamicgraph::Vector, int > waistOriSIN_;
         // Refrence angular velocity of the waist
-    SignalPtr < dynamicgraph::Vector , int > waistAngVelSIN_;
+    SignalPtr < dynamicgraph::Vector , int > waistVelSIN_;
     // Reference  angular acceleration of the waist
     SignalPtr < dynamicgraph::Vector, int> waistAngAccSIN_;
 

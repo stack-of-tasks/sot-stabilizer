@@ -80,7 +80,7 @@ namespace sotStabilizer
     comddotRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comddotRef"),
     waistOriSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistOri"),
     waistOriRefgSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistOriRefg"),
-    waistAngVelSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistAngVel"),
+    waistVelSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistVel"),
     waistAngAccSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistAngAcc"),
     jacobianWaistSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::Jwaist"),
     zmpRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::zmpRef"),
@@ -151,7 +151,7 @@ namespace sotStabilizer
 
     signalRegistration (waistOriSIN_);
     signalRegistration (waistOriRefgSIN_);
-    signalRegistration (waistAngVelSIN_);
+    signalRegistration (waistVelSIN_);
     signalRegistration (waistAngAccSIN_);
     signalRegistration (jacobianWaistSIN_);
 
@@ -491,7 +491,8 @@ namespace sotStabilizer
 
     // Waist orientation
     const stateObservation::Vector3 & waistOri = convertVector<stateObservation::Vector>(waistOriSIN_ (time));
-    const stateObservation::Vector3 & waistAngVel = convertVector<stateObservation::Vector>(waistAngVelSIN_ (time));
+    const stateObservation::Vector & waistVel = convertVector<stateObservation::Vector>(waistVelSIN_ (time));
+    const stateObservation::Vector3 & waistAngVel = waistVel.block(3,0,3,1);
 
     // Flexibility
     const stateObservation::Vector3 & flexOriVect = convertVector<stateObservation::Vector>(flexOriVectSIN_.access(time));
@@ -537,7 +538,7 @@ namespace sotStabilizer
         break;
         case 1: // Single support
         {
-             computeDynamicsMatrix(comRefl,Kth_,Kdth_,time);
+             computeDynamicsMatrix(comRefg,Kth_,Kdth_,time);
              controller_.setDynamicsMatrices(A_,B_);
              controller_.setState(xk,time);
              u=controller_.getControl(time);
@@ -555,7 +556,7 @@ namespace sotStabilizer
 
               // TODO: when feet are not aligned along the y axis
 
-              computeDynamicsMatrix(comRefl,Kth,Kdth,time);
+              computeDynamicsMatrix(comRefg,Kth,Kdth,time);
               controller_.setDynamicsMatrices(A_,B_);
               controller_.setState(xk,time);
               u=controller_.getControl(time);
