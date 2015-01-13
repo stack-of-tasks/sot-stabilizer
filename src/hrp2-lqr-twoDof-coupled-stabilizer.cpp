@@ -111,6 +111,7 @@ namespace sotStabilizer
     ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(unsigned)::nbSupport"),
     zmpRefSOUT_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::zmpRefOUT"),
     errorSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::error"),
+    stateSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::state"),
     supportPos1SOUT_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::supportPos1"),
     supportPos2SOUT_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::supportPos2"),
     dt_ (.005), on_ (false),
@@ -141,6 +142,7 @@ namespace sotStabilizer
     signalRegistration (comddotSOUT_ <<comddotRefSOUT_);
     signalRegistration (nbSupportSOUT_ << supportPos1SOUT_ << supportPos2SOUT_);
     signalRegistration (errorSOUT_);
+    signalRegistration (stateSOUT_);
     signalRegistration (zmpRefSOUT_);
     signalRegistration (inertiaSIN);
 
@@ -378,9 +380,11 @@ namespace sotStabilizer
                 0,0,65;
 
     Q_.setIdentity();
-    Q_.noalias()=10*Q_;
+    Q_.noalias()=1*Q_;
 
     R_.setIdentity();
+    R_.noalias()=1000*R_;
+
 
     zmp_.setZero ();
 
@@ -490,6 +494,7 @@ namespace sotStabilizer
     // Flexibility
     const stateObservation::Vector3 & flexOriVect = convertVector<stateObservation::Vector>(flexOriVectSIN_.access(time));
     const stateObservation::Vector3 & flexAngVelVect = convertVector<stateObservation::Vector>(flexAngVelVectSIN_.access(time));
+    const MatrixHomogeneous& flexHomo = stateFlexSIN_.access(time);
 
     // Error
     stateObservation::Vector dCom = com - comRefg;
@@ -513,6 +518,13 @@ namespace sotStabilizer
     stateObservation::Vector preTask;
     preTask.resize(controlSize_);
 
+    stateObservation::Vector comRefl;
+    Vector flexPos(3);
+    Matrix flexRot(3,3);
+    flexHomo.extract(flexPos);
+    flexHomo.extract(flexRot);
+    comRefl= convertMatrix<stateObservation::Matrix>(flexRot).transpose()*(comRefg-convertVector<stateObservation::Vector>(flexPos));
+
     switch (nbSupport_)
     {
         case 0: // No support
@@ -523,7 +535,7 @@ namespace sotStabilizer
         break;
         case 1: // Single support
         {
-             computeDynamicsMatrix(comRefg,Kth_,Kdth_,time);
+             computeDynamicsMatrix(comRefl,Kth_,Kdth_,time);
              controller_.setDynamicsMatrices(A_,B_);
              controller_.setState(xk,time);
              u=controller_.getControl(time);
@@ -541,7 +553,7 @@ namespace sotStabilizer
 
               // TODO: when feet are not aligned along the y axis
 
-              computeDynamicsMatrix(comRefg,Kth,Kdth,time);
+              computeDynamicsMatrix(comRefl,Kth,Kdth,time);
               controller_.setDynamicsMatrices(A_,B_);
               controller_.setState(xk,time);
               u=controller_.getControl(time);
@@ -568,6 +580,8 @@ namespace sotStabilizer
     error(5)=dWaistOri(2);
     errorSOUT_.setConstant (error);
     errorSOUT_.setTime (time);
+
+    stateSOUT_.setConstant (convertVector<dynamicgraph::Vector>(xk));
 
     return task;
   }

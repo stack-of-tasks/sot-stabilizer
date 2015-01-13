@@ -290,6 +290,9 @@ namespace sotStabilizer
     ///error output
     SignalTimeDependent <Vector, int> errorSOUT_;
 
+    ///state output
+    SignalTimeDependent <Vector, int> stateSOUT_;
+
     ///Reference ZMP
     SignalTimeDependent <Vector, int> zmpRefSOUT_;
 
