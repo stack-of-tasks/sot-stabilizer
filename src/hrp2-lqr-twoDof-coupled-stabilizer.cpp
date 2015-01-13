@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2012,
-// Florent Lamiraux
+// Copyright (c) 2014,
+// Alexis Mifsud
 //
 // CNRS
 //
@@ -92,6 +92,8 @@ namespace sotStabilizer
     (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::stateFlexDDot"),
     controlGainSIN_
     (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(double)::controlGain"),
+    inertiaSIN(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::inertia"),
+    positionWaistSIN(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::positionWaist"),
     comdotSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::comdot"),
     comddotSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::comddot"),
     comddotRefSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::comddotRefOUT"),
@@ -99,23 +101,14 @@ namespace sotStabilizer
     ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(unsigned)::nbSupport"),
     zmpRefSOUT_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::zmpRefOUT"),
     errorSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::error"),
-    debugSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::debug"),
     supportPos1SOUT_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::supportPos1"),
     supportPos2SOUT_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::supportPos2"),
-    prevCom_(3), dcom_ (3), dt_ (.005), on_ (false),
+    dt_ (.005), on_ (false),
     forceThreshold_ (.036 * constm_*stateObservation::cst::gravityConstant),
-    angularStiffness_ (425.), d2com_ (3),
-    deltaCom_ (3),
-    flexPosition_ (), flexPositionLf_ (), flexPositionRf_ (),
-    flexPositionLat_ (),
-    flexVelocity_ (6), flexVelocityLf_ (6), flexVelocityRf_ (6),
-    flexVelocityLat_ (6),
-    timeBeforeFlyingFootCorrection_ (.1),
     iterationsSinceLastSupportLf_ (0), iterationsSinceLastSupportRf_ (0),
     supportCandidateLf_ (0), supportCandidateRf_ (0),
-    uth_ (),fixedGains_(false), zmpMode_(true),
-    translation_ (3), zmp_ (3),comddotRef_(3),
-    theta1Ref_ (0), theta1RefPrev_ (0), dtheta1Ref_ (0), debug_(14),
+    fixedGains_(false), zmpMode_(true),
+    zmp_ (3),
     controller_(stateSize_,1),
     A_(stateObservation::Matrix::Zero(stateSize_,stateSize_)),
     B_(stateObservation::Matrix::Zero(stateSize_,1)),
@@ -138,8 +131,13 @@ namespace sotStabilizer
     signalRegistration (nbSupportSOUT_ << supportPos1SOUT_ << supportPos2SOUT_);
     signalRegistration (errorSOUT_);
     signalRegistration (zmpRefSOUT_);
-    signalRegistration (debugSOUT_);
+    signalRegistration (inertiaSIN);
+    dynamicgraph::Matrix inertia(6);
+    inertiaSIN.setConstant(inertia);
 
+    signalRegistration (positionWaistSIN);
+    dynamicgraph::Matrix positionWaist;
+    positionWaistSIN.setConstant(positionWaist);
 
     taskSOUT.addDependency (comSIN_);
     taskSOUT.addDependency (comRefSIN_);
@@ -169,21 +167,10 @@ namespace sotStabilizer
 
     jacobianSOUT.addDependency (jacobianSIN_);
 
-    taskSOUT.setFunction (boost::bind(&HRP2LQRTwoDofCoupledStabilizer::computeControlFeedback,
-                                      this,_1,_2));
+    taskSOUT.setFunction (boost::bind(&HRP2LQRTwoDofCoupledStabilizer::computeControlFeedback,this,_1,_2));
     jacobianSOUT.setFunction (boost::bind(&HRP2LQRTwoDofCoupledStabilizer::computeJacobianCom,
                                           this,_1,_2));
     nbSupportSOUT_.addDependency (taskSOUT);
-
-    d2com_.setZero ();
-
-    dcom_.setZero ();
-    deltaCom_.setZero ();
-    comddotSOUT_.setConstant (d2com_);
-    comdotSOUT_.setConstant (d2com_);
-    comddotRefSOUT_.setConstant (d2com_);
-    flexVelocity_.setZero ();
-    flexVelocityLat_.setZero ();
 
 
     Vector rfconf(6);
@@ -334,54 +321,38 @@ namespace sotStabilizer
                (*this, &HRP2LQRTwoDofCoupledStabilizer::setHorizon, docstring));
 
 
-    addCommand ("getKth",
-                makeDirectGetter (*this, &kth_,
-                                  docDirectGetter
-                                  ("Set angular elasticity","float")));
 
-    addCommand ("getKz",
-                makeDirectGetter (*this, &kz_,
-                                  docDirectGetter
-                                  ("Set linear elasticity","float")));
+    docstring  =
+            "\n"
+            "    Sets the angular stifness of the flexibility \n"
+            "\n";
 
-    addCommand ("setKth",
-                makeDirectSetter (*this, &kth_,
-                                  docDirectSetter
-                                  ("Set angular elasticity","float")));
+    addCommand(std::string("setKth"),
+               new ::dynamicgraph::command::Setter <HRP2LQRTwoDofCoupledStabilizer,dynamicgraph::Matrix>
+                (*this, & HRP2LQRTwoDofCoupledStabilizer::setKth ,docstring));
 
-    addCommand ("setKz",
-                makeDirectSetter (*this, &kz_,
-                                  docDirectSetter
-                                  ("Set linear elasticity","float")));
+    docstring  =
+            "\n"
+            "    Sets the angular damping of the flexibility \n"
+            "\n";
 
-    addCommand ("getKdth",
-                makeDirectGetter (*this, &kdth_,
-                                  docDirectGetter
-                                  ("Set angular viscosity","float")));
-
-    addCommand ("setKdth",
-                makeDirectSetter (*this, &kdth_,
-                                  docDirectSetter
-                                  ("Set angular viscosity","float")));
-
-    addCommand ("setRFOffset",
-                makeDirectSetter (*this, &kdth_,
-                                  docDirectSetter
-                                  ("Set angular viscosity","float")));
+    addCommand(std::string("setKdth"),
+               new ::dynamicgraph::command::Setter <HRP2LQRTwoDofCoupledStabilizer,dynamicgraph::Matrix>
+                (*this, & HRP2LQRTwoDofCoupledStabilizer::setKdth ,docstring));
 
 
 
-    prevCom_.fill (0.);
+    Kth_ << 600,0,0,
+            0,600,0,
+            0,0,600;
 
+    Kdth_ <<    65,0,0,
+                0,65,0,
+                0,0,65;
 
-    kth_ = 600;
-    kdth_ = 65;
-    kz_= 53200;//150000;
 
     Q_(0,0)=Q_(2,2)=Q_(4,4)=10;
     R_(0,0)=1;
-
-    debug_.setZero();
 
     zmp_.setZero ();
 
@@ -389,9 +360,7 @@ namespace sotStabilizer
 
     controller_.setHorizonLength(horizon);
 
-    A_=computeDynamicsMatrix(kth_, kdth_, constm_);
-    B_=computeInputMatrix(kth_, kdth_, constm_);
-
+    computeDynamicsMatrix(0);
     controller_.setDynamicsMatrices(A_, B_);
     controller_.setCostMatrices(Q_,R_);
 
@@ -413,7 +382,6 @@ namespace sotStabilizer
 
       leftFootPosition.extract(rfpos);
       rightFootPosition.extract(lfpos);
-
 
       // Express vertical component of force in global basis
       double flz = leftFootPosition (2,0) * forceLf (0) +
@@ -525,22 +493,118 @@ namespace sotStabilizer
   }
 
 
-  stateObservation::Matrix HRP2LQRTwoDofCoupledStabilizer::computeDynamicsMatrix
-    (double kth, double kdth, double mass)
+  void HRP2LQRTwoDofCoupledStabilizer::computeDynamicsMatrix(const int& time)
   {
     stateObservation::Matrix A(stateObservation::Matrix::Zero(stateSize_,stateSize_));
 
+    double g = stateObservation::cst::gravityConstant;
+    double m = hrp2Mass_;
+    stateObservation::Matrix3 Kth = Kth_;
+    stateObservation::Matrix3 Kdth = Kdth_;
+    stateObservation::Vector cl = convertVector<stateObservation::Vector>(comSIN_ (time));
+    stateObservation::Matrix I = computeInert(cl,time);
 
-    return A;
+    stateObservation::Matrix3 identity;
+    identity.setIdentity();
+
+    stateObservation::Matrix3 ddomega_cl, ddomega_omegach, ddomega_omega, ddomega_dcl,
+                              ddomega_domegach, ddomega_domega, ddomega_ddcl, ddomega_ddomegach;
+
+    // usefull variables for code factorisation
+    stateObservation::Vector3 uz;
+    uz <<     0,
+              0,
+              1;
+
+    stateObservation::Matrix Inertia;
+    Inertia = I;
+    Inertia -= m * kine::skewSymmetric(cl)*kine::skewSymmetric(cl);
+    Inertia = Inertia.inverse();
+
+    stateObservation::Vector3 v;
+    v=-g*m*Inertia*kine::skewSymmetric(cl)*uz;
+
+    // Caracteristic polynomial
+    ddomega_cl=Inertia*(m*(-kine::skewSymmetric(kine::skewSymmetric(cl)*v)-kine::skewSymmetric(cl)*kine::skewSymmetric(v))+g*m*kine::skewSymmetric(uz));
+    ddomega_omegach=-Inertia*(-kine::skewSymmetric(I*v)+I*kine::skewSymmetric(v));
+    ddomega_omega=-kine::skewSymmetric(v)+Inertia*(-Kth-Kdth-g*m*kine::skewSymmetric(cl)*kine::skewSymmetric(uz));
+    ddomega_dcl.setZero();
+    ddomega_domegach.setZero();
+    ddomega_domega=-Inertia*Kdth;
+
+    ddomega_ddcl=-m*Inertia*kine::skewSymmetric(cl);
+    ddomega_ddomegach=Inertia*I;
+
+    // A_ and B_ computation
+    A_.block(0,9,2,2)=identity;
+    A_.block(3,12,2,2)=identity;
+    A_.block(6,15,2,2)=identity;
+    A_.block(15,0,2,2)=ddomega_cl;
+    A_.block(15,3,2,2)=ddomega_omegach;
+    A_.block(15,6,2,2)=ddomega_omega;
+    A_.block(15,9,2,2)=ddomega_dcl;
+    A_.block(15,12,2,2)=ddomega_domegach;
+    A_.block(15,15,2,2)=ddomega_domega;
+
+    stateObservation::Matrix Identity(stateObservation::Matrix::Zero(stateSize_,stateSize_));
+    Identity.setIdentity();
+
+    A_.noalias() = dt_ * A_ + Identity;
+
+    B_.block(9,0,2,2)=identity;
+    B_.block(12,3,2,2)=identity;
+    B_.block(15,0,2,2)=ddomega_ddcl;
+    B_.block(15,3,2,2)=ddomega_ddomegach;
+
+    B_.noalias() = dt_* B_;
+
   }
 
 
-  stateObservation::Matrix HRP2LQRTwoDofCoupledStabilizer::computeInputMatrix(double kth, double kdth, double mass)
-  {
-    stateObservation::Matrix B(stateObservation::Matrix::Zero(stateSize_,1));
+  stateObservation::Matrix3 HRP2LQRTwoDofCoupledStabilizer::computeInert(const stateObservation::Vector& cl, const int& inTime)
+{
 
-    return B;
-  }
+    const dynamicgraph::Matrix& inertia=inertiaSIN.access(inTime);
+    const dynamicgraph::Matrix& homoWaist=positionWaistSIN.access(inTime);
+
+    double m=inertia(0,0); //<=== donne 56.8;
+
+    dynamicgraph::Vector com=convertVector<dynamicgraph::Vector>(cl);
+    dynamicgraph::Vector inert;
+    inert.resize(6);
+
+    dynamicgraph::Vector waist;
+    waist.resize(3);
+    waist.elementAt(0)=homoWaist(0,3);
+    waist.elementAt(1)=homoWaist(1,3);
+    waist.elementAt(2)=homoWaist(2,3);
+
+    // Inertia expressed at waist
+    inert.elementAt(0)=inertia(3,3);
+    inert.elementAt(1)=inertia(4,4);
+    inert.elementAt(2)=inertia(5,5);
+    inert.elementAt(3)=inertia(3,4);
+    inert.elementAt(4)=inertia(3,5);
+    inert.elementAt(5)=inertia(4,5);
+
+    // From waist to com
+    inert.elementAt(0) += -m*((com.elementAt(1)-waist.elementAt(1))*(com.elementAt(1)-waist.elementAt(1))+(com.elementAt(2)-waist.elementAt(2))*(com.elementAt(2)-waist.elementAt(2)));
+    inert.elementAt(1) += -m*((com.elementAt(0)-waist.elementAt(0))*(com.elementAt(0)-waist.elementAt(0))+(com.elementAt(2)-waist.elementAt(2))*(com.elementAt(2)-waist.elementAt(2)));
+    inert.elementAt(2) += -m*((com.elementAt(0)-waist.elementAt(0))*(com.elementAt(0)-waist.elementAt(0))+(com.elementAt(1)-waist.elementAt(1))*(com.elementAt(1)-waist.elementAt(1)));
+    inert.elementAt(3) += m*(com.elementAt(0)-waist.elementAt(0))*(com.elementAt(1)-waist.elementAt(1));
+    inert.elementAt(4) += m*(com.elementAt(0)-waist.elementAt(0))*(com.elementAt(2)-waist.elementAt(2));
+    inert.elementAt(5) += m*(com.elementAt(1)-waist.elementAt(1))*(com.elementAt(2)-waist.elementAt(2));
+
+    // From com to local frame
+    inert.elementAt(0) -= -m*((com.elementAt(1))*(com.elementAt(1))+(com.elementAt(2))*(com.elementAt(2)));
+    inert.elementAt(1) -= -m*((com.elementAt(0))*(com.elementAt(0))+(com.elementAt(2))*(com.elementAt(2)));
+    inert.elementAt(2) -= -m*((com.elementAt(0))*(com.elementAt(0))+(com.elementAt(1))*(com.elementAt(1)));
+    inert.elementAt(3) -= m*(com.elementAt(0))*(com.elementAt(1));
+    inert.elementAt(4) -= m*(com.elementAt(0))*(com.elementAt(2));
+    inert.elementAt(5) -= m*(com.elementAt(1))*(com.elementAt(2));
+
+    return kine::computeInertiaTensor(convertVector<stateObservation::Vector>(inert));
+
+}
 
 } // namespace sotStabilizer
-

@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2012,
-// Florent Lamiraux
+// Copyright (c) 2014,
+// Alexis Mifsud
 //
 // CNRS
 //
@@ -50,6 +50,9 @@ namespace sotStabilizer
   using dynamicgraph::sot::MatrixRotation;
   using dynamicgraph::sot::VectorUTheta;
   using dynamicgraph::sot::VectorRollPitchYaw;
+
+  using namespace sotStateObservation;
+  using namespace stateObservation;
 
 /// Dynamic balance stabilizer
 ///
@@ -185,12 +188,18 @@ namespace sotStabilizer
     }
 
 
-    inline stateObservation::Matrix computeDynamicsMatrix
-      (double kth, double kdth, double mass);
+    void setKth(const dynamicgraph::Matrix & m)
+    {
+        Kth_=convertMatrix<stateObservation::Matrix>(m);
+    }
 
-    inline stateObservation::Matrix computeInputMatrix
-      (double kth, double kdth, double mass);
+    void setKdth(const dynamicgraph::Matrix & m)
+    {
+        Kdth_=convertMatrix<stateObservation::Matrix>(m);
+    }
 
+
+    inline void computeDynamicsMatrix(const int& time);
 
   private:
 
@@ -203,54 +212,57 @@ namespace sotStabilizer
 
     Matrix& computeJacobianCom(Matrix& jacobian, const int& time);
 
-    /// Position of center of mass
-    SignalPtr < dynamicgraph::Vector, int> comSIN_;
-    /// Reference position of center of mass
-    SignalPtr < dynamicgraph::Vector, int> comRefSIN_;
-    /// Position of center of mass
-    SignalPtr < dynamicgraph::Matrix, int> jacobianSIN_;
-    /// Reference velocity of the center of mass
-    SignalPtr < dynamicgraph::Vector, int> comdotRefSIN_;
+    stateObservation::Matrix3 computeInert(const stateObservation::Vector& com, const int& time);
 
-    ///Reference com ddot
+    // Position of center of mass
+    SignalPtr < dynamicgraph::Vector, int> comSIN_;
+
+    // Reference position of center of mass
+    SignalPtr < dynamicgraph::Vector, int> comRefSIN_;
+    // Reference velocity of the center of mass
+    SignalPtr < dynamicgraph::Vector, int> comdotRefSIN_;
+    // Reference com ddot
     SignalPtr < dynamicgraph::Vector, int> comddotRefSIN_;
+
+    SignalPtr < dynamicgraph::Matrix, int> jacobianSIN_;
+    SignalPtr <double, int> controlGainSIN_;
 
     ///Reference ZMP
     SignalPtr < dynamicgraph::Vector, int> zmpRefSIN_;
 
-
-
-    /// Position of left foot force sensor in global frame
+    /// Signals to compute number of supports
+    // Position of left foot force sensor in global frame
     SignalPtr <MatrixHomogeneous, int> leftFootPositionSIN_;
-    /// Position of right foot force sensor in global frame
+    // Position of right foot force sensor in global frame
     SignalPtr <MatrixHomogeneous, int> rightFootPositionSIN_;
-    /// Force in left foot sensor
+    // Force in left foot sensor
     SignalPtr <dynamicgraph::Vector, int> forceLeftFootSIN_;
-    /// Force in right foot sensor
+    // Force in right foot sensor
     SignalPtr <dynamicgraph::Vector, int> forceRightFootSIN_;
-    /// State of the flexibility
-    SignalPtr <MatrixHomogeneous, int> stateFlexSIN_;
-    /// Velocity of the flexibility
-    SignalPtr <dynamicgraph::Vector, int> stateFlexDotSIN_;
 
-    /// Velocity of the flexibility
+    /// Flexibility
+    // State of the flexibility
+    SignalPtr <MatrixHomogeneous, int> stateFlexSIN_;
+    // Velocity of the flexibility
+    SignalPtr <dynamicgraph::Vector, int> stateFlexDotSIN_;
+    // Velocity of the flexibility
     SignalPtr <dynamicgraph::Vector, int> stateFlexDDotSIN_;
 
-    SignalPtr <double, int> controlGainSIN_;
+    /// Signals to compute dynamics model
+    dynamicgraph::SignalPtr < ::dynamicgraph::Matrix, int> inertiaSIN;
+    dynamicgraph::SignalPtr < ::dynamicgraph::Matrix, int> positionWaistSIN;
 
-    /// Acceleration of center of mass
+    // Velocity of center of mass
     SignalTimeDependent <dynamicgraph::Vector, int> comdotSOUT_;
-
-    /// Acceleration of center of mass
+    // Acceleration of center of mass
     SignalTimeDependent <dynamicgraph::Vector, int> comddotSOUT_;
-
-    /// Acceleration of center of mass
+    // Reference acceleration of center of mass
     SignalTimeDependent <dynamicgraph::Vector, int> comddotRefSOUT_;
 
-    /// Number of support feet
+    /// Number and position of supports
+    // Number of support feet
     SignalTimeDependent <unsigned int, int> nbSupportSOUT_;
-
-    /// Contact Position
+    // Contact Position
     SignalTimeDependent <Vector, int> supportPos1SOUT_;
     SignalTimeDependent <Vector, int> supportPos2SOUT_;
 
@@ -260,76 +272,36 @@ namespace sotStabilizer
     ///Reference ZMP
     SignalTimeDependent <Vector, int> zmpRefSOUT_;
 
-    SignalTimeDependent <Vector, int> debugSOUT_;
-
-
-    /// Store center of mass for finite-difference evaluation of velocity
-    Vector prevCom_;
-    /// coordinates of center of mass velocity in moving frame
-    Vector dcom_;
     // Time sampling period
     double dt_;
     // Whether stabilizer is on
     bool on_;
-    // Threshold on normal force above which the foot is considered in contact
-    double forceThreshold_;
-    // Angular stiffness of flexibility of each foot
-    double angularStiffness_;
+
     // Number of feet in support
     unsigned int nbSupport_;
-    // Acceleration of the center of mass computed by stabilizer
-    Vector d2com_;
-
-    Vector comddotRef_;
-
-    // Deviation of center of mass
-    Vector deltaCom_;
-
-    MatrixHomogeneous flexPosition_;
-    MatrixHomogeneous flexPositionLf_;
-    MatrixHomogeneous flexPositionRf_;
-    MatrixHomogeneous flexPositionLat_;
-    Vector flexVelocity_;
-    Vector flexVelocityLf_;
-    Vector flexVelocityRf_;
-    Vector flexVelocityLat_;
-
-    double timeBeforeFlyingFootCorrection_;
+    double forceThreshold_; // Threshold on normal force above which the foot is considered in contact
     unsigned int iterationsSinceLastSupportLf_;
     unsigned int iterationsSinceLastSupportRf_;
     unsigned int supportCandidateLf_;
     unsigned int supportCandidateRf_;
-    // Temporary variables for internal computation
-    VectorUTheta uth_;
-    Vector translation_;
-    Vector zmp_;
-    double u_;
-    // Lateral deflection in double support
-    double theta1Ref_;
-    double theta1RefPrev_;
-    double dtheta1Ref_;
-    Vector debug_;
 
-    stateObservation::Matrix Q_;
-    stateObservation::Matrix R_;
+    Vector zmp_;
 
     stateObservation::Matrix A_;
     stateObservation::Matrix B_;
+    stateObservation::Matrix Q_;
+    stateObservation::Matrix R_;
 
     controller::DiscreteTimeLTILQR controller_;
 
-    Vector rfOffset;
-    Vector lfOffset;
-
-    double kth_;
-    double kdth_;
-    double kz_;
+    stateObservation::Matrix Kth_;
+    stateObservation::Matrix Kdth_;
 
     bool fixedGains_;
-
     bool zmpMode_;
 
     double hrp2Mass_;
+
   }; // class Stabilizer
 } // namespace sotStabiilizer
 
