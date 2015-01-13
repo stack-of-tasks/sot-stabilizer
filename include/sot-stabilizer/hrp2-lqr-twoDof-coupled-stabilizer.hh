@@ -243,7 +243,7 @@ namespace sotStabilizer
     // State of the flexibility
     SignalPtr <MatrixHomogeneous, int> stateFlexSIN_;
     // Velocity of the flexibility
-    SignalPtr <dynamicgraph::Vector, int> stateFlexDotSIN_;
+    SignalPtr <dynamicgraph::Vector, int> flexAngVelVectSIN_;
     // Velocity of the flexibility
     SignalPtr <dynamicgraph::Vector, int> stateFlexDDotSIN_;
     // Orientation of the flexibility on vector form

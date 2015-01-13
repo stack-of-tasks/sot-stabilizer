@@ -95,8 +95,8 @@ namespace sotStabilizer
     (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(HomoMatrix)::stateFlex"),
     flexOriVectSIN_
     (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::flexOriVect"),
-    stateFlexDotSIN_
-    (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::stateFlexDot"),
+    flexAngVelVectSIN_
+    (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::flexAngVelVect"),
     stateFlexDDotSIN_
     (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::stateFlexDDot"),
     controlGainSIN_
@@ -134,7 +134,7 @@ namespace sotStabilizer
     signalRegistration (comddotRefSIN_);
     signalRegistration (leftFootPositionSIN_ << rightFootPositionSIN_
                         << forceRightFootSIN_ << forceLeftFootSIN_);
-    signalRegistration (stateFlexSIN_ << stateFlexDotSIN_ << stateFlexDDotSIN_);
+    signalRegistration (stateFlexSIN_ << flexAngVelVectSIN_ << stateFlexDDotSIN_);
     signalRegistration (controlGainSIN_);
     signalRegistration (comdotSOUT_);
     signalRegistration (comddotSOUT_ <<comddotRefSOUT_);
@@ -162,7 +162,7 @@ namespace sotStabilizer
     taskSOUT.addDependency (comdotRefSIN_);
 
     taskSOUT.addDependency (stateFlexSIN_);
-    taskSOUT.addDependency (stateFlexDotSIN_);
+    taskSOUT.addDependency (flexAngVelVectSIN_);
     taskSOUT.addDependency (stateFlexDDotSIN_);
 
     if (zmpMode_)
@@ -179,7 +179,7 @@ namespace sotStabilizer
     taskSOUT.addDependency (forceRightFootSIN_);
     taskSOUT.addDependency (forceLeftFootSIN_);
     taskSOUT.addDependency (stateFlexSIN_);
-    taskSOUT.addDependency (stateFlexDotSIN_);
+    taskSOUT.addDependency (flexAngVelVectSIN_);
     taskSOUT.addDependency (stateFlexDDotSIN_);
     taskSOUT.addDependency (controlGainSIN_);
 
@@ -496,7 +496,7 @@ namespace sotStabilizer
 
     // Flexibility
     const stateObservation::Vector3 & flexOriVect = convertVector<stateObservation::Vector>(flexOriVectSIN_.access(time));
-    const stateObservation::Vector3 & flexDot = convertVector<stateObservation::Vector>(stateFlexDotSIN_.access(time));
+    const stateObservation::Vector3 & flexAngVelVect = convertVector<stateObservation::Vector>(flexAngVelVectSIN_.access(time));
 
     // Error
     stateObservation::Vector dCom = com - comRefg;
@@ -509,7 +509,7 @@ namespace sotStabilizer
             flexOriVect,
             comDot,
             waistAngVel,
-            flexDot;
+            flexAngVelVect;
 
     stateObservation::Vector u;
     stateObservation::Matrix3 Kth, Kdth;

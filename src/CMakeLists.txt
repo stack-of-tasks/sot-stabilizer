@@ -142,6 +142,7 @@ INSTALL(FILES
   dynamic_graph/sot/application/stabilizer/scenarii/hrp2_linear_stabilizer.py
   dynamic_graph/sot/application/stabilizer/scenarii/hrp2_model_free_observer_stabilizer.py
   dynamic_graph/sot/application/stabilizer/scenarii/ds_model_free_observer_stabilizer_hrp2.py
+  dynamic_graph/sot/application/stabilizer/scenarii/hrp2_lqr_twoDof_coupled_stabilizer.py
   dynamic_graph/sot/application/stabilizer/scenarii/__init__.py
   DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/application/stabilizer/scenarii
   )
