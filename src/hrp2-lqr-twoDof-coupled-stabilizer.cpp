@@ -193,39 +193,6 @@ namespace sotStabilizer
                                           this,_1,_2));
     nbSupportSOUT_.addDependency (taskSOUT);
 
-    Vector rfconf(6);
-    rfconf.setZero();
-
-    Vector lfconf(6);
-    lfconf.setZero();
-
-    rfconf(0) = 0.009490463094;
-    rfconf(1) = -0.095000000000;
-
-    lfconf(0) = 0.009490463094;
-    lfconf(1) = 0.095000000000;
-
-    supportPos1SOUT_.setConstant (lfconf);
-    supportPos1SOUT_.setTime (0);
-    supportPos1_=lfconf;
-    supportPos2SOUT_.setConstant (rfconf);
-    supportPos2SOUT_.setTime (0);
-    supportPos2_=rfconf;
-
-    nbSupportSOUT_.setConstant (2);
-    nbSupportSOUT_.setTime (0);
-
-    Vector com;
-    com.resize(3);
-    com.setZero();
-    comSIN_.setConstant(com);
-
-    dynamicgraph::Matrix inertia(6,6);
-    inertiaSIN.setConstant(inertia);
-
-    dynamicgraph::Matrix positionWaist(4,4);
-    positionWaistSIN.setConstant(positionWaist);
-
     std::string docstring;
     docstring =
       "\n"
@@ -369,6 +336,58 @@ namespace sotStabilizer
                new ::dynamicgraph::command::Setter <HRP2LQRTwoDofCoupledStabilizer,dynamicgraph::Matrix>
                 (*this, & HRP2LQRTwoDofCoupledStabilizer::setKdth ,docstring));
 
+    Vector rfconf(6);
+    rfconf.setZero();
+    Vector lfconf(6);
+    lfconf.setZero();
+    rfconf(0) = 0.009490463094;
+    rfconf(1) = -0.095000000000;
+    lfconf(0) = 0.009490463094;
+    lfconf(1) = 0.095000000000;
+
+    supportPos1SOUT_.setConstant (lfconf);
+    supportPos1SOUT_.setTime (0);
+    supportPos1_=lfconf;
+
+    supportPos2SOUT_.setConstant (rfconf);
+    supportPos2SOUT_.setTime (0);
+    supportPos2_=rfconf;
+
+    nbSupportSOUT_.setConstant (2);
+    nbSupportSOUT_.setTime (0);
+
+    stateObservation::Vector com;
+    com.resize(3);
+    com <<  0.009490463094,
+            0,
+            0.80771000000000004;
+    comSIN_.setConstant(convertVector<dynamicgraph::Vector>(com));
+
+    stateObservation::Matrix positionWaist(4,4);
+    positionWaist   <<      0.99998573432883131, -0.0053403256847235764, 0.00010981989355530105, -1.651929567364003e-05,
+                            0.0053403915800877009, 0.99998555471196726, -0.00060875707006170711, 0.0008733516988761506,
+                            -0.00010656734615829933, 0.00060933486696839291, 0.99999980867719196, 0.64869730032049466,
+                            0.0, 0.0, 0.0, 1.0;
+    positionWaistSIN.setConstant(convertMatrix<dynamicgraph::Matrix>(positionWaist));
+
+    stateObservation::Matrix inertia;
+    inertia.resize(6,6);
+    inertia <<  56.867992000000001, 1.082595017423981e-17, -1.0227922838095677e-19, 0.012404467020412754, 9.0440811406882826, -0.087341805362338931,
+                2.1471441204328374e-17, 56.867991999999994, -6.6915602833089727e-20, -9.0441155822106154, 0.012400591461492968, 0.77639199232843892,
+                -1.6877131474041934e-19, 7.0557844506283218e-19, 56.867992000000001, 0.086277191499897876, -0.77651101919284393, -6.6174449004242214e-22,
+                0.012404467020412752, -9.0441155822106154, 0.086277191499897876, 9.5962629755728397, -0.0033323767643302234, 0.15070837823024946,
+                9.0440811406882808, 0.012400591461492966, -0.77651101919284393, -0.0033323567633330438, 8.3906225580324634, -0.038677900732410085,
+                -0.087341805362338931, 0.77639199232843892, 6.6174449004242214e-22, 0.15070833849597523, -0.03867792067753683, 1.7394745168929315;
+    inertiaSIN.setConstant(convertMatrix<dynamicgraph::Matrix>(inertia));
+
+    Vector vect;
+    vect.resize(3); vect.setZero();
+    comDotSIN_.setConstant(vect);
+    waistOriSIN_.setConstant(vect);
+    flexOriVectSIN_.setConstant(vect);
+    flexAngVelVectSIN_.setConstant(vect);
+    vect.resize(6); vect.setZero();
+    waistVelSIN_.setConstant(vect);
 
     Kth_.resize(3,3);
     Kdth_.resize(3,3);
@@ -382,10 +401,10 @@ namespace sotStabilizer
                 0,0,65;
 
     Q_.setIdentity();
-    Q_.noalias()=1*Q_;
+    Q_.noalias()=10*Q_;
 
     R_.setIdentity();
-    R_.noalias()=1000*R_;
+    R_.noalias()=1*R_;
 
 
     zmp_.setZero ();
@@ -393,11 +412,7 @@ namespace sotStabilizer
     int horizon = 200;
 
     controller_.setHorizonLength(horizon);
-
-    stateObservation::Vector3 cl;
-    cl.setZero();
-    computeDynamicsMatrix(cl,Kth_,Kdth_,0);
-
+    computeDynamicsMatrix(com,Kth_,Kdth_,0);
     controller_.setDynamicsMatrices(A_, B_);
     controller_.setCostMatrices(Q_,R_);
 
@@ -486,23 +501,23 @@ namespace sotStabilizer
         // References for the flexibility are set to zero
 
     // Com
-    const stateObservation::Vector3 & com = convertVector<stateObservation::Vector>(comSIN_ (time));
-    const stateObservation::Vector3 & comDot = convertVector<stateObservation::Vector>(comDotSIN_ (time));
+    const stateObservation::Vector & com = convertVector<stateObservation::Vector>(comSIN_ (time));
+    const stateObservation::Vector & comDot = convertVector<stateObservation::Vector>(comDotSIN_ (time));
 
     // Waist orientation
-    const stateObservation::Vector3 & waistOri = convertVector<stateObservation::Vector>(waistOriSIN_ (time));
+    const stateObservation::Vector & waistOri = convertVector<stateObservation::Vector>(waistOriSIN_ (time));
     const stateObservation::Vector & waistVel = convertVector<stateObservation::Vector>(waistVelSIN_ (time));
     const stateObservation::Vector3 & waistAngVel = waistVel.block(3,0,3,1);
+std::cout << "waistOri" << waistOri << std::endl;
 
     // Flexibility
-    const stateObservation::Vector3 & flexOriVect = convertVector<stateObservation::Vector>(flexOriVectSIN_.access(time));
-    const stateObservation::Vector3 & flexAngVelVect = convertVector<stateObservation::Vector>(flexAngVelVectSIN_.access(time));
+    const stateObservation::Vector & flexOriVect = convertVector<stateObservation::Vector>(flexOriVectSIN_.access(time));
+    const stateObservation::Vector & flexAngVelVect = convertVector<stateObservation::Vector>(flexAngVelVectSIN_.access(time));
     const MatrixHomogeneous& flexHomo = stateFlexSIN_.access(time);
 
     // Error
     stateObservation::Vector dCom = com - comRefg;
     stateObservation::Vector dWaistOri = waistOri - waistOriRefg;
-
 
     stateObservation::Vector xk;
     xk.resize(stateSize_);
@@ -586,6 +601,8 @@ namespace sotStabilizer
 
     stateSOUT_.setConstant (convertVector<dynamicgraph::Vector>(xk));
     controlSOUT_.setConstant (convertVector<dynamicgraph::Vector>(u));
+    std::cout << "state:" << xk.transpose() << std::endl;
+    std::cout << "control:" << u.transpose() << std::endl;
 
     return task;
   }

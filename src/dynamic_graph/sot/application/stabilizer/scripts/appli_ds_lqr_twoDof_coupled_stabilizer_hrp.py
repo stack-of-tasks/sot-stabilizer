@@ -47,6 +47,7 @@ appli.robot.addTrace( realcom.name, 'sout')
 appli.robot.addTrace ( appli.waistMatrixToUTheta.name, 'sout')
 appli.robot.addTrace ( stabilizer.name,'state')
 appli.robot.addTrace ( stabilizer.name,'control')
+appli.robot.addTrace (robot.device.name,'velocity')
 
 appli.startTracer()
 

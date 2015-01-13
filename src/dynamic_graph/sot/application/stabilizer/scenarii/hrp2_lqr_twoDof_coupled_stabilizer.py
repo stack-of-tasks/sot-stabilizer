@@ -5,7 +5,7 @@ from dynamic_graph import plug
 import numpy as np
 import dynamic_graph.signal_base as dgsb
     
-from dynamic_graph.sot.core import Stack_of_vector, MatrixHomoToPoseUTheta, OpPointModifier, Multiply_matrix_vector, MatrixHomoToPose, MatrixHomoToPoseRollPitchYaw
+from dynamic_graph.sot.core import Stack_of_vector, MatrixHomoToPoseUTheta, OpPointModifier, Multiply_matrix_vector, MatrixHomoToPose, MatrixHomoToPoseRollPitchYaw, MatrixToUTheta, HomoToMatrix, HomoToRotation
 from dynamic_graph.sot.core.matrix_util import matrixToTuple
 
 
@@ -19,15 +19,35 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
         HRP2LQRTwoDofCoupledStabilizer.__init__(self,taskname)
         robot.dynamic.com.recompute(1)
         robot.dynamic.Jcom.recompute(1)
-        robot.dynamic.waist.recompute(1)
+        robot.dynamic.waist.recompute(2)
         robot.dynamic.Jwaist.recompute(1)
-	robot.dynamic.inertia.recompute(1)
-        
-        plug (robot.dynamic.com, self.com)
+	robot.dynamic.inertia.recompute(2)
+
+        self.DCom = Multiply_matrix_vector('DCom') # Com velocity: self.DCom.sout
+        plug(robot.dynamic.Jcom,self.DCom.sin1)
+        plug(robot.device.velocity,self.DCom.sin2)
+
+        self.DWaist = Multiply_matrix_vector('DWaist') # Waist angulat velocity: self.DWaist.sout
+        plug(robot.dynamic.Jwaist,self.DWaist.sin1)
+        plug(robot.device.velocity,self.DWaist.sin2)
+
+	self.waistHomoToMatrix = HomoToRotation ('waistHomoToMatrix') # Waist orientation: self.waistMatrixToUTheta.sout
+	plug(robot.dynamic.waist,self.waistHomoToMatrix.sin)
+	self.waistMatrixToUTheta = MatrixToUTheta('waistMatrixToUTheta')
+	plug(self.waistHomoToMatrix.sout,self.waistMatrixToUTheta.sin)
+
+
+	# Control state
+	plug(self.waistMatrixToUTheta.sout,self.waistOri)
+
+	plug (robot.dynamic.com, self.com)
         plug (robot.dynamic.Jcom, self.Jcom)
+	plug(self.DCom.sout,self.comDot)
+
 	plug (robot.dynamic.waist, self.positionWaist)
-	plug ( robot.dynamic.Jwaist, self.Jwaist) # /!\ There is certainly not only the jacobian of the orientation
+	plug ( robot.dynamic.Jwaist, self.Jwaist) 
 	plug ( robot.dynamic.inertia, self.inertia)
+	plug(self.DWaist.sout,self.waistVel)
 
 	# For determining nbSupport
         plug (robot.device.forceLLEG,self.force_lf)
