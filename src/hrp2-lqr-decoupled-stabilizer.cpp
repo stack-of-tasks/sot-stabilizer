@@ -28,6 +28,7 @@
 
 #include <sot-stabilizer/hrp2-lqr-decoupled-stabilizer.hh>
 
+
 namespace sotStabilizer
 {
   using dynamicgraph::sot::TaskAbstract;

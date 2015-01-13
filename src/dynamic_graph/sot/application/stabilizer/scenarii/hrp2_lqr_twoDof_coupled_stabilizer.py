@@ -17,15 +17,17 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
 
 	from dynamic_graph.sot.application.state_observation.initializations.hrp2_model_base_flex_estimator import HRP2ModelBaseFlexEstimator  
         HRP2LQRTwoDofCoupledStabilizer.__init__(self,taskname)
-        robot.dynamic.com.recompute(0)
-        robot.dynamic.Jcom.recompute(0)
-        robot.dynamic.waist.recompute(0)
-        robot.dynamic.Jwaist.recompute(0)
+        robot.dynamic.com.recompute(1)
+        robot.dynamic.Jcom.recompute(1)
+        robot.dynamic.waist.recompute(1)
+        robot.dynamic.Jwaist.recompute(1)
+	robot.dynamic.inertia.recompute(1)
         
         plug (robot.dynamic.com, self.com)
         plug (robot.dynamic.Jcom, self.Jcom)
 	plug (robot.dynamic.waist, self.positionWaist)
 	plug ( robot.dynamic.Jwaist, self.Jwaist) # /!\ There is certainly not only the jacobian of the orientation
+	plug ( robot.dynamic.inertia, self.inertia)
 
 	# For determining nbSupport
         plug (robot.device.forceLLEG,self.force_lf)

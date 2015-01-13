@@ -18,16 +18,16 @@ class DSLqrTwoDofCoupledStabilizerHRP2(DSStabilizer):
 	waistHomoToMatrix = HomoToRotation ('waistHomoToMatrix')
 	plug(self.robot.dynamic.waist,waistHomoToMatrix.sin)
 	#waistHomoToMatrix.sin.value = self.robot.dynamic.waist.value
-	waistMatrixToUTheta = MatrixToUTheta('waistMatrixToUTheta')
-	plug(waistHomoToMatrix.sout,waistMatrixToUTheta.sin)
+	self.waistMatrixToUTheta = MatrixToUTheta('waistMatrixToUTheta')
+	plug(waistHomoToMatrix.sout,self.waistMatrixToUTheta.sin)
 	#waistMatrixToUTheta.sin.value = waistHomoToMatrix.sout.value
 
         self.DCom = Multiply_matrix_vector('DCom')
         plug(self.robot.dynamic.Jcom,self.DCom.sin1)
         plug(self.robot.device.velocity,self.DCom.sin2)
 	
-	task.waistOriRefg.value=waistMatrixToUTheta.sout.value
-	plug(waistMatrixToUTheta.sout,task.waistOri)
+	task.waistOriRefg.value=self.waistMatrixToUTheta.sout.value
+	plug(self.waistMatrixToUTheta.sout,task.waistOri)
 	task.comRefg.value = self.refCom
         #plug(self.refCom,task.comRef)
 	plug(self.DCom.sout,task.comDot)

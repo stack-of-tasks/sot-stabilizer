@@ -29,8 +29,6 @@
 #include <sot-stabilizer/hrp2-lqr-twoDof-coupled-stabilizer.hh>
 #include <stdexcept>
 
-#include <iostream>
-
 namespace sotStabilizer
 {
   using dynamicgraph::sot::TaskAbstract;
@@ -56,6 +54,7 @@ namespace sotStabilizer
   double HRP2LQRTwoDofCoupledStabilizer::conststepLength_ = 0.19;
 
   const unsigned stateSize_=18;
+  const unsigned controlSize_=6;
 
   DYNAMICGRAPH_FACTORY_ENTITY_PLUGIN (HRP2LQRTwoDofCoupledStabilizer, "HRP2LQRTwoDofCoupledStabilizer");
 
@@ -120,11 +119,11 @@ namespace sotStabilizer
     supportCandidateLf_ (0), supportCandidateRf_ (0),
     fixedGains_(false), zmpMode_(true),
     zmp_ (3),
-    controller_(stateSize_,6),
+    controller_(stateSize_,controlSize_),
     A_(stateObservation::Matrix::Zero(stateSize_,stateSize_)),
-    B_(stateObservation::Matrix::Zero(stateSize_,6)),
+    B_(stateObservation::Matrix::Zero(stateSize_,controlSize_)),
     Q_(stateObservation::Matrix::Zero(stateSize_,stateSize_)),
-    R_(stateObservation::Matrix::Zero(6,6))
+    R_(stateObservation::Matrix::Zero(controlSize_,controlSize_))
   {
 
     // Register signals into the entity.
@@ -528,8 +527,12 @@ namespace sotStabilizer
             flexAngVelVect;
 
     stateObservation::Vector u;
+    u.resize(controlSize_);
+
     stateObservation::Matrix3 Kth, Kdth;
+
     stateObservation::Vector preTask;
+    preTask.resize(controlSize_);
 
     switch (nbSupport_)
     {
@@ -570,13 +573,15 @@ namespace sotStabilizer
         default: throw std::invalid_argument("Only 0, 1 and 2 number of supports cases are developped");
     };
 
-    task.resize (3);
-    task [0].setSingleBound (preTask(0));
-    task [1].setSingleBound (preTask (1));
-    task [2].setSingleBound (preTask (2));
+    task.resize (controlSize_);
+    int i;
+    for (i=0;i<controlSize_;i++)
+    {
+        task [i].setSingleBound (preTask(i));
+    }
 
     dynamicgraph::Vector error;
-    error.resize(6);
+    error.resize(controlSize_);
     error(0)=dCom(0);
     error(1)=dCom(1);
     error(2)=dCom(2);
@@ -593,17 +598,16 @@ namespace sotStabilizer
   {
     typedef unsigned int size_t;
 
-    const stateObservation::Matrix3 & jacobianCom=convertMatrix<stateObservation::Matrix>(jacobianComSIN_(time));
-    const stateObservation::Matrix3 & jacobianWaist=convertMatrix<stateObservation::Matrix>(jacobianWaistSIN_(time));
+    const stateObservation::Matrix & jacobianCom=convertMatrix<stateObservation::Matrix>(jacobianComSIN_(time));
+    const stateObservation::Matrix & jacobianWaist=convertMatrix<stateObservation::Matrix>(jacobianWaistSIN_(time));
 
-    stateObservation::Matrix3 jacobianWaistOri = jacobianWaist.block(3,0,2,jacobianWaist.cols());
+    stateObservation::Matrix jacobianWaistOri = jacobianWaist.block(3,0,3,jacobianWaist.cols());
 
     stateObservation::Matrix preJacobian;
-    preJacobian.resize(jacobianCom.rows()+jacobianWaistOri.rows(),jacobianCom.cols()+jacobianWaistOri.cols());
-    preJacobian.setZero();
+    preJacobian.resize(jacobianCom.rows()+jacobianWaistOri.rows(),jacobianCom.cols());
 
-    preJacobian.block(0,0,2,2)= jacobianCom;
-    preJacobian.block(3,3,2,2)= jacobianWaistOri;
+    preJacobian.block(0,0,jacobianCom.rows(),jacobianCom.cols())= jacobianCom;
+    preJacobian.block(jacobianCom.rows(),0,jacobianWaistOri.rows(),jacobianWaistOri.cols())= jacobianWaistOri;
 
     jacobian = convertMatrix<dynamicgraph::Matrix>(preJacobian);
 
@@ -639,15 +643,15 @@ namespace sotStabilizer
     v=-g*m*Inertia*kine::skewSymmetric(cl)*uz;
 
     // Caracteristic polynomial
-    ddomega_cl=Inertia*(m*(-kine::skewSymmetric(kine::skewSymmetric(cl)*v)-kine::skewSymmetric(cl)*kine::skewSymmetric(v))+g*m*kine::skewSymmetric(uz));
-    ddomega_omegach=-Inertia*(-kine::skewSymmetric(I*v)+I*kine::skewSymmetric(v));
-    ddomega_omega=-kine::skewSymmetric(v)+Inertia*(-Kth-Kdth-g*m*kine::skewSymmetric(cl)*kine::skewSymmetric(uz));
+    ddomega_cl=Inertia*m*kine::skewSymmetric(Inertia*v)-Inertia*g*m*kine::skewSymmetric(uz);
+    ddomega_omegach=Inertia*kine::skewSymmetric(v)-Inertia*kine::skewSymmetric(I*v);
+    ddomega_omega=kine::skewSymmetric(v)-Inertia*(Kth-g*m*kine::skewSymmetric(cl)*kine::skewSymmetric(uz));
     ddomega_dcl.setZero();
     ddomega_domegach.setZero();
     ddomega_domega=-Inertia*Kdth;
 
     ddomega_ddcl=-m*Inertia*kine::skewSymmetric(cl);
-    ddomega_ddomegach=Inertia*I;
+    ddomega_ddomegach=-Inertia*I;
 
     // A_ and B_ computation
     A_.block(0,9,3,3)=identity;

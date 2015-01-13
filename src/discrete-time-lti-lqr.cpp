@@ -80,8 +80,8 @@ namespace controller
 
 #ifndef NDEBUG
 
-//          std::cout<< "P " << std::endl;
-//          std::cout<< P << std::endl;
+            std::cout<< "P " << std::endl;
+            std::cout<< P << std::endl;
             std::cout<<"Gain :"<< std::endl;
             std::cout<< -lastGain_ <<std::endl;
             std::cout<<"State :"<< x_.transpose()<< std::endl;

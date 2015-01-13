@@ -22,9 +22,9 @@ stabilizer = appli.taskCoMStabilized
 #perturbator.perturbation.value=(-0.5,0,0)
 #perturbator.selec.value = '111'
 
-#realcom = Multiply_matrixHomo_vector('real-com')
-#plug(est.flexTransformationMatrix, realcom.sin1)
-#plug(appli.com, realcom.sin2)
+realcom = Multiply_matrixHomo_vector('real-com')
+plug(est.flexTransformationMatrix, realcom.sin1)
+plug(appli.com, realcom.sin2)
 
 appli.robot.addTrace( est.name,'flexibility' )
 appli.robot.addTrace( est.name,'flexThetaU' )
@@ -35,7 +35,6 @@ appli.robot.addTrace( est.name,'flexMatrixInverse' )
 appli.robot.addTrace( est.name,'input')
 appli.robot.addTrace( est.name,'measurement')
 appli.robot.addTrace( est.name,'simulatedSensors' )
-#appli.robot.addTrace( realcom.name,'sout' )
 appli.robot.addTrace( stabilizer.name,'task' )
 appli.robot.addTrace( stabilizer.name,'nbSupport' )
 appli.robot.addTrace( stabilizer.name,'error' )
@@ -44,6 +43,8 @@ appli.robot.addTrace( robot.device.name, 'forceLLEG')
 appli.robot.addTrace( robot.device.name, 'forceRLEG')
 appli.robot.addTrace( robot.device.name, 'accelerometer')
 appli.robot.addTrace( robot.device.name, 'gyrometer')
+appli.robot.addTrace( realcom.name, 'sout')
+appli.robot.addTrace ( appli.waistMatrixToUTheta.name, 'sout')
 
 appli.startTracer()
 
