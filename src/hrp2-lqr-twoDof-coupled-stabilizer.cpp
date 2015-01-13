@@ -81,7 +81,7 @@ namespace sotStabilizer
     waistOriRefgSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistOriRefg"),
     waistAngVelSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistAngVel"),
     waistAngAccSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistAngAcc"),
-    jacobianWaistOriSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::JwaistOri"),
+    jacobianWaistSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::Jwaist"),
     zmpRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::zmpRef"),
     leftFootPositionSIN_
     (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(HomoMatrix)::leftFootPosition"),
@@ -149,7 +149,7 @@ namespace sotStabilizer
     signalRegistration (waistOriRefgSIN_);
     signalRegistration (waistAngVelSIN_);
     signalRegistration (waistAngAccSIN_);
-    signalRegistration (jacobianWaistOriSIN_);
+    signalRegistration (jacobianWaistSIN_);
 
     signalRegistration (flexOriVectSIN_);
 
@@ -576,7 +576,9 @@ namespace sotStabilizer
     typedef unsigned int size_t;
 
     const stateObservation::Matrix3 & jacobianCom=convertMatrix<stateObservation::Matrix>(jacobianComSIN_(time));
-    const stateObservation::Matrix3 & jacobianWaistOri=convertMatrix<stateObservation::Matrix>(jacobianWaistOriSIN_(time));
+    const stateObservation::Matrix3 & jacobianWaist=convertMatrix<stateObservation::Matrix>(jacobianWaistSIN_(time));
+
+    stateObservation::Matrix3 jacobianWaistOri = jacobianWaist.block(3,0,2,jacobianWaist.cols());
 
     stateObservation::Matrix preJacobian;
     preJacobian.resize(jacobianCom.rows()+jacobianWaistOri.rows(),jacobianCom.cols()+jacobianWaistOri.cols());

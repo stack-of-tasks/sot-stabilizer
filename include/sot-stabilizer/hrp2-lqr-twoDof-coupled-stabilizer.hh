@@ -252,7 +252,7 @@ namespace sotStabilizer
 
 
     SignalPtr < dynamicgraph::Matrix, int> jacobianComSIN_;
-    SignalPtr < dynamicgraph::Matrix, int> jacobianWaistOriSIN_;
+    SignalPtr < dynamicgraph::Matrix, int> jacobianWaistSIN_;
     SignalPtr <double, int> controlGainSIN_;
 
     ///Reference ZMP
