@@ -24,7 +24,7 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
         
         plug (robot.dynamic.com, self.com)
         plug (robot.dynamic.Jcom, self.Jcom)
-	plug (robot.dynamic.waist, self.waist)
+	plug (robot.dynamic.waist, self.positionWaist)
 	plug ( robot.dynamic.Jwaist, self.Jwaist) # /!\ There is certainly not only the jacobian of the orientation
 
 	# For determining nbSupport
@@ -35,6 +35,7 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
 
 	# Estimator of the flexibility state
         self.estimator = HRP2ModelBaseFlexEstimator(robot, taskname+"Estimator")
+	self.estimator.setContactModelNumber(1)
         plug (self.nbSupport,self.estimator.contactNbr) # In
 	
 		# Contacts definition

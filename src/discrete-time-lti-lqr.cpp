@@ -120,6 +120,7 @@ namespace controller
                                                 const stateObservation::Matrix & B)
     {
         checkDynamicsMatrices_(A,B);
+
         A_=A;
         B_=B;
 //        std::cout << "changedValue_ DYNAMICS-----------------------------------"<<std::endl;

@@ -24,6 +24,8 @@
 #ifndef DISCRETETIMEFINITEHORIZONLQRHH
 #define DISCRETETIMEFINITEHORIZONLQRHH
 
+//#define NDEBUG
+
 namespace sotStabilizer
 {
 namespace controller

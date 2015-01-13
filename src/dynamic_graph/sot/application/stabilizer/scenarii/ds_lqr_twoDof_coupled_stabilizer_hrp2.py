@@ -3,7 +3,7 @@ from dynamic_graph.sot.application.stabilizer.scenarii.hrp2_lqr_twoDof_coupled_s
 from dynamic_graph.sot.core.meta_tasks import GainAdaptive
 from dynamic_graph import plug
 from dynamic_graph.sot.core.matrix_util import matrixToTuple
-from dynamic_graph.sot.core import  MatrixToUTheta, HomoToMatrix
+from dynamic_graph.sot.core import  MatrixToUTheta, HomoToMatrix, HomoToRotation, Multiply_matrix_vector
 from numpy import diag
 
 
@@ -14,15 +14,23 @@ class DSLqrTwoDofCoupledStabilizerHRP2(DSStabilizer):
     def createStabilizedCoMTask (self):
         task = HRP2LqrTwoDofCoupledStabilizer(self.robot)
         gain = GainAdaptive('gain'+task.name)
-	self.refCom.value=self.comRef.value # initialization of the reference of com in the global frame
-	waistHomoToMatrix = HomoToMatrix ('waistHomoToMatrix')
-	waistHomoToMatrix.sin.value = robot.dynamic.waist.value
+	self.refCom=self.comRef.value # initialization of the reference of com in the global frame
+	waistHomoToMatrix = HomoToRotation ('waistHomoToMatrix')
+	plug(self.robot.dynamic.waist,waistHomoToMatrix.sin)
+	#waistHomoToMatrix.sin.value = self.robot.dynamic.waist.value
 	waistMatrixToUTheta = MatrixToUTheta('waistMatrixToUTheta')
-	waistMatrixToUTheta.sin.value = waistHomoToMatrix.sout.value
-	self.refWaistOri.value = waistMatrixToUTheta.sout.value
+	plug(waistHomoToMatrix.sout,waistMatrixToUTheta.sin)
+	#waistMatrixToUTheta.sin.value = waistHomoToMatrix.sout.value
 
-	plug(self.refWaistOri,task.waistOriRef)
-        plug(self.refCom,task.comRef)
+        self.DCom = Multiply_matrix_vector('DCom')
+        plug(self.robot.dynamic.Jcom,self.DCom.sin1)
+        plug(self.robot.device.velocity,self.DCom.sin2)
+	
+	task.waistOriRefg.value=waistMatrixToUTheta.sout.value
+	plug(waistMatrixToUTheta.sout,task.waistOri)
+	task.comRefg.value = self.refCom
+        #plug(self.refCom,task.comRef)
+	plug(self.DCom.sout,task.comDot)
         task.comdot.value = (0.0,)*3
 	task.waistAngVel.value = (0.0,)*3
         plug(gain.gain, task.controlGain)
