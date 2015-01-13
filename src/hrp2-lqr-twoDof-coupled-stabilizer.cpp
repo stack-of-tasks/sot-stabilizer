@@ -74,13 +74,14 @@ namespace sotStabilizer
     comSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::com"),
     comDotSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comDot"),
     comRefgSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comRefg"),
-    jacobianSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::Jcom"),
+    jacobianComSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::Jcom"),
     comdotRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comdotRef"),
     comddotRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comddotRef"),
     waistOriSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistOri"),
     waistOriRefgSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistOriRefg"),
     waistAngVelSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistAngVel"),
     waistAngAccSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistAngAcc"),
+    jacobianWaistOriSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::JwaistOri"),
     zmpRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::zmpRef"),
     leftFootPositionSIN_
     (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(HomoMatrix)::leftFootPosition"),
@@ -127,7 +128,7 @@ namespace sotStabilizer
     signalRegistration (comSIN_);
     signalRegistration (comDotSIN_);
     signalRegistration (comRefgSIN_);
-    signalRegistration (jacobianSIN_);
+    signalRegistration (jacobianComSIN_);
     signalRegistration (comdotRefSIN_);
     signalRegistration (zmpRefSIN_);
     signalRegistration (comddotRefSIN_);
@@ -148,6 +149,7 @@ namespace sotStabilizer
     signalRegistration (waistOriRefgSIN_);
     signalRegistration (waistAngVelSIN_);
     signalRegistration (waistAngAccSIN_);
+    signalRegistration (jacobianWaistOriSIN_);
 
     signalRegistration (flexOriVectSIN_);
 
@@ -181,10 +183,10 @@ namespace sotStabilizer
     taskSOUT.addDependency (stateFlexDDotSIN_);
     taskSOUT.addDependency (controlGainSIN_);
 
-    jacobianSOUT.addDependency (jacobianSIN_);
+    jacobianSOUT.addDependency (jacobianComSIN_);
 
     taskSOUT.setFunction (boost::bind(&HRP2LQRTwoDofCoupledStabilizer::computeControlFeedback,this,_1,_2));
-    jacobianSOUT.setFunction (boost::bind(&HRP2LQRTwoDofCoupledStabilizer::computeJacobianCom,
+    jacobianSOUT.setFunction (boost::bind(&HRP2LQRTwoDofCoupledStabilizer::computeJacobian,
                                           this,_1,_2));
     nbSupportSOUT_.addDependency (taskSOUT);
 
@@ -558,10 +560,22 @@ namespace sotStabilizer
     return task;
   }
 
-  Matrix& HRP2LQRTwoDofCoupledStabilizer::computeJacobianCom(Matrix& jacobian, const int& time)
+  Matrix& HRP2LQRTwoDofCoupledStabilizer::computeJacobian(Matrix& jacobian, const int& time)
   {
     typedef unsigned int size_t;
-    jacobian = jacobianSIN_ (time);
+
+    const stateObservation::Matrix3 & jacobianCom=convertMatrix<stateObservation::Matrix>(jacobianComSIN_(time));
+    const stateObservation::Matrix3 & jacobianWaistOri=convertMatrix<stateObservation::Matrix>(jacobianWaistOriSIN_(time));
+
+    stateObservation::Matrix preJacobian;
+    preJacobian.resize(jacobianCom.rows()+jacobianWaistOri.rows(),jacobianCom.cols()+jacobianWaistOri.cols());
+    preJacobian.setZero();
+
+    preJacobian.block(0,0,2,2)= jacobianCom;
+    preJacobian.block(3,3,2,2)= jacobianWaistOri;
+
+    jacobian = convertMatrix<dynamicgraph::Matrix>(preJacobian);
+
     return jacobian;
   }
 

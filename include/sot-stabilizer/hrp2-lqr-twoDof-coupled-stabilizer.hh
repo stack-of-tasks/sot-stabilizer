@@ -210,7 +210,7 @@ namespace sotStabilizer
     VectorMultiBound& computeControlFeedback(VectorMultiBound& comdot,
         const int& time);
 
-    Matrix& computeJacobianCom(Matrix& jacobian, const int& time);
+    Matrix& computeJacobian(Matrix& jacobian, const int& time);
 
     stateObservation::Matrix3 computeInert(const stateObservation::Vector& com, const int& time);
 
@@ -251,7 +251,8 @@ namespace sotStabilizer
 
 
 
-    SignalPtr < dynamicgraph::Matrix, int> jacobianSIN_;
+    SignalPtr < dynamicgraph::Matrix, int> jacobianComSIN_;
+    SignalPtr < dynamicgraph::Matrix, int> jacobianWaistOriSIN_;
     SignalPtr <double, int> controlGainSIN_;
 
     ///Reference ZMP
