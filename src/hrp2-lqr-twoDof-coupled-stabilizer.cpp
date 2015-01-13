@@ -557,6 +557,17 @@ namespace sotStabilizer
     task [0].setSingleBound (preTask(0));
     task [1].setSingleBound (preTask (1));
     task [2].setSingleBound (preTask (2));
+
+    dynamicgraph::Vector error;
+    error(0)=dCom(0);
+    error(1)=dCom(1);
+    error(2)=dCom(2);
+    error(3)=dWaistOri(0);
+    error(4)=dWaistOri(1);
+    error(5)=dWaistOri(2);
+    errorSOUT_.setConstant (error);
+    errorSOUT_.setTime (time);
+
     return task;
   }
 

@@ -132,6 +132,7 @@ INSTALL(FILES
   dynamic_graph/sot/application/stabilizer/scenarii/ds_stabilizer.py
   dynamic_graph/sot/application/stabilizer/scenarii/ds_stabilizer_hrp2.py
   dynamic_graph/sot/application/stabilizer/scenarii/ds_linear_stabilizer_hrp2.py
+  dynamic_graph/sot/application/stabilizer/scenarii/ds_lqr_twoDof_coupled_stabilizer_hrp2.py
   dynamic_graph/sot/application/stabilizer/scenarii/seqplay_stabilizer.py
   dynamic_graph/sot/application/stabilizer/scenarii/seqplay_stabilizer_hrp2.py
   dynamic_graph/sot/application/stabilizer/scenarii/hand_compensater_chicken.py
