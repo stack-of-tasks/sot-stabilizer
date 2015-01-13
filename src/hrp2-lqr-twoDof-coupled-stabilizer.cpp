@@ -115,8 +115,6 @@ namespace sotStabilizer
     supportPos2SOUT_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::supportPos2"),
     dt_ (.005), on_ (false),
     forceThreshold_ (.036 * constm_*stateObservation::cst::gravityConstant),
-    iterationsSinceLastSupportLf_ (0), iterationsSinceLastSupportRf_ (0),
-    supportCandidateLf_ (0), supportCandidateRf_ (0),
     fixedGains_(false), zmpMode_(true),
     zmp_ (3),
     controller_(stateSize_,controlSize_),
@@ -431,25 +429,13 @@ namespace sotStabilizer
       {
         rightFootPosition.extract(rfpos);
         nbSupport_++;
-        supportCandidateRf_++;
         supportPos1SOUT_.setConstant (rfpos);
-        nbSupportSOUT_.setTime (time);
-        if (supportCandidateRf_ >= 3)
-        {
-          iterationsSinceLastSupportRf_ = 0;
-        }
-      }
-      else
-      {
-        supportCandidateRf_ = 0;
-        iterationsSinceLastSupportRf_ ++;
       }
 
       if (flz >= forceThreshold_)
       {
         leftFootPosition.extract(rfpos);
         nbSupport_++;
-        supportCandidateLf_++;
         if (nbSupport_==0)
         {
           supportPos1SOUT_.setConstant (rfpos);
@@ -460,24 +446,14 @@ namespace sotStabilizer
           supportPos2SOUT_.setConstant (rfpos);
           supportPos2SOUT_.setTime (time);
         }
-        if (supportCandidateLf_ >= 3)
-        {
-          iterationsSinceLastSupportLf_ = 0;
-        }
       }
-      else
-      {
-        supportCandidateLf_ = 0;
-        iterationsSinceLastSupportLf_++;
-      }
+
       nbSupportSOUT_.setConstant (nbSupport_);
       nbSupportSOUT_.setTime (time);
 
       if (!on_)
       {
-
         nbSupport_=0;
-
       }
 
       return nbSupport_;
