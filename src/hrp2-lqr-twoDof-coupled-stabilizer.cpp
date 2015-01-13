@@ -27,6 +27,7 @@
 #include <state-observation/tools/miscellaneous-algorithms.hpp>
 
 #include <sot-stabilizer/hrp2-lqr-twoDof-coupled-stabilizer.hh>
+#include <stdexcept>
 
 namespace sotStabilizer
 {
@@ -71,10 +72,15 @@ namespace sotStabilizer
   HRP2LQRTwoDofCoupledStabilizer::HRP2LQRTwoDofCoupledStabilizer(const std::string& inName) :
     TaskAbstract(inName),
     comSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::com"),
-    comRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comRef"),
+    comDotSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comDot"),
+    comRefgSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comRefg"),
     jacobianSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::Jcom"),
     comdotRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comdotRef"),
     comddotRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comddotRef"),
+    waistOriSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistOri"),
+    waistOriRefgSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistOriRefg"),
+    waistAngVelSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistAngVel"),
+    waistAngAccSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistAngAcc"),
     zmpRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::zmpRef"),
     leftFootPositionSIN_
     (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(HomoMatrix)::leftFootPosition"),
@@ -86,6 +92,8 @@ namespace sotStabilizer
     (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::force_rf"),
     stateFlexSIN_
     (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(HomoMatrix)::stateFlex"),
+    flexOriVectSIN_
+    (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::flexOriVect"),
     stateFlexDotSIN_
     (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::stateFlexDot"),
     stateFlexDDotSIN_
@@ -117,7 +125,8 @@ namespace sotStabilizer
   {
     // Register signals into the entity.
     signalRegistration (comSIN_);
-    signalRegistration (comRefSIN_);
+    signalRegistration (comDotSIN_);
+    signalRegistration (comRefgSIN_);
     signalRegistration (jacobianSIN_);
     signalRegistration (comdotRefSIN_);
     signalRegistration (zmpRefSIN_);
@@ -135,12 +144,19 @@ namespace sotStabilizer
     dynamicgraph::Matrix inertia(6);
     inertiaSIN.setConstant(inertia);
 
+    signalRegistration (waistOriSIN_);
+    signalRegistration (waistOriRefgSIN_);
+    signalRegistration (waistAngVelSIN_);
+    signalRegistration (waistAngAccSIN_);
+
+    signalRegistration (flexOriVectSIN_);
+
     signalRegistration (positionWaistSIN);
     dynamicgraph::Matrix positionWaist;
     positionWaistSIN.setConstant(positionWaist);
 
     taskSOUT.addDependency (comSIN_);
-    taskSOUT.addDependency (comRefSIN_);
+    taskSOUT.addDependency (comRefgSIN_);
     taskSOUT.addDependency (comdotRefSIN_);
 
     taskSOUT.addDependency (stateFlexSIN_);
@@ -360,7 +376,7 @@ namespace sotStabilizer
 
     controller_.setHorizonLength(horizon);
 
-    computeDynamicsMatrix(0);
+    computeDynamicsMatrix(Kth_,Kdth_,0);
     controller_.setDynamicsMatrices(A_, B_);
     controller_.setCostMatrices(Q_,R_);
 
@@ -462,26 +478,83 @@ namespace sotStabilizer
     // Determination of the number of support
     nbSupport_=computeNbSupport(time);
 
-    const Vector & com = comSIN_ (time);
-    const Vector & comref = comRefSIN_ (time);
-    const Vector& comdotRef = comdotRefSIN_ (time);
-    const MatrixHomogeneous& flexibilityMatrix = stateFlexSIN_.access(time);
-    const Vector& flexDot = stateFlexDotSIN_.access(time);
-    const Vector& flexDDot = stateFlexDDotSIN_.access(time);
+    // Reference in the global frame
+    const stateObservation::Vector3 & comRefg = convertVector<stateObservation::Vector>(comRefgSIN_ (time));
+    const stateObservation::Vector3 & waistOriRefg = convertVector<stateObservation::Vector>(waistOriRefgSIN_ (time));
+        // References of velocities and acceleration are equal to zero
+        // References for the flexibility are set to zero
+
+    // Com
+    const stateObservation::Vector3 & com = convertVector<stateObservation::Vector>(comSIN_ (time));
+    const stateObservation::Vector3 & comDot = convertVector<stateObservation::Vector>(comDotSIN_ (time));
+
+    // Waist orientation
+    const stateObservation::Vector3 & waistOri = convertVector<stateObservation::Vector>(waistOriSIN_ (time));
+    const stateObservation::Vector3 & waistAngVel = convertVector<stateObservation::Vector>(waistAngVelSIN_ (time));
+
+    // Flexibility
+    const stateObservation::Vector3 & flexOriVect = convertVector<stateObservation::Vector>(flexOriVectSIN_.access(time));
+    const stateObservation::Vector3 & flexDot = convertVector<stateObservation::Vector>(stateFlexDotSIN_.access(time));
+
+    // Error
+    stateObservation::Vector dCom = com - comRefg;
+    stateObservation::Vector dWaistOri = waistOri - waistOriRefg;
+
+    stateObservation::Vector xk;
+    xk.resize(stateSize_);
+    xk <<   dCom,
+            dWaistOri,
+            flexOriVect,
+            comDot,
+            waistAngVel,
+            flexDot;
+
+    stateObservation::Vector u;
+    stateObservation::Matrix3 Kth, Kdth;
+    stateObservation::Vector preTask;
 
     switch (nbSupport_)
     {
-        case 0: break;
-        case 1: //single support
+        case 0: // No support
         {
+            preTask <<  -gain*dCom,
+                        -gain*dWaistOri;
         }
         break;
-        default: //double support or more
+        case 1: // Single support
         {
+             computeDynamicsMatrix(Kth_,Kdth_,time);
+             controller_.setDynamicsMatrices(A_,B_);
+             controller_.setState(xk,time);
+             u=controller_.getControl(time);
+             preTask=dt_*u;
         }
         break;
+        case 2 : // Double support
+        {
+              Kth <<    0.5*Kth_(0,0)*Kth_(0,0) ,0,0,
+                        0,Kth_(1,1),0,
+                        0,0,0.5*Kth_(2,2)*Kth_(2,2);
+              Kdth <<    0.5*Kdth_(0,0)*Kdth_(0,0) ,0,0,
+                        0,Kdth_(1,1),0,
+                        0,0,0.5*Kdth_(2,2)*Kdth_(2,2);
+
+              // TODO: when feet are not aligned along the y axis
+
+              computeDynamicsMatrix(Kth,Kdth,time);
+              controller_.setDynamicsMatrices(A_,B_);
+              controller_.setState(xk,time);
+              u=controller_.getControl(time);
+              preTask=dt_*u;
+        }
+        break;
+        default: throw std::invalid_argument("Only 0, 1 and 2 number of supports cases are developped");
     };
 
+    task.resize (3);
+    task [0].setSingleBound (preTask(0));
+    task [1].setSingleBound (preTask (1));
+    task [2].setSingleBound (preTask (2));
     return task;
   }
 
@@ -493,14 +566,10 @@ namespace sotStabilizer
   }
 
 
-  void HRP2LQRTwoDofCoupledStabilizer::computeDynamicsMatrix(const int& time)
+  void HRP2LQRTwoDofCoupledStabilizer::computeDynamicsMatrix(const stateObservation::Matrix Kth, const stateObservation::Matrix Kdth, const int& time)
   {
-    stateObservation::Matrix A(stateObservation::Matrix::Zero(stateSize_,stateSize_));
-
     double g = stateObservation::cst::gravityConstant;
     double m = hrp2Mass_;
-    stateObservation::Matrix3 Kth = Kth_;
-    stateObservation::Matrix3 Kdth = Kdth_;
     stateObservation::Vector cl = convertVector<stateObservation::Vector>(comSIN_ (time));
     stateObservation::Matrix I = computeInert(cl,time);
 
@@ -563,7 +632,6 @@ namespace sotStabilizer
 
   stateObservation::Matrix3 HRP2LQRTwoDofCoupledStabilizer::computeInert(const stateObservation::Vector& cl, const int& inTime)
 {
-
     const dynamicgraph::Matrix& inertia=inertiaSIN.access(inTime);
     const dynamicgraph::Matrix& homoWaist=positionWaistSIN.access(inTime);
 
@@ -604,7 +672,6 @@ namespace sotStabilizer
     inert.elementAt(5) -= m*(com.elementAt(1))*(com.elementAt(2));
 
     return kine::computeInertiaTensor(convertVector<stateObservation::Vector>(inert));
-
 }
 
 } // namespace sotStabilizer

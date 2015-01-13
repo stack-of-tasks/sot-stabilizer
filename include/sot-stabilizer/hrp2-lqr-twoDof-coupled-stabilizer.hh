@@ -199,7 +199,7 @@ namespace sotStabilizer
     }
 
 
-    inline void computeDynamicsMatrix(const int& time);
+    inline void computeDynamicsMatrix(const stateObservation::Matrix Kth, const stateObservation::Matrix Kdth, const int& time);
 
   private:
 
@@ -214,15 +214,42 @@ namespace sotStabilizer
 
     stateObservation::Matrix3 computeInert(const stateObservation::Vector& com, const int& time);
 
-    // Position of center of mass
-    SignalPtr < dynamicgraph::Vector, int> comSIN_;
-
+    /// References
     // Reference position of center of mass
-    SignalPtr < dynamicgraph::Vector, int> comRefSIN_;
+    SignalPtr < dynamicgraph::Vector, int> comRefgSIN_;
+    // Reference orientation of the waist
+    SignalPtr < dynamicgraph::Vector, int > waistOriRefgSIN_;
+
     // Reference velocity of the center of mass
     SignalPtr < dynamicgraph::Vector, int> comdotRefSIN_;
     // Reference com ddot
     SignalPtr < dynamicgraph::Vector, int> comddotRefSIN_;
+
+    /// Com
+    // Position of center of mass
+    SignalPtr < dynamicgraph::Vector, int> comSIN_;
+    // Velocity of center of mass
+    SignalPtr < dynamicgraph::Vector, int> comDotSIN_;
+
+    /// Waist
+    // Orientation of the waist
+    SignalPtr < dynamicgraph::Vector, int > waistOriSIN_;
+        // Refrence angular velocity of the waist
+    SignalPtr < dynamicgraph::Vector , int > waistAngVelSIN_;
+    // Reference  angular acceleration of the waist
+    SignalPtr < dynamicgraph::Vector, int> waistAngAccSIN_;
+
+    /// Flexibility
+    // State of the flexibility
+    SignalPtr <MatrixHomogeneous, int> stateFlexSIN_;
+    // Velocity of the flexibility
+    SignalPtr <dynamicgraph::Vector, int> stateFlexDotSIN_;
+    // Velocity of the flexibility
+    SignalPtr <dynamicgraph::Vector, int> stateFlexDDotSIN_;
+    // Orientation of the flexibility on vector form
+    SignalPtr <dynamicgraph::Vector, int> flexOriVectSIN_;
+
+
 
     SignalPtr < dynamicgraph::Matrix, int> jacobianSIN_;
     SignalPtr <double, int> controlGainSIN_;
@@ -240,13 +267,6 @@ namespace sotStabilizer
     // Force in right foot sensor
     SignalPtr <dynamicgraph::Vector, int> forceRightFootSIN_;
 
-    /// Flexibility
-    // State of the flexibility
-    SignalPtr <MatrixHomogeneous, int> stateFlexSIN_;
-    // Velocity of the flexibility
-    SignalPtr <dynamicgraph::Vector, int> stateFlexDotSIN_;
-    // Velocity of the flexibility
-    SignalPtr <dynamicgraph::Vector, int> stateFlexDDotSIN_;
 
     /// Signals to compute dynamics model
     dynamicgraph::SignalPtr < ::dynamicgraph::Matrix, int> inertiaSIN;
