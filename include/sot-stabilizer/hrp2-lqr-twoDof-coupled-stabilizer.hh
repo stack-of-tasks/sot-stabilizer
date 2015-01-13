@@ -239,6 +239,9 @@ namespace sotStabilizer
     // Reference  angular acceleration of the waist
     SignalPtr < dynamicgraph::Vector, int> waistAngAccSIN_;
 
+    // Homogeneous representation of the waist position
+    SignalPtr <dynamicgraph::Matrix, int> waistHomoSIN_;
+
     /// Flexibility
     // State of the flexibility
     SignalPtr <MatrixHomogeneous, int> stateFlexSIN_;

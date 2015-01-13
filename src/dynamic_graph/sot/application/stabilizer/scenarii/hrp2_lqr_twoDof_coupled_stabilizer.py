@@ -38,7 +38,8 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
 
 
 	# Control state
-	plug(self.waistMatrixToUTheta.sout,self.waistOri)
+	#plug(self.waistMatrixToUTheta.sout,self.waistOri)
+	plug(robot.dynamic.waist,self.waistHomo)
 
 	plug (robot.dynamic.com, self.com)
         plug (robot.dynamic.Jcom, self.Jcom)

@@ -83,6 +83,7 @@ namespace sotStabilizer
     waistVelSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistVel"),
     waistAngAccSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistAngAcc"),
     jacobianWaistSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::Jwaist"),
+    waistHomoSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::waistHomo"),
     zmpRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::zmpRef"),
     leftFootPositionSIN_
     (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(HomoMatrix)::leftFootPosition"),
@@ -154,6 +155,7 @@ namespace sotStabilizer
     signalRegistration (waistVelSIN_);
     signalRegistration (waistAngAccSIN_);
     signalRegistration (jacobianWaistSIN_);
+    signalRegistration (waistHomoSIN_);
 
     signalRegistration (flexOriVectSIN_);
 
@@ -370,6 +372,13 @@ namespace sotStabilizer
                             0.0, 0.0, 0.0, 1.0;
     positionWaistSIN.setConstant(convertMatrix<dynamicgraph::Matrix>(positionWaist));
 
+    stateObservation::Matrix4 homoWaist;
+    homoWaist <<      0.99998573432883131, -0.0053403256847235764, 0.00010981989355530105, -1.651929567364003e-05,
+                      0.0053403915800877009, 0.99998555471196726, -0.00060875707006170711, 0.0008733516988761506,
+                      -0.00010656734615829933, 0.00060933486696839291, 0.99999980867719196, 0.64869730032049466,
+                      0.0, 0.0, 0.0, 1.0;
+    waistHomoSIN_.setConstant(convertMatrix<dynamicgraph::Matrix>(homoWaist));
+
     stateObservation::Matrix inertia;
     inertia.resize(6,6);
     inertia <<  56.867992000000001, 1.082595017423981e-17, -1.0227922838095677e-19, 0.012404467020412754, 9.0440811406882826, -0.087341805362338931,
@@ -505,10 +514,18 @@ namespace sotStabilizer
     const stateObservation::Vector & comDot = convertVector<stateObservation::Vector>(comDotSIN_ (time));
 
     // Waist orientation
-    const stateObservation::Vector & waistOri = convertVector<stateObservation::Vector>(waistOriSIN_ (time));
+    //const stateObservation::Vector & waistOri = convertVector<stateObservation::Vector>(waistOriSIN_ (time));
     const stateObservation::Vector & waistVel = convertVector<stateObservation::Vector>(waistVelSIN_ (time));
     const stateObservation::Vector3 & waistAngVel = waistVel.block(3,0,3,1);
-std::cout << "waistOri" << waistOri << std::endl;
+    const stateObservation::Matrix & waistHomo = convertMatrix<stateObservation::Matrix>(waistHomoSIN_ (time));
+
+    stateObservation::Vector waistVect;
+    waistVect.resize(6);
+    stateObservation::Vector3 waistOri;
+    waistVect = kine::homogeneousMatrixToVector6(waistHomo);
+    waistOri=waistVect.block(3,0,3,1);
+
+    std::cout << "waistOri: " << waistOri.transpose() << std::endl;
 
     // Flexibility
     const stateObservation::Vector & flexOriVect = convertVector<stateObservation::Vector>(flexOriVectSIN_.access(time));
@@ -588,21 +605,16 @@ std::cout << "waistOri" << waistOri << std::endl;
         task [i].setSingleBound (preTask(i));
     }
 
-    dynamicgraph::Vector error;
+    stateObservation::Vector error;
     error.resize(controlSize_);
-    error(0)=dCom(0);
-    error(1)=dCom(1);
-    error(2)=dCom(2);
-    error(3)=dWaistOri(0);
-    error(4)=dWaistOri(1);
-    error(5)=dWaistOri(2);
-    errorSOUT_.setConstant (error);
+    error.block(0,1,3,1)=dCom;
+    error.block(3,1,3,1)=dWaistOri;
+    errorSOUT_.setConstant (convertVector<dynamicgraph::Vector>(error));
     errorSOUT_.setTime (time);
 
     stateSOUT_.setConstant (convertVector<dynamicgraph::Vector>(xk));
     controlSOUT_.setConstant (convertVector<dynamicgraph::Vector>(u));
-    std::cout << "state:" << xk.transpose() << std::endl;
-    std::cout << "control:" << u.transpose() << std::endl;
+
 
     return task;
   }
