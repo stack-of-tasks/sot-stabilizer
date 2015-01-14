@@ -274,7 +274,6 @@ namespace sotStabilizer
 
     /// Signals to compute dynamics model
     dynamicgraph::SignalPtr < ::dynamicgraph::Matrix, int> inertiaSIN;
-    dynamicgraph::SignalPtr < ::dynamicgraph::Matrix, int> positionWaistSIN;
 
     // Velocity of center of mass
     SignalTimeDependent <dynamicgraph::Vector, int> comdotSOUT_;
@@ -322,6 +321,8 @@ namespace sotStabilizer
 
     stateObservation::Matrix Kth_;
     stateObservation::Matrix Kdth_;
+
+    stateObservation::Vector preTask_;
 
     bool fixedGains_;
     bool zmpMode_;

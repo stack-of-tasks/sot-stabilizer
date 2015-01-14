@@ -104,7 +104,6 @@ namespace sotStabilizer
     controlGainSIN_
     (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(double)::controlGain"),
     inertiaSIN(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::inertia"),
-    positionWaistSIN(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::positionWaist"),
     comdotSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::comdot"),
     comddotSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::comddot"),
     comddotRefSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::comddotRefOUT"),
@@ -158,9 +157,6 @@ namespace sotStabilizer
     signalRegistration (waistHomoSIN_);
 
     signalRegistration (flexOriVectSIN_);
-
-    signalRegistration (positionWaistSIN);
-
 
     taskSOUT.addDependency (comSIN_);
     taskSOUT.addDependency (comRefgSIN_);
@@ -365,13 +361,6 @@ namespace sotStabilizer
             0.80771000000000004;
     comSIN_.setConstant(convertVector<dynamicgraph::Vector>(com));
 
-    stateObservation::Matrix positionWaist(4,4);
-    positionWaist   <<      0.99998573432883131, -0.0053403256847235764, 0.00010981989355530105, -1.651929567364003e-05,
-                            0.0053403915800877009, 0.99998555471196726, -0.00060875707006170711, 0.0008733516988761506,
-                            -0.00010656734615829933, 0.00060933486696839291, 0.99999980867719196, 0.64869730032049466,
-                            0.0, 0.0, 0.0, 1.0;
-    positionWaistSIN.setConstant(convertMatrix<dynamicgraph::Matrix>(positionWaist));
-
     stateObservation::Matrix4 homoWaist;
     homoWaist <<      0.99998573432883131, -0.0053403256847235764, 0.00010981989355530105, -1.651929567364003e-05,
                       0.0053403915800877009, 0.99998555471196726, -0.00060875707006170711, 0.0008733516988761506,
@@ -409,11 +398,51 @@ namespace sotStabilizer
                 0,65,0,
                 0,0,65;
 
-    Q_.setIdentity();
-    Q_.noalias()=10*Q_;
+    stateObservation::Vector Qvec;
+    stateObservation::Matrix Qglob;
+    Qglob.resize(stateSize_,stateSize_);
+    Qvec.resize(stateSize_);
+    Qglob.setIdentity();
 
-    R_.setIdentity();
-    R_.noalias()=1*R_;
+    Qglob.noalias()=1*Qglob;
+    Qvec    <<  1,     // com
+                1,
+                1,
+                1,     // ori waist
+                1,
+                1,
+                1,     // ori flex
+                1,
+                1,
+                1,     // dcom
+                1,
+                1,
+                1,     // d ori waist
+                1,
+                1,
+                1,     // d ori flex
+                1,
+                1;
+
+    Q_ = Qvec.asDiagonal()*Qglob;
+
+
+    stateObservation::Vector Rvec;
+    stateObservation::Matrix Rglob;
+    Rglob.resize(controlSize_,controlSize_);
+    Rvec.resize(controlSize_);
+    Rglob.setIdentity();
+
+    Rglob.noalias()=1*Rglob;
+    Rvec    <<  1,     // dd com
+                1,
+                1,
+                1,     // dd ori waist
+                1,
+                0.001;
+
+    Q_ = Qvec.asDiagonal()*Qglob;
+    R_ = Rvec.asDiagonal()*Rglob;
 
 
     zmp_.setZero ();
@@ -424,6 +453,9 @@ namespace sotStabilizer
     computeDynamicsMatrix(com,Kth_,Kdth_,0);
     controller_.setDynamicsMatrices(A_, B_);
     controller_.setCostMatrices(Q_,R_);
+
+    preTask_.resize(controlSize_);
+    preTask_.setZero();
 
     hrp2Mass_ = 58;
 
@@ -550,9 +582,6 @@ namespace sotStabilizer
 
     stateObservation::Matrix3 Kth, Kdth;
 
-    stateObservation::Vector preTask;
-    preTask.resize(controlSize_);
-
     stateObservation::Vector comRefl;
     Vector flexPos(3);
     Matrix flexRot(3,3);
@@ -564,7 +593,7 @@ namespace sotStabilizer
     {
         case 0: // No support
         {
-            preTask <<  -gain*dCom,
+            preTask_ <<  -gain*dCom,
                         -gain*dWaistOri;
         }
         break;
@@ -574,7 +603,7 @@ namespace sotStabilizer
              controller_.setDynamicsMatrices(A_,B_);
              controller_.setState(xk,time);
              u=controller_.getControl(time);
-             preTask=dt_*u;
+             preTask_+=dt_*u;
         }
         break;
         case 2 : // Double support
@@ -592,7 +621,7 @@ namespace sotStabilizer
               controller_.setDynamicsMatrices(A_,B_);
               controller_.setState(xk,time);
               u=controller_.getControl(time);
-              preTask=dt_*u;
+              preTask_+=dt_*u;
         }
         break;
         default: throw std::invalid_argument("Only 0, 1 and 2 number of supports cases are developped");
@@ -602,13 +631,13 @@ namespace sotStabilizer
     int i;
     for (i=0;i<controlSize_;i++)
     {
-        task [i].setSingleBound (preTask(i));
+        task [i].setSingleBound (preTask_(i));
     }
 
     stateObservation::Vector error;
     error.resize(controlSize_);
-    error.block(0,1,3,1)=dCom;
-    error.block(3,1,3,1)=dWaistOri;
+    error.block(0,0,3,1)=dCom;
+    error.block(3,0,3,1)=dWaistOri;
     errorSOUT_.setConstant (convertVector<dynamicgraph::Vector>(error));
     errorSOUT_.setTime (time);
 
@@ -706,7 +735,7 @@ namespace sotStabilizer
   stateObservation::Matrix3 HRP2LQRTwoDofCoupledStabilizer::computeInert(const stateObservation::Vector& cl, const int& inTime)
 {
     const dynamicgraph::Matrix& inertia=inertiaSIN.access(inTime);
-    const dynamicgraph::Matrix& homoWaist=positionWaistSIN.access(inTime);
+    const dynamicgraph::Matrix& homoWaist=waistHomoSIN_.access(inTime);
 
     double m=inertia(0,0); //<=== donne 56.8;
 

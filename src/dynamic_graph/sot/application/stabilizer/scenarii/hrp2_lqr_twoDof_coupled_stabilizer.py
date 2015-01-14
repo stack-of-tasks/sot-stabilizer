@@ -17,11 +17,11 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
 
 	from dynamic_graph.sot.application.state_observation.initializations.hrp2_model_base_flex_estimator import HRP2ModelBaseFlexEstimator  
         HRP2LQRTwoDofCoupledStabilizer.__init__(self,taskname)
-        robot.dynamic.com.recompute(1)
-        robot.dynamic.Jcom.recompute(1)
-        robot.dynamic.waist.recompute(2)
-        robot.dynamic.Jwaist.recompute(1)
-	robot.dynamic.inertia.recompute(2)
+        robot.dynamic.com.recompute(0)
+        robot.dynamic.Jcom.recompute(0)
+        robot.dynamic.waist.recompute(0)
+        robot.dynamic.Jwaist.recompute(0)
+	robot.dynamic.inertia.recompute(0)
 
         self.DCom = Multiply_matrix_vector('DCom') # Com velocity: self.DCom.sout
         plug(robot.dynamic.Jcom,self.DCom.sin1)
@@ -45,7 +45,6 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
         plug (robot.dynamic.Jcom, self.Jcom)
 	plug(self.DCom.sout,self.comDot)
 
-	plug (robot.dynamic.waist, self.positionWaist)
 	plug ( robot.dynamic.Jwaist, self.Jwaist) 
 	plug ( robot.dynamic.inertia, self.inertia)
 	plug(self.DWaist.sout,self.waistVel)
