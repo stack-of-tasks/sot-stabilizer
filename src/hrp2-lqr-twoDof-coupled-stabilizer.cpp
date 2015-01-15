@@ -734,46 +734,20 @@ namespace sotStabilizer
 
   stateObservation::Matrix3 HRP2LQRTwoDofCoupledStabilizer::computeInert(const stateObservation::Vector& cl, const int& inTime)
 {
-    const dynamicgraph::Matrix& inertia=inertiaSIN.access(inTime);
-    const dynamicgraph::Matrix& homoWaist=waistHomoSIN_.access(inTime);
+    const stateObservation::Matrix& inertiaSotWaistFrame=convertMatrix<stateObservation::Matrix>(inertiaSIN.access(inTime));
+    const stateObservation::Matrix& homoWaist=convertMatrix<stateObservation::Matrix>(waistHomoSIN_.access(inTime));
 
-    double m=inertia(0,0); //<=== donne 56.8;
+    double m=inertiaSotWaistFrame(0,0); //<=== give 56.8;
+    stateObservation::Vector3 wl=homoWaist.block(0,3,3,1);
 
-    dynamicgraph::Vector com=convertVector<dynamicgraph::Vector>(cl);
-    dynamicgraph::Vector inert;
-    inert.resize(6);
 
-    dynamicgraph::Vector waist;
-    waist.resize(3);
-    waist.elementAt(0)=homoWaist(0,3);
-    waist.elementAt(1)=homoWaist(1,3);
-    waist.elementAt(2)=homoWaist(2,3);
+    stateObservation::Matrix3 inertiaControlFrame, inertiaComFrame, inertiaWaistFrame;
 
-    // Inertia expressed at waist
-    inert.elementAt(0)=inertia(3,3);
-    inert.elementAt(1)=inertia(4,4);
-    inert.elementAt(2)=inertia(5,5);
-    inert.elementAt(3)=inertia(3,4);
-    inert.elementAt(4)=inertia(3,5);
-    inert.elementAt(5)=inertia(4,5);
+    inertiaWaistFrame = inertiaSotWaistFrame.block(3,3,3,3);
+    inertiaComFrame = inertiaWaistFrame + m * kine::skewSymmetric2(cl-wl);
+    inertiaControlFrame = inertiaComFrame - m * kine::skewSymmetric2(cl);
 
-    // From waist to com
-    inert.elementAt(0) += -m*((com.elementAt(1)-waist.elementAt(1))*(com.elementAt(1)-waist.elementAt(1))+(com.elementAt(2)-waist.elementAt(2))*(com.elementAt(2)-waist.elementAt(2)));
-    inert.elementAt(1) += -m*((com.elementAt(0)-waist.elementAt(0))*(com.elementAt(0)-waist.elementAt(0))+(com.elementAt(2)-waist.elementAt(2))*(com.elementAt(2)-waist.elementAt(2)));
-    inert.elementAt(2) += -m*((com.elementAt(0)-waist.elementAt(0))*(com.elementAt(0)-waist.elementAt(0))+(com.elementAt(1)-waist.elementAt(1))*(com.elementAt(1)-waist.elementAt(1)));
-    inert.elementAt(3) += m*(com.elementAt(0)-waist.elementAt(0))*(com.elementAt(1)-waist.elementAt(1));
-    inert.elementAt(4) += m*(com.elementAt(0)-waist.elementAt(0))*(com.elementAt(2)-waist.elementAt(2));
-    inert.elementAt(5) += m*(com.elementAt(1)-waist.elementAt(1))*(com.elementAt(2)-waist.elementAt(2));
-
-    // From com to local frame
-    inert.elementAt(0) -= -m*((com.elementAt(1))*(com.elementAt(1))+(com.elementAt(2))*(com.elementAt(2)));
-    inert.elementAt(1) -= -m*((com.elementAt(0))*(com.elementAt(0))+(com.elementAt(2))*(com.elementAt(2)));
-    inert.elementAt(2) -= -m*((com.elementAt(0))*(com.elementAt(0))+(com.elementAt(1))*(com.elementAt(1)));
-    inert.elementAt(3) -= m*(com.elementAt(0))*(com.elementAt(1));
-    inert.elementAt(4) -= m*(com.elementAt(0))*(com.elementAt(2));
-    inert.elementAt(5) -= m*(com.elementAt(1))*(com.elementAt(2));
-
-    return kine::computeInertiaTensor(convertVector<stateObservation::Vector>(inert));
+    return inertiaControlFrame;
 }
 
 } // namespace sotStabilizer
