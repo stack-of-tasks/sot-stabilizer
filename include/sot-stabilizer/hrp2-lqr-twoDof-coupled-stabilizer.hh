@@ -289,6 +289,10 @@ namespace sotStabilizer
     SignalTimeDependent <Vector, int> supportPos1SOUT_;
     SignalTimeDependent <Vector, int> supportPos2SOUT_;
 
+    dynamicgraph::SignalPtr < ::dynamicgraph::Matrix, int> inertiaSOUT;
+
+    dynamicgraph::SignalPtr < ::dynamicgraph::Matrix, int> gainSOUT;
+
     ///error output
     SignalTimeDependent <Vector, int> errorSOUT_;
 

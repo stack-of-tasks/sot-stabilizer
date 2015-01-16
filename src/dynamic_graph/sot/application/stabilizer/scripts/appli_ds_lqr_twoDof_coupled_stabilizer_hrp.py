@@ -48,6 +48,8 @@ appli.robot.addTrace ( stabilizer.name,'state')
 appli.robot.addTrace ( stabilizer.name,'control')
 appli.robot.addTrace (robot.device.name,'velocity')
 appli.robot.addTrace (robot.dynamic.name,'waist')
+appli.robot.addTrace (stabilizer.name,'inertiaOut')
+appli.robot.addTrace (stabilizer.name,'gain')
 
 appli.startTracer()
 

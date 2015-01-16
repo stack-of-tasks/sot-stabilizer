@@ -115,6 +115,8 @@ namespace sotStabilizer
     controlSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::control"),
     supportPos1SOUT_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::supportPos1"),
     supportPos2SOUT_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::supportPos2"),
+    inertiaSOUT(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(matrix)::inertiaOut"),
+    gainSOUT(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(matrix)::gain"),
     dt_ (.005), on_ (false),
     forceThreshold_ (.036 * constm_*stateObservation::cst::gravityConstant),
     supportPos1_(3), supportPos2_(3),
@@ -147,7 +149,8 @@ namespace sotStabilizer
     signalRegistration (controlSOUT_);
     signalRegistration (zmpRefSOUT_);
     signalRegistration (inertiaSIN);
-
+    signalRegistration (inertiaSOUT);
+    signalRegistration (gainSOUT);
 
     signalRegistration (waistOriSIN_);
     signalRegistration (waistOriRefgSIN_);
@@ -439,7 +442,7 @@ namespace sotStabilizer
                 10,
                 1,     // dd ori waist
                 1,
-                0.1;
+                1;
 
     Q_ = Qvec.asDiagonal()*Qglob;
     R_ = Rvec.asDiagonal()*Rglob;
@@ -641,6 +644,8 @@ namespace sotStabilizer
     std::cout << "state: " << xk.transpose() << std::endl;
     controlSOUT_.setConstant (convertVector<dynamicgraph::Vector>(u));
 
+    gainSOUT.setConstant (convertMatrix<dynamicgraph::Matrix>(controller_.getLastGain()));
+
 
     return task;
   }
@@ -744,6 +749,7 @@ namespace sotStabilizer
     inertiaComFrame = inertiaWaistFrame + m * kine::skewSymmetric2(cl-wl);
    // inertiaControlFrame = inertiaComFrame - m * kine::skewSymmetric2(cl);
 
+    inertiaSOUT.setConstant (convertMatrix<dynamicgraph::Matrix>(inertiaComFrame));
     return inertiaComFrame;
 }
 
