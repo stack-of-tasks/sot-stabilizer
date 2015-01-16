@@ -404,13 +404,13 @@ namespace sotStabilizer
     Qvec.resize(stateSize_);
     Qglob.setIdentity();
 
-    Qglob.noalias()=1*Qglob;
-    Qvec    <<  1,     // com
-                1,
-                1,
-                1,     // ori waist
-                1,
-                1,
+    Qglob.noalias()=10000*Qglob;
+    Qvec    <<  10,     // com
+                10,
+                10,
+                10,     // ori waist
+                10,
+                10,
                 1,     // ori flex
                 1,
                 1,
@@ -434,16 +434,15 @@ namespace sotStabilizer
     Rglob.setIdentity();
 
     Rglob.noalias()=1*Rglob;
-    Rvec    <<  1,     // dd com
-                1,
-                1,
+    Rvec    <<  10,     // dd com
+                10,
+                10,
                 1,     // dd ori waist
                 1,
-                0.001;
+                0.1;
 
     Q_ = Qvec.asDiagonal()*Qglob;
     R_ = Rvec.asDiagonal()*Rglob;
-
 
     zmp_.setZero ();
 
@@ -458,7 +457,6 @@ namespace sotStabilizer
     preTask_.setZero();
 
     hrp2Mass_ = 58;
-
   }
 
   /// Determine number of support : to be put in stateObervation in my opinion
@@ -557,8 +555,6 @@ namespace sotStabilizer
     waistVect = kine::homogeneousMatrixToVector6(waistHomo);
     waistOri=waistVect.block(3,0,3,1);
 
-    std::cout << "waistOri: " << waistOri.transpose() << std::endl;
-
     // Flexibility
     const stateObservation::Vector & flexOriVect = convertVector<stateObservation::Vector>(flexOriVectSIN_.access(time));
     const stateObservation::Vector & flexAngVelVect = convertVector<stateObservation::Vector>(flexAngVelVectSIN_.access(time));
@@ -642,6 +638,7 @@ namespace sotStabilizer
     errorSOUT_.setTime (time);
 
     stateSOUT_.setConstant (convertVector<dynamicgraph::Vector>(xk));
+    std::cout << "state: " << xk.transpose() << std::endl;
     controlSOUT_.setConstant (convertVector<dynamicgraph::Vector>(u));
 
 
@@ -689,22 +686,22 @@ namespace sotStabilizer
 
     stateObservation::Matrix Inertia;
     Inertia = I;
-    Inertia -= m * kine::skewSymmetric(cl)*kine::skewSymmetric(cl);
+    Inertia -= m * kine::skewSymmetric2(cl);
     Inertia = Inertia.inverse();
 
     stateObservation::Vector3 v;
     v=-g*m*Inertia*kine::skewSymmetric(cl)*uz;
 
     // Caracteristic polynomial
-    ddomega_cl=Inertia*m*kine::skewSymmetric(Inertia*v)-Inertia*g*m*kine::skewSymmetric(uz);
-    ddomega_omegach=Inertia*kine::skewSymmetric(v)-Inertia*kine::skewSymmetric(I*v);
-    ddomega_omega=kine::skewSymmetric(v)-Inertia*(Kth-g*m*kine::skewSymmetric(cl)*kine::skewSymmetric(uz));
-    ddomega_dcl.setZero();
-    ddomega_domegach.setZero();
-    ddomega_domega=-Inertia*Kdth;
+    ddomega_cl=Inertia*m*(2*kine::skewSymmetric(cl)*kine::skewSymmetric(v)-kine::skewSymmetric(v)*kine::skewSymmetric(cl)-g*kine::skewSymmetric(uz));
+    ddomega_omegach=Inertia*I*kine::skewSymmetric(v)-Inertia*kine::skewSymmetric(I*v);
+    ddomega_omega=kine::skewSymmetric(v)-Inertia*(Kth-g*m*kine::skewSymmetric(cl)*kine::skewSymmetric(uz)); //
+    ddomega_dcl.setZero(); //
+    ddomega_domegach.setZero(); //
+    ddomega_domega=-Inertia*Kdth; //
 
-    ddomega_ddcl=-m*Inertia*kine::skewSymmetric(cl);
-    ddomega_ddomegach=-Inertia*I;
+    ddomega_ddcl=-m*Inertia*kine::skewSymmetric(cl); //
+    ddomega_ddomegach=-Inertia*I; //
 
     // A_ and B_ computation
     A_.block(0,9,3,3)=identity;
@@ -745,9 +742,9 @@ namespace sotStabilizer
 
     inertiaWaistFrame = inertiaSotWaistFrame.block(3,3,3,3);
     inertiaComFrame = inertiaWaistFrame + m * kine::skewSymmetric2(cl-wl);
-    inertiaControlFrame = inertiaComFrame - m * kine::skewSymmetric2(cl);
+   // inertiaControlFrame = inertiaComFrame - m * kine::skewSymmetric2(cl);
 
-    return inertiaControlFrame;
+    return inertiaComFrame;
 }
 
 } // namespace sotStabilizer
