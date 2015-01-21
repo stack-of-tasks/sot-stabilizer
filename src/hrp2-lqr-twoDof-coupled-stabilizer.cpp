@@ -117,6 +117,8 @@ namespace sotStabilizer
     supportPos2SOUT_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::supportPos2"),
     inertiaSOUT(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(matrix)::inertiaOut"),
     gainSOUT(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(matrix)::gain"),
+    AmatrixSOUT(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(matrix)::Amatrix"),
+    BmatrixSOUT(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(matrix)::Bmatrix"),
     dt_ (.005), on_ (false),
     forceThreshold_ (.036 * constm_*stateObservation::cst::gravityConstant),
     supportPos1_(3), supportPos2_(3),
@@ -151,6 +153,8 @@ namespace sotStabilizer
     signalRegistration (inertiaSIN);
     signalRegistration (inertiaSOUT);
     signalRegistration (gainSOUT);
+    signalRegistration (AmatrixSOUT);
+    signalRegistration (BmatrixSOUT);
 
     signalRegistration (waistOriSIN_);
     signalRegistration (waistOriRefgSIN_);
@@ -732,6 +736,8 @@ std::cout << "nbSupport: " << nbSupport_ << std::endl;
 
     B_.noalias() = dt_* B_;
 
+    AmatrixSOUT.setConstant(convertMatrix<dynamicgraph::Matrix>(A_));
+    BmatrixSOUT.setConstant(convertMatrix<dynamicgraph::Matrix>(B_));
     std::cout << "A: " << A_ << std::endl;
     std::cout << "B: " << B_ << std::endl;
 

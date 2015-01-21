@@ -301,6 +301,9 @@ namespace sotStabilizer
     ///control output
     SignalTimeDependent <Vector, int> controlSOUT_;
 
+    dynamicgraph::SignalPtr < ::dynamicgraph::Matrix, int> AmatrixSOUT;
+    dynamicgraph::SignalPtr < ::dynamicgraph::Matrix, int> BmatrixSOUT;
+
     ///Reference ZMP
     SignalTimeDependent <Vector, int> zmpRefSOUT_;
 
