@@ -53,8 +53,8 @@ namespace sotStabilizer
   double HRP2LQRTwoDofCoupledStabilizer::constcomHeight_ = 0.807;
   double HRP2LQRTwoDofCoupledStabilizer::conststepLength_ = 0.19;
 
-  const unsigned stateSize_=18;
-  const unsigned controlSize_=6;
+  const unsigned stateSize_=16;
+  const unsigned controlSize_=5;
 
   DYNAMICGRAPH_FACTORY_ENTITY_PLUGIN (HRP2LQRTwoDofCoupledStabilizer, "HRP2LQRTwoDofCoupledStabilizer");
 
@@ -382,13 +382,15 @@ namespace sotStabilizer
     inertiaSIN.setConstant(convertMatrix<dynamicgraph::Matrix>(inertia));
 
     Vector vect;
+    stateObservation::Vector vec;
+    vec.resize(2); vec.setZero();
     vect.resize(3); vect.setZero();
     comDotSIN_.setConstant(vect);
-    waistOriSIN_.setConstant(vect);
+    waistOriSIN_.setConstant(convertVector<dynamicgraph::Vector>(vec));
     flexOriVectSIN_.setConstant(vect);
     flexAngVelVectSIN_.setConstant(vect);
     vect.resize(6); vect.setZero();
-    waistVelSIN_.setConstant(vect);
+    waistVelSIN_.setConstant(convertVector<dynamicgraph::Vector>(vec));
 
     Kth_.resize(3,3);
     Kdth_.resize(3,3);
@@ -407,13 +409,12 @@ namespace sotStabilizer
     Qvec.resize(stateSize_);
     Qglob.setIdentity();
 
-    Qglob.noalias()=10000*Qglob;
-    Qvec    <<  10,     // com
-                10,
-                10,
-                10,     // ori waist
-                10,
-                10,
+    Qglob.noalias()=1*Qglob;
+    Qvec    <<  1,     // com
+                1,
+                1,
+                1,     // ori waist
+                1,
                 1,     // ori flex
                 1,
                 1,
@@ -422,13 +423,11 @@ namespace sotStabilizer
                 1,
                 1,     // d ori waist
                 1,
-                1,
                 1,     // d ori flex
                 1,
                 1;
 
     Q_ = Qvec.asDiagonal()*Qglob;
-
 
     stateObservation::Vector Rvec;
     stateObservation::Matrix Rglob;
@@ -437,11 +436,10 @@ namespace sotStabilizer
     Rglob.setIdentity();
 
     Rglob.noalias()=1*Rglob;
-    Rvec    <<  10,     // dd com
-                10,
-                10,
-                1,     // dd ori waist
+    Rvec    <<  1,     // dd com
                 1,
+                1,
+                1,     // dd ori waist
                 1;
 
     Q_ = Qvec.asDiagonal()*Qglob;
@@ -449,7 +447,7 @@ namespace sotStabilizer
 
     zmp_.setZero ();
 
-    int horizon = 200;
+    int horizon = 4000;
 
     controller_.setHorizonLength(horizon);
     computeDynamicsMatrix(com,Kth_,Kdth_,0);
@@ -459,12 +457,16 @@ namespace sotStabilizer
     preTask_.resize(controlSize_);
     preTask_.setZero();
 
+
     hrp2Mass_ = 58;
+
+
   }
 
   /// Determine number of support : to be put in stateObervation in my opinion
   unsigned int HRP2LQRTwoDofCoupledStabilizer::computeNbSupport(const int& time)//const MatrixHomogeneous& leftFootPosition, const MatrixHomogeneous& rightFootPosition, const Vector& forceLf, const Vector& forceRf, const int& time)
   {
+
       /// Forces signals
       const MatrixHomogeneous& leftFootPosition = leftFootPositionSIN_.access (time);
       const MatrixHomogeneous& rightFootPosition = rightFootPositionSIN_.access (time);
@@ -519,7 +521,7 @@ namespace sotStabilizer
       {
         nbSupport_=0;
       }
-
+std::cout << "nbSupport: " << nbSupport_ << std::endl;
       return nbSupport_;
   }
 
@@ -529,6 +531,7 @@ namespace sotStabilizer
   HRP2LQRTwoDofCoupledStabilizer::computeControlFeedback(VectorMultiBound& task,
       const int& time)
   {
+      std::cout << "\n\n time: " << time << std::endl;
 
     // Control gain
     const double& gain = controlGainSIN_.access (time);
@@ -570,10 +573,10 @@ namespace sotStabilizer
     stateObservation::Vector xk;
     xk.resize(stateSize_);
     xk <<   dCom,
-            dWaistOri,
+            dWaistOri.block(0,0,2,1),
             flexOriVect,
             comDot,
-            waistAngVel,
+            waistAngVel.block(0,0,2,1),
             flexAngVelVect;
 
     stateObservation::Vector u;
@@ -593,7 +596,7 @@ namespace sotStabilizer
         case 0: // No support
         {
             preTask_ <<  -gain*dCom,
-                        -gain*dWaistOri;
+                        -gain*dWaistOri.block(0,0,2,1);
         }
         break;
         case 1: // Single support
@@ -636,16 +639,14 @@ namespace sotStabilizer
     stateObservation::Vector error;
     error.resize(controlSize_);
     error.block(0,0,3,1)=dCom;
-    error.block(3,0,3,1)=dWaistOri;
+    error.block(3,0,2,1)=dWaistOri.block(0,0,2,1);
     errorSOUT_.setConstant (convertVector<dynamicgraph::Vector>(error));
     errorSOUT_.setTime (time);
 
     stateSOUT_.setConstant (convertVector<dynamicgraph::Vector>(xk));
-    std::cout << "state: " << xk.transpose() << std::endl;
     controlSOUT_.setConstant (convertVector<dynamicgraph::Vector>(u));
 
     gainSOUT.setConstant (convertMatrix<dynamicgraph::Matrix>(controller_.getLastGain()));
-
 
     return task;
   }
@@ -657,7 +658,7 @@ namespace sotStabilizer
     const stateObservation::Matrix & jacobianCom=convertMatrix<stateObservation::Matrix>(jacobianComSIN_(time));
     const stateObservation::Matrix & jacobianWaist=convertMatrix<stateObservation::Matrix>(jacobianWaistSIN_(time));
 
-    stateObservation::Matrix jacobianWaistOri = jacobianWaist.block(3,0,3,jacobianWaist.cols());
+    stateObservation::Matrix jacobianWaistOri = jacobianWaist.block(3,0,2,jacobianWaist.cols());
 
     stateObservation::Matrix preJacobian;
     preJacobian.resize(jacobianCom.rows()+jacobianWaistOri.rows(),jacobianCom.cols());
@@ -709,27 +710,30 @@ namespace sotStabilizer
     ddomega_ddomegach=-Inertia*I; //
 
     // A_ and B_ computation
-    A_.block(0,9,3,3)=identity;
-    A_.block(3,12,3,3)=identity;
-    A_.block(6,15,3,3)=identity;
-    A_.block(15,0,3,3)=ddomega_cl;
-    A_.block(15,3,3,3)=ddomega_omegach;
-    A_.block(15,6,3,3)=ddomega_omega;
-    A_.block(15,9,3,3)=ddomega_dcl;
-    A_.block(15,12,3,3)=ddomega_domegach;
-    A_.block(15,15,3,3)=ddomega_domega;
+    A_.block(0,8,3,3)=identity;
+    A_.block(3,11,2,2)=identity.block(0,0,2,2);
+    A_.block(5,13,3,3)=identity;
+    A_.block(13,0,3,3)=ddomega_cl;
+    A_.block(13,3,3,2)=ddomega_omegach.block(0,0,3,2);
+    A_.block(13,5,3,3)=ddomega_omega;
+    A_.block(13,8,3,3)=ddomega_dcl;
+    A_.block(13,11,3,2)=ddomega_domegach.block(0,0,3,2);
+    A_.block(13,13,3,3)=ddomega_domega;
 
     stateObservation::Matrix Identity(stateObservation::Matrix::Zero(stateSize_,stateSize_));
     Identity.setIdentity();
 
     A_.noalias() = dt_ * A_ + Identity;
 
-    B_.block(9,0,3,3)=identity;
-    B_.block(12,3,3,3)=identity;
-    B_.block(15,0,3,3)=ddomega_ddcl;
-    B_.block(15,3,3,3)=ddomega_ddomegach;
+    B_.block(8,0,3,3)=identity;
+    B_.block(11,3,2,2)=identity.block(0,0,2,2);
+    B_.block(13,0,3,3)=ddomega_ddcl;
+    B_.block(13,3,3,2)=ddomega_ddomegach.block(0,0,3,2);
 
     B_.noalias() = dt_* B_;
+
+    std::cout << "A: " << A_ << std::endl;
+    std::cout << "B: " << B_ << std::endl;
 
   }
 
@@ -747,7 +751,6 @@ namespace sotStabilizer
 
     inertiaWaistFrame = inertiaSotWaistFrame.block(3,3,3,3);
     inertiaComFrame = inertiaWaistFrame + m * kine::skewSymmetric2(cl-wl);
-   // inertiaControlFrame = inertiaComFrame - m * kine::skewSymmetric2(cl);
 
     inertiaSOUT.setConstant (convertMatrix<dynamicgraph::Matrix>(inertiaComFrame));
     return inertiaComFrame;
