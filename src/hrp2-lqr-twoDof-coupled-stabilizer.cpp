@@ -112,6 +112,7 @@ namespace sotStabilizer
     zmpRefSOUT_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::zmpRefOUT"),
     errorSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::error"),
     stateSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::state"),
+    extendedStateSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector):extendedState"),
     controlSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::control"),
     supportPos1SOUT_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::supportPos1"),
     supportPos2SOUT_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::supportPos2"),
@@ -148,6 +149,7 @@ namespace sotStabilizer
     signalRegistration (nbSupportSOUT_ << supportPos1SOUT_ << supportPos2SOUT_);
     signalRegistration (errorSOUT_);
     signalRegistration (stateSOUT_);
+    signalRegistration (extendedStateSOUT_);
     signalRegistration (controlSOUT_);
     signalRegistration (zmpRefSOUT_);
     signalRegistration (inertiaSIN);
@@ -413,15 +415,15 @@ namespace sotStabilizer
     Qvec.resize(stateSize_);
     Qglob.setIdentity();
 
-    Qglob.noalias()=1*Qglob;
-    Qvec    <<  1,     // com
-                1,
-                1,
-                1,     // ori waist
-                1,
-                1,     // ori flex
-                1,
-                1,
+    Qglob.noalias()=100*Qglob;
+    Qvec    <<  10,     // com
+                10,
+                10,
+                10,     // ori waist
+                10,
+                10,     // ori flex
+                10,
+                10,
                 1,     // dcom
                 1,
                 1,
@@ -440,10 +442,10 @@ namespace sotStabilizer
     Rglob.setIdentity();
 
     Rglob.noalias()=1*Rglob;
-    Rvec    <<  1,     // dd com
-                1,
-                1,
-                1,     // dd ori waist
+    Rvec    <<  0.1,     // dd com
+                10,
+                10,
+                0.1,     // dd ori waist
                 1;
 
     Q_ = Qvec.asDiagonal()*Qglob;
@@ -582,6 +584,18 @@ std::cout << "nbSupport: " << nbSupport_ << std::endl;
             comDot,
             waistAngVel.block(0,0,2,1),
             flexAngVelVect;
+
+    stateObservation::Vector extxk;
+    extxk.resize(stateSize_+2);
+    extxk <<   dCom,
+            dWaistOri,
+            flexOriVect,
+            comDot,
+            waistAngVel,
+            flexAngVelVect;
+    extendedStateSOUT_.setConstant (convertVector<dynamicgraph::Vector>(extxk));
+    extendedStateSOUT_.setTime (time);
+
 
     stateObservation::Vector u;
     u.resize(controlSize_);
