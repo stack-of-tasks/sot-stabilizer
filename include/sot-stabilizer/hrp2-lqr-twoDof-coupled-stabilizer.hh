@@ -329,6 +329,7 @@ namespace sotStabilizer
 
     controller::DiscreteTimeLTILQR controller_;
 
+    double kth_, kdth_;
     stateObservation::Matrix Kth_;
     stateObservation::Matrix Kdth_;
 

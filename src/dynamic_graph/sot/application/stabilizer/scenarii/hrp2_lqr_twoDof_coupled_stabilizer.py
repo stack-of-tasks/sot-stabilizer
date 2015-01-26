@@ -38,7 +38,6 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
 
 
 	# Control state
-	#plug(self.waistMatrixToUTheta.sout,self.waistOri)
 	plug(robot.dynamic.waist,self.waistHomo)
 
 	plug (robot.dynamic.com, self.com)
@@ -61,16 +60,13 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
         plug (self.nbSupport,self.estimator.contactNbr) # In
 	
 		# Contacts definition
-	rFootPos = MatrixHomoToPoseRollPitchYaw('rFootFramePos')
-	lFootPos = MatrixHomoToPoseRollPitchYaw('lFootFramePos')
-	plug(robot.frames['rightFootForceSensor'].position,rFootPos.sin)
-	plug(robot.frames['leftFootForceSensor'].position,lFootPos.sin)
 	self.estimator.contacts = Stack_of_vector ('contacts')
-	plug(rFootPos.sout,self.estimator.contacts.sin1)
-	plug(lFootPos.sout,self.estimator.contacts.sin2)
+        plug(self.supportPos1,self.estimator.contacts.sin1)
+        plug(self.supportPos2,self.estimator.contacts.sin2)
 	self.estimator.contacts.selec1 (0, 6)
 	self.estimator.contacts.selec2 (0, 6)
 	plug(self.estimator.contacts.sout,self.estimator.inputVector.contactsPosition)
+
 
 		# Simulation: Stifness and damping
 	kfe=40000

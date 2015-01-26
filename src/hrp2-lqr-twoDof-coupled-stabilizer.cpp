@@ -387,6 +387,42 @@ namespace sotStabilizer
                 -0.087341805362338931, 0.77639199232843892, 6.6174449004242214e-22, 0.15070833849597523, -0.03867792067753683, 1.7394745168929315;
     inertiaSIN.setConstant(convertMatrix<dynamicgraph::Matrix>(inertia));
 
+    stateObservation::Matrix leftFootPos;
+    leftFootPos.resize(4,4);
+    leftFootPos <<  1,1.94301e-07,2.363e-10,0.0094903,
+                    -1.94301e-07,1,-2.70566e-12,0.0949988,
+                    -2.363e-10,2.70562e-12,1,3.03755e-06,
+                    0,0,0,1;
+    leftFootPositionSIN_.setConstant(convertMatrix<dynamicgraph::Matrix>(leftFootPos));
+
+    stateObservation::Matrix rightFootPos;
+    rightFootPos.resize(4,4);
+    rightFootPos <<  1,-9.18094e-18,-1.52169e-16,0.00949046,
+                    9.184e-18,1,-1.10345e-16,-0.095,
+                    1.68756e-16,1.10345e-16,1,2.55006e-07,
+                    0,0,0,1;
+    rightFootPositionSIN_.setConstant(convertMatrix<dynamicgraph::Matrix>(rightFootPos));
+
+    stateObservation::Vector forceRightFoot;
+    forceRightFoot.resize(6);
+    forceRightFoot <<   45.1262,
+                        -21.367,
+                        361.344,
+                        1.12135,
+                        -14.5562,
+                        1.89125;
+    forceRightFootSIN_.setConstant(convertVector<dynamicgraph::Vector>(forceRightFoot));
+
+    stateObservation::Vector forceLeftFoot;
+    forceLeftFoot.resize(6);
+    forceLeftFoot <<    44.6005,
+                        21.7871,
+                        352.85,
+                        -1.00715,
+                        -14.5158,
+                        -1.72017;
+    forceLeftFootSIN_.setConstant(convertVector<dynamicgraph::Vector>(forceLeftFoot));
+
     Vector vect;
     stateObservation::Vector vec;
     vec.resize(2); vec.setZero();
@@ -401,13 +437,8 @@ namespace sotStabilizer
     Kth_.resize(3,3);
     Kdth_.resize(3,3);
 
-    Kth_ << 600,0,0,
-            0,600,0,
-            0,0,600;
-
-    Kdth_ <<    65,0,0,
-                0,65,0,
-                0,0,65;
+    kth_=600;
+    kdth_=65;
 
     stateObservation::Vector Qvec;
     stateObservation::Matrix Qglob;
@@ -453,7 +484,16 @@ namespace sotStabilizer
 
     zmp_.setZero ();
 
-    int horizon = 4000;
+    int horizon = 200;
+
+    nbSupport_=computeNbSupport(0);
+
+    Kth_ <<    0.5*kth_*kth_,0,0,
+              0,kth_,0,
+              0,0,0.5*kth_*kth_;
+    Kdth_ <<    0.5*kdth_ ,0,0,
+              0,kdth_,0,
+              0,0,0.5*kdth_*kdth_;
 
     controller_.setHorizonLength(horizon);
     computeDynamicsMatrix(com,Kth_,Kdth_,0);
@@ -463,10 +503,12 @@ namespace sotStabilizer
     preTask_.resize(controlSize_);
     preTask_.setZero();
 
-
     hrp2Mass_ = 58;
 
-
+    dynamicgraph::Matrix::Matrix gains;
+    gains.resize(controlSize_,stateSize_);
+    gains.setZero();
+    gainSOUT.setConstant (gains);
   }
 
   /// Determine number of support : to be put in stateObervation in my opinion
@@ -483,6 +525,31 @@ namespace sotStabilizer
       Vector rfpos(3);
       Vector lfpos(3);
 
+      MatrixRotation rfrot;
+      MatrixRotation lfrot;
+
+      VectorUTheta rfuth;
+      VectorUTheta lfuth;
+
+      rightFootPosition.extract(rfpos);
+      rightFootPosition.extract(rfrot);
+      rfuth.fromMatrix(rfrot);
+
+      leftFootPosition.extract(lfpos);
+      leftFootPosition.extract(lfrot);
+      lfuth.fromMatrix(lfrot);
+
+      Vector rfconf(6);
+      Vector lfconf(6);
+
+      for (size_t i=0; i<3; ++i)
+      {
+        rfconf(i)   = rfpos(i);
+        rfconf(i+3) = rfuth(i);
+        lfconf(i)   = lfpos(i);
+        lfconf(i+3) = lfuth(i);
+      }
+
       // Express vertical component of force in global basis
       double flz = leftFootPosition (2,0) * forceLf (0) +
                    leftFootPosition(2,1) * forceLf (1) +
@@ -495,28 +562,28 @@ namespace sotStabilizer
       nbSupport_ = 0;
       if (frz >= forceThreshold_)
       {
-        rightFootPosition.extract(rfpos);
+        rightFootPosition.extract(rfconf);
         nbSupport_++;
-        supportPos1SOUT_.setConstant (rfpos);
+        supportPos1SOUT_.setConstant (rfconf);
         supportPos1SOUT_.setTime (time);
-        supportPos1_=rfpos;
+        supportPos1_=rfconf;
       }
 
       if (flz >= forceThreshold_)
       {
-        leftFootPosition.extract(lfpos);
+        leftFootPosition.extract(lfconf);
         nbSupport_++;
         if (nbSupport_==0)
         {
-          supportPos1SOUT_.setConstant (lfpos);
+          supportPos1SOUT_.setConstant (lfconf);
           supportPos1SOUT_.setTime (time);
-          supportPos1_=lfpos;
+          supportPos1_=lfconf;
         }
         else
         {
-          supportPos2SOUT_.setConstant (lfpos);
+          supportPos2SOUT_.setConstant (lfconf);
           supportPos2SOUT_.setTime (time);
-          supportPos2_=lfpos;
+          supportPos2_=lfconf;
         }
       }
 
@@ -527,7 +594,7 @@ namespace sotStabilizer
       {
         nbSupport_=0;
       }
-std::cout << "nbSupport: " << nbSupport_ << std::endl;
+
       return nbSupport_;
   }
 
@@ -600,8 +667,6 @@ std::cout << "nbSupport: " << nbSupport_ << std::endl;
     stateObservation::Vector u;
     u.resize(controlSize_);
 
-    stateObservation::Matrix3 Kth, Kdth;
-
     stateObservation::Vector comRefl;
     Vector flexPos(3);
     Matrix flexRot(3,3);
@@ -619,8 +684,16 @@ std::cout << "nbSupport: " << nbSupport_ << std::endl;
         break;
         case 1: // Single support
         {
+            Kth_ <<   kth_,0,0,
+                      0,kth_,0,
+                      0,0,kth_;
+            Kdth_ <<  kdth_,0,0,
+                      0,kdth_,0,
+                      0,0,kdth_;
+
              computeDynamicsMatrix(comRefg,Kth_,Kdth_,time);
              controller_.setDynamicsMatrices(A_,B_);
+
              controller_.setState(xk,time);
              u=controller_.getControl(time);
              preTask_+=dt_*u;
@@ -628,16 +701,16 @@ std::cout << "nbSupport: " << nbSupport_ << std::endl;
         break;
         case 2 : // Double support
         {
-              Kth <<    0.5*Kth_(0,0)*Kth_(0,0) ,0,0,
-                        0,Kth_(1,1),0,
-                        0,0,0.5*Kth_(2,2)*Kth_(2,2);
-              Kdth <<    0.5*Kdth_(0,0)*Kdth_(0,0) ,0,0,
-                        0,Kdth_(1,1),0,
-                        0,0,0.5*Kdth_(2,2)*Kdth_(2,2);
+              Kth_ <<    0.5*kth_*kth_,0,0,
+                        0,kth_,0,
+                        0,0,0.5*kth_*kth_;
+              Kdth_ <<  0.5*kdth_*kdth_ ,0,0,
+                        0,kdth_,0,
+                        0,0,0.5*kdth_*kdth_;
 
               // TODO: when feet are not aligned along the y axis
 
-              computeDynamicsMatrix(comRefg,Kth,Kdth,time);
+              computeDynamicsMatrix(comRefg,Kth_,Kdth_,time);
               controller_.setDynamicsMatrices(A_,B_);
               controller_.setState(xk,time);
               u=controller_.getControl(time);
@@ -752,8 +825,8 @@ std::cout << "nbSupport: " << nbSupport_ << std::endl;
 
     AmatrixSOUT.setConstant(convertMatrix<dynamicgraph::Matrix>(A_));
     BmatrixSOUT.setConstant(convertMatrix<dynamicgraph::Matrix>(B_));
-    std::cout << "A: " << A_ << std::endl;
-    std::cout << "B: " << B_ << std::endl;
+   // std::cout << "A: " << A_ << std::endl;
+   // std::cout << "B: " << B_ << std::endl;
 
   }
 
