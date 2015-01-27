@@ -123,7 +123,7 @@ namespace sotStabilizer
     dt_ (.005), on_ (false),
     forceThreshold_ (.036 * constm_*stateObservation::cst::gravityConstant),
     supportPos1_(3), supportPos2_(3),
-    fixedGains_(false), zmpMode_(true),
+    fixedGains_(true), zmpMode_(true), computed_(false),
     zmp_ (3),
     controller_(stateSize_,controlSize_),
     A_(stateObservation::Matrix::Zero(stateSize_,stateSize_)),
@@ -446,7 +446,7 @@ namespace sotStabilizer
     Qvec.resize(stateSize_);
     Qglob.setIdentity();
 
-    Qglob.noalias()=100*Qglob;
+    Qglob.noalias()=10000*Qglob;
     Qvec    <<  10,     // com
                 10,
                 10,
@@ -473,10 +473,10 @@ namespace sotStabilizer
     Rglob.setIdentity();
 
     Rglob.noalias()=1*Rglob;
-    Rvec    <<  0.1,     // dd com
+    Rvec    <<  10,     // dd com
                 10,
                 10,
-                0.1,     // dd ori waist
+                1,     // dd ori waist
                 1;
 
     Q_ = Qvec.asDiagonal()*Qglob;
@@ -610,7 +610,7 @@ namespace sotStabilizer
     const double& gain = controlGainSIN_.access (time);
 
     // Determination of the number of support
-    nbSupport_=computeNbSupport(time);
+    unsigned int nbSupport=computeNbSupport(time);
 
     // Reference in the global frame
     const stateObservation::Vector3 & comRefg = convertVector<stateObservation::Vector>(comRefgSIN_ (time));
@@ -666,6 +666,7 @@ namespace sotStabilizer
 
     stateObservation::Vector u;
     u.resize(controlSize_);
+    u.setZero();
 
     stateObservation::Vector comRefl;
     Vector flexPos(3);
@@ -674,7 +675,7 @@ namespace sotStabilizer
     flexHomo.extract(flexRot);
     comRefl= convertMatrix<stateObservation::Matrix>(flexRot).transpose()*(comRefg-convertVector<stateObservation::Vector>(flexPos));
 
-    switch (nbSupport_)
+    switch (nbSupport)
     {
         case 0: // No support
         {
@@ -684,16 +685,20 @@ namespace sotStabilizer
         break;
         case 1: // Single support
         {
-            Kth_ <<   kth_,0,0,
-                      0,kth_,0,
-                      0,0,kth_;
-            Kdth_ <<  kdth_,0,0,
-                      0,kdth_,0,
-                      0,0,kdth_;
+             if(nbSupport!=nbSupport_ || computed_==false || fixedGains_!=true)
+             {
+                Kth_ <<   kth_,0,0,
+                          0,kth_,0,
+                          0,0,kth_;
+                Kdth_ <<  kdth_,0,0,
+                          0,kdth_,0,
+                          0,0,kdth_;
 
-             computeDynamicsMatrix(comRefg,Kth_,Kdth_,time);
-             controller_.setDynamicsMatrices(A_,B_);
-
+                computeDynamicsMatrix(comRefg,Kth_,Kdth_,time);
+                controller_.setDynamicsMatrices(A_,B_);
+                nbSupport_=nbSupport;
+                computed_=true;
+             }
              controller_.setState(xk,time);
              u=controller_.getControl(time);
              preTask_+=dt_*u;
@@ -701,17 +706,22 @@ namespace sotStabilizer
         break;
         case 2 : // Double support
         {
-              Kth_ <<    0.5*kth_*kth_,0,0,
-                        0,kth_,0,
-                        0,0,0.5*kth_*kth_;
-              Kdth_ <<  0.5*kdth_*kdth_ ,0,0,
-                        0,kdth_,0,
-                        0,0,0.5*kdth_*kdth_;
+              if(nbSupport!=nbSupport_ || computed_ == false || fixedGains_!=true)
+              {
+                  Kth_ <<    0.5*kth_*kth_,0,0,
+                            0,kth_,0,
+                            0,0,0.5*kth_*kth_;
+                  Kdth_ <<  0.5*kdth_*kdth_ ,0,0,
+                            0,kdth_,0,
+                            0,0,0.5*kdth_*kdth_;
 
-              // TODO: when feet are not aligned along the y axis
+                  // TODO: when feet are not aligned along the y axis
 
-              computeDynamicsMatrix(comRefg,Kth_,Kdth_,time);
-              controller_.setDynamicsMatrices(A_,B_);
+                  computeDynamicsMatrix(comRefg,Kth_,Kdth_,time);
+                  controller_.setDynamicsMatrices(A_,B_);
+                  nbSupport_=nbSupport;
+                  computed_=true;
+              }
               controller_.setState(xk,time);
               u=controller_.getControl(time);
               preTask_+=dt_*u;

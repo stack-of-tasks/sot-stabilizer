@@ -336,6 +336,7 @@ namespace sotStabilizer
     stateObservation::Vector preTask_;
 
     bool fixedGains_;
+    bool computed_;
     bool zmpMode_;
 
     double hrp2Mass_;

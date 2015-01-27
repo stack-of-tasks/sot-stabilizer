@@ -53,13 +53,14 @@ appli.robot.addTrace (stabilizer.name,'inertiaOut')
 appli.robot.addTrace (stabilizer.name,'gain')
 appli.robot.addTrace (stabilizer.name,'Amatrix')
 appli.robot.addTrace (stabilizer.name,'Bmatrix')
+appli.robot.addTrace (stabilizer.name,'supportPos1')
+appli.robot.addTrace (stabilizer.name,'supportPos2')
 
 appli.startTracer()
 
 appli.gains['trunk'].setConstant(2)
 
 est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-1,)*6)))
-
 
 stabilizer.start()
 
