@@ -214,11 +214,8 @@ namespace sotStabilizer
 
     stateObservation::Matrix3 computeInert(const stateObservation::Vector& com, const int& time);
 
-    /// References
     // Reference position of center of mass
-    SignalPtr < dynamicgraph::Vector, int> comRefgSIN_;
-    // Reference orientation of the waist
-    SignalPtr < dynamicgraph::Vector, int > waistOriRefgSIN_;
+    SignalPtr < dynamicgraph::Vector, int> stateRefSIN_;
 
     // Reference velocity of the center of mass
     SignalPtr < dynamicgraph::Vector, int> comdotRefSIN_;

@@ -74,12 +74,11 @@ namespace sotStabilizer
     TaskAbstract(inName),
     comSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::com"),
     comDotSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comDot"),
-    comRefgSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comRefg"),
+    stateRefSIN_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::stateRef"),
     jacobianComSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::Jcom"),
     comdotRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comdotRef"),
     comddotRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comddotRef"),
     waistOriSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistOri"),
-    waistOriRefgSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistOriRefg"),
     waistVelSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistVel"),
     waistAngAccSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistAngAcc"),
     jacobianWaistSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::Jwaist"),
@@ -135,8 +134,8 @@ namespace sotStabilizer
     // Register signals into the entity.
     signalRegistration (comSIN_);
     signalRegistration (comDotSIN_);
-    signalRegistration (comRefgSIN_);
-    signalRegistration (jacobianComSIN_);
+    signalRegistration (stateRefSIN_);
+        signalRegistration (jacobianComSIN_);
     signalRegistration (comdotRefSIN_);
     signalRegistration (zmpRefSIN_);
     signalRegistration (comddotRefSIN_);
@@ -159,7 +158,6 @@ namespace sotStabilizer
     signalRegistration (BmatrixSOUT);
 
     signalRegistration (waistOriSIN_);
-    signalRegistration (waistOriRefgSIN_);
     signalRegistration (waistVelSIN_);
     signalRegistration (waistAngAccSIN_);
     signalRegistration (jacobianWaistSIN_);
@@ -168,7 +166,7 @@ namespace sotStabilizer
     signalRegistration (flexOriVectSIN_);
 
     taskSOUT.addDependency (comSIN_);
-    taskSOUT.addDependency (comRefgSIN_);
+    taskSOUT.addDependency (stateRefSIN_);
     taskSOUT.addDependency (comdotRefSIN_);
 
     taskSOUT.addDependency (stateFlexSIN_);
@@ -611,10 +609,8 @@ namespace sotStabilizer
     unsigned int nbSupport=computeNbSupport(time);
 
     // Reference in the global frame
-    const stateObservation::Vector3 & comRefg = convertVector<stateObservation::Vector>(comRefgSIN_ (time));
-    const stateObservation::Vector3 & waistOriRefg = convertVector<stateObservation::Vector>(waistOriRefgSIN_ (time));
+    const stateObservation::Vector & stateRef = convertVector<stateObservation::Vector>(stateRefSIN_ (time));
         // References of velocities and acceleration are equal to zero
-        // References for the flexibility are set to zero
 
     // Com
     const stateObservation::Vector & com = convertVector<stateObservation::Vector>(comSIN_ (time));
@@ -637,14 +633,11 @@ namespace sotStabilizer
     const stateObservation::Vector & flexAngVelVect = convertVector<stateObservation::Vector>(flexAngVelVectSIN_.access(time));
     const MatrixHomogeneous& flexHomo = stateFlexSIN_.access(time);
 
-    // Error
-    stateObservation::Vector dCom = com - comRefg;
-    stateObservation::Vector dWaistOri = waistOri - waistOriRefg;
-
+    // State reconstruction
     stateObservation::Vector xk;
     xk.resize(stateSize_);
-    xk <<   dCom,
-            dWaistOri.block(0,0,2,1),
+    xk <<   com,
+            waistOri.block(0,0,2,1),
             flexOriVect,
             comDot,
             waistAngVel.block(0,0,2,1),
@@ -652,14 +645,19 @@ namespace sotStabilizer
 
     stateObservation::Vector extxk;
     extxk.resize(stateSize_+2);
-    extxk <<   dCom,
-            dWaistOri,
-            flexOriVect,
-            comDot,
-            waistAngVel,
-            flexAngVelVect;
+    extxk <<    com,
+                waistOri,
+                flexOriVect,
+                comDot,
+                waistAngVel,
+                flexAngVelVect;
     extendedStateSOUT_.setConstant (convertVector<dynamicgraph::Vector>(extxk));
     extendedStateSOUT_.setTime (time);
+
+    // State error
+    stateObservation::Vector dxk;
+    dxk.resize(stateSize_);
+    dxk=xk-stateRef;
 
 
     stateObservation::Vector u;
@@ -671,14 +669,13 @@ namespace sotStabilizer
     Matrix flexRot(3,3);
     flexHomo.extract(flexPos);
     flexHomo.extract(flexRot);
-    comRefl= convertMatrix<stateObservation::Matrix>(flexRot).transpose()*(comRefg-convertVector<stateObservation::Vector>(flexPos));
+    comRefl= convertMatrix<stateObservation::Matrix>(flexRot).transpose()*(stateRef.block(0,0,3,1)-convertVector<stateObservation::Vector>(flexPos));
 
     switch (nbSupport)
     {
         case 0: // No support
         {
-            preTask_ <<  -gain*dCom,
-                        -gain*dWaistOri.block(0,0,2,1);
+            preTask_ <<  -gain*dxk.block(0,0,5,1);
         }
         break;
         case 1: // Single support
@@ -692,7 +689,7 @@ namespace sotStabilizer
                           0,kdth_,0,
                           0,0,kdth_;
 
-                computeDynamicsMatrix(comRefg,Kth_,Kdth_,time);
+                computeDynamicsMatrix(stateRef.block(0,0,3,1),Kth_,Kdth_,time);
                 controller_.setDynamicsMatrices(A_,B_);
                 nbSupport_=nbSupport;
                 computed_=true;
@@ -715,7 +712,7 @@ namespace sotStabilizer
 
                   // TODO: when feet are not aligned along the y axis
 
-                  computeDynamicsMatrix(comRefg,Kth_,Kdth_,time);
+                  computeDynamicsMatrix(stateRef.block(0,0,3,1),Kth_,Kdth_,time);
                   controller_.setDynamicsMatrices(A_,B_);
                   nbSupport_=nbSupport;
                   computed_=true;
@@ -737,8 +734,7 @@ namespace sotStabilizer
 
     stateObservation::Vector error;
     error.resize(controlSize_);
-    error.block(0,0,3,1)=dCom;
-    error.block(3,0,2,1)=dWaistOri.block(0,0,2,1);
+    error.block(0,0,5,1)=dxk.block(0,0,5,1);
     errorSOUT_.setConstant (convertVector<dynamicgraph::Vector>(error));
     errorSOUT_.setTime (time);
 

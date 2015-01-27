@@ -15,9 +15,7 @@ class DSLqrTwoDofCoupledStabilizerHRP2(DSStabilizer):
         task = HRP2LqrTwoDofCoupledStabilizer(self.robot)
         gain = GainAdaptive('gain'+task.name)
 	# References
-	task.waistOriRefg.value=(0.0,)*3 #task.waistMatrixToUTheta.sout.value
-	task.comRefg.value = (0.009490463094,0.0,0.80771000000000004) #self.comRef.value
-	self.comRef.value=(0.009490463094,0.0,0.80771000000000004)
+	task.stateRef.value=self.comRef.value+(0,)*2+(-0.000540322,0.00338134,-5.34856e-07)+(0,)*8
         plug(gain.gain, task.controlGain)
         plug(task.error, gain.error) 
         return (task, gain)
