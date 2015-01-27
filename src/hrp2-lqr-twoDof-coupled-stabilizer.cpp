@@ -446,7 +446,7 @@ namespace sotStabilizer
     Qvec.resize(stateSize_);
     Qglob.setIdentity();
 
-    Qglob.noalias()=10000*Qglob;
+    Qglob.noalias()=100000*Qglob;
     Qvec    <<  10,     // com
                 10,
                 10,
@@ -473,9 +473,9 @@ namespace sotStabilizer
     Rglob.setIdentity();
 
     Rglob.noalias()=1*Rglob;
-    Rvec    <<  10,     // dd com
-                10,
-                10,
+    Rvec    <<  1000,     // dd com
+                1000,
+                1000,
                 1,     // dd ori waist
                 1;
 
@@ -559,21 +559,18 @@ namespace sotStabilizer
                    rightFootPosition (2,2) * forceRf (2);
 
       //compute the number of supports
-      nbSupport_ = 0;
+      unsigned int nbSupport = 0;
       if (frz >= forceThreshold_)
       {
-        rightFootPosition.extract(rfconf);
-        nbSupport_++;
         supportPos1SOUT_.setConstant (rfconf);
         supportPos1SOUT_.setTime (time);
         supportPos1_=rfconf;
+        nbSupport++;
       }
 
       if (flz >= forceThreshold_)
       {
-        leftFootPosition.extract(lfconf);
-        nbSupport_++;
-        if (nbSupport_==0)
+        if (nbSupport==0)
         {
           supportPos1SOUT_.setConstant (lfconf);
           supportPos1SOUT_.setTime (time);
@@ -585,17 +582,18 @@ namespace sotStabilizer
           supportPos2SOUT_.setTime (time);
           supportPos2_=lfconf;
         }
+        nbSupport++;
       }
 
-      nbSupportSOUT_.setConstant (nbSupport_);
+      nbSupportSOUT_.setConstant (nbSupport);
       nbSupportSOUT_.setTime (time);
 
       if (!on_)
       {
-        nbSupport_=0;
+        nbSupport=0;
       }
 
-      return nbSupport_;
+      return nbSupport;
   }
 
 
