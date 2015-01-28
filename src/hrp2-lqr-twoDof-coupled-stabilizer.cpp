@@ -111,6 +111,7 @@ namespace sotStabilizer
     zmpRefSOUT_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::zmpRefOUT"),
     errorSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::error"),
     stateSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::state"),
+    errorStateSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::errorState"),
     extendedStateSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector):extendedState"),
     controlSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::control"),
     supportPos1SOUT_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::supportPos1"),
@@ -148,6 +149,7 @@ namespace sotStabilizer
     signalRegistration (nbSupportSOUT_ << supportPos1SOUT_ << supportPos2SOUT_);
     signalRegistration (errorSOUT_);
     signalRegistration (stateSOUT_);
+    signalRegistration (errorStateSOUT_);
     signalRegistration (extendedStateSOUT_);
     signalRegistration (controlSOUT_);
     signalRegistration (zmpRefSOUT_);
@@ -642,6 +644,7 @@ namespace sotStabilizer
             comDot,
             waistAngVel.block(0,0,2,1),
             flexAngVelVect;
+    stateSOUT_.setConstant (convertVector<dynamicgraph::Vector>(xk));
 
     stateObservation::Vector extxk;
     extxk.resize(stateSize_+2);
@@ -658,7 +661,9 @@ namespace sotStabilizer
     stateObservation::Vector dxk;
     dxk.resize(stateSize_);
     dxk=xk-stateRef;
-
+    dxk.block(5,0,3,1).setZero();
+    dxk.block(13,0,3,1).setZero();
+    errorStateSOUT_.setConstant (convertVector<dynamicgraph::Vector>(dxk));
 
     stateObservation::Vector u;
     u.resize(controlSize_);
@@ -694,7 +699,7 @@ namespace sotStabilizer
                 nbSupport_=nbSupport;
                 computed_=true;
              }
-             controller_.setState(xk,time);
+             controller_.setState(dxk,time);
              u=controller_.getControl(time);
              preTask_+=dt_*u;
         }
@@ -717,7 +722,7 @@ namespace sotStabilizer
                   nbSupport_=nbSupport;
                   computed_=true;
               }
-              controller_.setState(xk,time);
+              controller_.setState(dxk,time);
               u=controller_.getControl(time);
               preTask_+=dt_*u;
         }
@@ -738,9 +743,7 @@ namespace sotStabilizer
     errorSOUT_.setConstant (convertVector<dynamicgraph::Vector>(error));
     errorSOUT_.setTime (time);
 
-    stateSOUT_.setConstant (convertVector<dynamicgraph::Vector>(xk));
     controlSOUT_.setConstant (convertVector<dynamicgraph::Vector>(u));
-
     gainSOUT.setConstant (convertMatrix<dynamicgraph::Matrix>(controller_.getLastGain()));
 
     return task;

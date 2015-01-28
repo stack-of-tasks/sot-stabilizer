@@ -297,6 +297,8 @@ namespace sotStabilizer
     SignalTimeDependent <Vector, int> stateSOUT_;
     ///extended state output
     SignalTimeDependent <Vector, int> extendedStateSOUT_;
+    ///error state output
+    SignalTimeDependent <Vector, int> errorStateSOUT_;
 
     ///control output
     SignalTimeDependent <Vector, int> controlSOUT_;
