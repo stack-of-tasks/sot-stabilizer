@@ -297,6 +297,10 @@ namespace sotStabilizer
     SignalTimeDependent <Vector, int> supportPos1SOUT_;
     SignalTimeDependent <Vector, int> supportPos2SOUT_;
 
+    /// forceTorqueSOUT_
+    SignalTimeDependent <Vector, int> forceTorqueSOUT_;
+
+
     ///error output
     SignalTimeDependent <Vector, int> errorSOUT_;
 

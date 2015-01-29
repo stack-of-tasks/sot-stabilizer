@@ -104,6 +104,7 @@ namespace sotStabilizer
     debugSOUT_ ("HRP2LQRDecoupledStabilizer("+inName+")::output(vector)::debug"),
     supportPos1SOUT_("HRP2LQRDecoupledStabilizer("+inName+")::output(vector)::supportPos1"),
     supportPos2SOUT_("HRP2LQRDecoupledStabilizer("+inName+")::output(vector)::supportPos2"),
+    forceTorqueSOUT_("HRP2LQRDecoupledStabilizer("+inName+")::output(vector)::measuredForceTorque"),
     prevCom_(3), dcom_ (3), dt_ (.005), on_ (false),
     forceThreshold_ (.036 * constm_*stateObservation::cst::gravityConstant),
     angularStiffness_ (425.), d2com_ (3),
@@ -145,6 +146,7 @@ namespace sotStabilizer
     signalRegistration (comdotSOUT_);
     signalRegistration (comddotSOUT_ <<comddotRefSOUT_);
     signalRegistration (nbSupportSOUT_ << supportPos1SOUT_ << supportPos2SOUT_);
+    signalRegistration (forceTorqueSOUT_);
     signalRegistration (errorSOUT_);
     signalRegistration (zmpRefSOUT_);
     signalRegistration (debugSOUT_);
@@ -183,6 +185,11 @@ namespace sotStabilizer
     jacobianSOUT.setFunction (boost::bind(&HRP2LQRDecoupledStabilizer::computeJacobianCom,
                                           this,_1,_2));
     nbSupportSOUT_.addDependency (taskSOUT);
+
+    forceTorqueSOUT_.addDependency (taskSOUT);
+    supportPos1SOUT_.addDependency (taskSOUT);
+    supportPos2SOUT_.addDependency (taskSOUT);
+
 
     d2com_.setZero ();
 
@@ -525,6 +532,9 @@ namespace sotStabilizer
     const Vector& forceLf = forceLeftFootSIN_.access (time);
     const Vector& forceRf = forceRightFootSIN_.access (time);
 
+    Vector forcetorque(6*2);
+    forcetorque.setZero();
+
 
 
     Vector flexibilityPos(3);
@@ -607,6 +617,7 @@ namespace sotStabilizer
     if (flz >= forceThreshold_)
     {
       nbSupport_++;
+      sotStateObservation::setSubvector(forcetorque,6*(nbSupport_-1),forceLf);
       supportCandidateLf_++;
       supportPos1SOUT_.setConstant (lfconf);
       supportPos1SOUT_.setTime (time);
@@ -624,6 +635,7 @@ namespace sotStabilizer
     if (frz >= forceThreshold_)
     {
       nbSupport_++;
+      sotStateObservation::setSubvector(forcetorque,6*(nbSupport_-1),forceRf);
       supportCandidateRf_++;
       if (nbSupport_==1)
       {
@@ -647,6 +659,9 @@ namespace sotStabilizer
     }
     nbSupportSOUT_.setConstant (nbSupport_);
     nbSupportSOUT_.setTime (time);
+
+    forceTorqueSOUT_.setConstant(forcetorque);
+    forceTorqueSOUT_.setTime(time);
 
     if (!on_)
     {
