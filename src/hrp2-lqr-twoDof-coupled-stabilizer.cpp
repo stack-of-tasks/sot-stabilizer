@@ -53,7 +53,7 @@ namespace sotStabilizer
   double HRP2LQRTwoDofCoupledStabilizer::constcomHeight_ = 0.807;
   double HRP2LQRTwoDofCoupledStabilizer::conststepLength_ = 0.19;
 
-  const unsigned stateSize_=16;
+  const unsigned stateSize_=14;
   const unsigned controlSize_=5;
 
   DYNAMICGRAPH_FACTORY_ENTITY_PLUGIN (HRP2LQRTwoDofCoupledStabilizer, "HRP2LQRTwoDofCoupledStabilizer");
@@ -445,25 +445,21 @@ namespace sotStabilizer
     Qglob.resize(stateSize_,stateSize_);
     Qvec.resize(stateSize_);
     Qglob.setIdentity();
-
-    Qglob.noalias()=100000*Qglob;
-    Qvec    <<  10,     // com
-                10,
-                10,
-                10,     // ori waist
-                10,
-                10,     // ori flex
-                10,
-                10,
+    Qglob.noalias()=1*Qglob;
+    Qvec    <<  1,     // com
+                1,
+                1,
+                1,     // ori waist
+                1,
+                1,     // ori flex
+                1,
                 1,     // dcom
                 1,
                 1,
                 1,     // d ori waist
                 1,
                 1,     // d ori flex
-                1,
                 1;
-
     Q_ = Qvec.asDiagonal()*Qglob;
 
     stateObservation::Vector Rvec;
@@ -471,11 +467,10 @@ namespace sotStabilizer
     Rglob.resize(controlSize_,controlSize_);
     Rvec.resize(controlSize_);
     Rglob.setIdentity();
-
     Rglob.noalias()=1*Rglob;
-    Rvec    <<  1000,     // dd com
-                1000,
-                1000,
+    Rvec    <<  1,     // dd com
+                1,
+                1,
                 1,     // dd ori waist
                 1;
 
@@ -484,7 +479,7 @@ namespace sotStabilizer
 
     zmp_.setZero ();
 
-    int horizon = 200;
+    int horizon = 4000;
 
     nbSupport_=computeNbSupport(0);
 
@@ -496,6 +491,7 @@ namespace sotStabilizer
               0,0,0.5*kdth_*kdth_;
 
     controller_.setHorizonLength(horizon);
+        std::cout << "coucou 0" << std::endl;
     computeDynamicsMatrix(com,Kth_,Kdth_,0);
     controller_.setDynamicsMatrices(A_, B_);
     controller_.setCostMatrices(Q_,R_);
@@ -640,14 +636,14 @@ namespace sotStabilizer
     xk.resize(stateSize_);
     xk <<   com,
             waistOri.block(0,0,2,1),
-            flexOriVect,
+            flexOriVect.block(0,0,2,1),
             comDot,
             waistAngVel.block(0,0,2,1),
-            flexAngVelVect;
+            flexAngVelVect.block(0,0,2,1);
     stateSOUT_.setConstant (convertVector<dynamicgraph::Vector>(xk));
 
     stateObservation::Vector extxk;
-    extxk.resize(stateSize_+2);
+    extxk.resize(stateSize_+4);
     extxk <<    com,
                 waistOri,
                 flexOriVect,
@@ -661,8 +657,6 @@ namespace sotStabilizer
     stateObservation::Vector dxk;
     dxk.resize(stateSize_);
     dxk=xk-stateRef;
-    dxk.block(5,0,3,1).setZero();
-    dxk.block(13,0,3,1).setZero();
     errorStateSOUT_.setConstant (convertVector<dynamicgraph::Vector>(dxk));
 
     stateObservation::Vector u;
@@ -680,7 +674,7 @@ namespace sotStabilizer
     {
         case 0: // No support
         {
-            preTask_ <<  -gain*dxk.block(0,0,5,1);
+            preTask_ <<  -gain*dxk.block(0,0,5,1)+dxk.block(5,0,5,1);
         }
         break;
         case 1: // Single support
@@ -808,25 +802,25 @@ namespace sotStabilizer
     ddomega_ddomegach=-Inertia*I; //
 
     // A_ and B_ computation
-    A_.block(0,8,3,3)=identity;
-    A_.block(3,11,2,2)=identity.block(0,0,2,2);
-    A_.block(5,13,3,3)=identity;
-    A_.block(13,0,3,3)=ddomega_cl;
-    A_.block(13,3,3,2)=ddomega_omegach.block(0,0,3,2);
-    A_.block(13,5,3,3)=ddomega_omega;
-    A_.block(13,8,3,3)=ddomega_dcl;
-    A_.block(13,11,3,2)=ddomega_domegach.block(0,0,3,2);
-    A_.block(13,13,3,3)=ddomega_domega;
+    A_.block(0,7,3,3)=identity;
+    A_.block(3,10,2,2)=identity.block(0,0,2,2);
+    A_.block(5,12,2,2)=identity.block(0,0,2,2);
+    A_.block(12,0,2,3)=ddomega_cl.block(0,0,2,3);
+    A_.block(12,3,2,2)=ddomega_omegach.block(0,0,2,2);
+    A_.block(12,5,2,2)=ddomega_omega.block(0,0,2,2);
+    A_.block(12,7,2,3)=ddomega_dcl.block(0,0,2,3);
+    A_.block(12,10,2,2)=ddomega_domegach.block(0,0,2,2);
+    A_.block(12,12,2,2)=ddomega_domega.block(0,0,2,2);
 
     stateObservation::Matrix Identity(stateObservation::Matrix::Zero(stateSize_,stateSize_));
     Identity.setIdentity();
 
     A_.noalias() = dt_ * A_ + Identity;
 
-    B_.block(8,0,3,3)=identity;
-    B_.block(11,3,2,2)=identity.block(0,0,2,2);
-    B_.block(13,0,3,3)=ddomega_ddcl;
-    B_.block(13,3,3,2)=ddomega_ddomegach.block(0,0,3,2);
+    B_.block(7,0,3,3)=identity;
+    B_.block(10,3,2,2)=identity.block(0,0,2,2);
+    B_.block(12,0,2,3)=ddomega_ddcl.block(0,0,2,3);
+    B_.block(12,3,2,2)=ddomega_ddomegach.block(0,0,2,2);
 
     B_.noalias() = dt_* B_;
 
