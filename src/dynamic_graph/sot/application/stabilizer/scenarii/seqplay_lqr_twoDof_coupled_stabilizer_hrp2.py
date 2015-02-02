@@ -1,4 +1,4 @@
-from dynamic_graph.sot.application.stabilizer.scenarii.seqplay_stabilizer import SeqPlayStabilizer
+from dynamic_graph.sot.application.stabilizer.scenarii.seqplay_lqr_twoDof_coupled_stabilizer import SeqPlayLqrTwoDofCoupledStabilizer
 from dynamic_graph.sot.application.stabilizer.scenarii.hrp2_lqr_twoDof_coupled_stabilizer import HRP2LqrTwoDofCoupledStabilizer
 from dynamic_graph.sot.core.meta_tasks import GainAdaptive
 from dynamic_graph import plug
@@ -7,15 +7,16 @@ from dynamic_graph.sot.core import  MatrixToUTheta, HomoToMatrix, HomoToRotation
 from numpy import diag
 
 
-class SeqPlayLqrTwoDofCoupledStabilizerHRP2(SeqPlayStabilizer):
+class SeqPlayLqrTwoDofCoupledStabilizerHRP2(SeqPlayLqrTwoDofCoupledStabilizer):
     def __init__(self,robot,sequenceFilename,trunkStabilize = False, hands = False, posture =False,forceSeqplay=True):
-        SeqPlayStabilizer.__init__(self,robot,sequenceFilename,trunkStabilize,hands,posture,forceSeqplay)
+        SeqPlayLqrTwoDofCoupledStabilizer.__init__(self,robot,sequenceFilename,trunkStabilize,hands,posture,forceSeqplay)
 
     def createStabilizedCoMTask (self):
         task = HRP2LqrTwoDofCoupledStabilizer(self.robot)
         gain = GainAdaptive('gain'+task.name)
 	# References
-	task.stateRef.value=self.comRef.value+(0,)*2+(-0.000540322,0.00338134,-5.34856e-07)+(0,)*8
+	self.comRef.value=(0.00965, 0.0, 0.80777668336283626)
+	task.stateRef.value=(0.00965, 0.0, 0.80777668336283626)+(0,)*11
         plug(gain.gain, task.controlGain)
         plug(task.error, gain.error) 
         return (task, gain)

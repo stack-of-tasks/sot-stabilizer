@@ -504,9 +504,10 @@ namespace sotStabilizer
     gains.resize(controlSize_,stateSize_);
     gains.setZero();
     gainSOUT.setConstant (gains);
+    AmatrixSOUT.setConstant(convertMatrix<dynamicgraph::Matrix>(A_));
+    BmatrixSOUT.setConstant(convertMatrix<dynamicgraph::Matrix>(B_));
   }
 
-  /// Determine number of support : to be put in stateObervation in my opinion
   unsigned int HRP2LQRTwoDofCoupledStabilizer::computeNbSupport(const int& time)//const MatrixHomogeneous& leftFootPosition, const MatrixHomogeneous& rightFootPosition, const Vector& forceLf, const Vector& forceRf, const int& time)
   {
 
