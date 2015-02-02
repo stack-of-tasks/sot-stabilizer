@@ -63,6 +63,7 @@ appli.gains['trunk'].setConstant(2)
 
 est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-1,)*6)))
 
+
 stabilizer.start()
 
 #comRef.value = (0.0,0.0,0.8)
@@ -70,5 +71,10 @@ stabilizer.start()
 #perturbator.setMode(1)
 #perturbator.setPeriod(3200)
 #perturbator.activate(True)
+
+stabilizer.setStateCost(matrixToTuple(5*np.diag((1,1,1,1,1,1,1,1,1,1,1,1,1,1))))
+stabilizer.setInputCost(matrixToTuple(1*np.diag((1,1,1,100,100))))
+stabilizer.stateRef.value=(0.0096500000000000006, 0.0, 0.80777699999999997, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+#stabilizer.setFixedGains(False)
 
 appli.nextStep()

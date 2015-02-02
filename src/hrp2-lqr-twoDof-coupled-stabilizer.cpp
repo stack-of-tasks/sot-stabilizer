@@ -471,15 +471,15 @@ namespace sotStabilizer
     Rvec    <<  1,     // dd com
                 1,
                 1,
-                1,     // dd ori waist
-                1;
+                10,     // dd ori waist
+                10;
 
     Q_ = Qvec.asDiagonal()*Qglob;
     R_ = Rvec.asDiagonal()*Rglob;
 
     zmp_.setZero ();
 
-    int horizon = 4000;
+    int horizon = 200;
 
     nbSupport_=computeNbSupport(0);
 
@@ -491,7 +491,6 @@ namespace sotStabilizer
               0,0,0.5*kdth_*kdth_;
 
     controller_.setHorizonLength(horizon);
-        std::cout << "coucou 0" << std::endl;
     computeDynamicsMatrix(com,Kth_,Kdth_,0);
     controller_.setDynamicsMatrices(A_, B_);
     controller_.setCostMatrices(Q_,R_);
@@ -674,7 +673,7 @@ namespace sotStabilizer
     {
         case 0: // No support
         {
-            preTask_ <<  -gain*dxk.block(0,0,5,1)+dxk.block(5,0,5,1);
+            preTask_ <<  -gain*dxk.block(0,0,5,1);
         }
         break;
         case 1: // Single support
@@ -739,6 +738,10 @@ namespace sotStabilizer
 
     controlSOUT_.setConstant (convertVector<dynamicgraph::Vector>(u));
     gainSOUT.setConstant (convertMatrix<dynamicgraph::Matrix>(controller_.getLastGain()));
+    AmatrixSOUT.setConstant(convertMatrix<dynamicgraph::Matrix>(A_));
+    BmatrixSOUT.setConstant(convertMatrix<dynamicgraph::Matrix>(B_));
+   // std::cout << "A: " << A_ << std::endl;
+   // std::cout << "B: " << B_ << std::endl;
 
     return task;
   }
@@ -823,11 +826,6 @@ namespace sotStabilizer
     B_.block(12,3,2,2)=ddomega_ddomegach.block(0,0,2,2);
 
     B_.noalias() = dt_* B_;
-
-    AmatrixSOUT.setConstant(convertMatrix<dynamicgraph::Matrix>(A_));
-    BmatrixSOUT.setConstant(convertMatrix<dynamicgraph::Matrix>(B_));
-   // std::cout << "A: " << A_ << std::endl;
-   // std::cout << "B: " << B_ << std::endl;
 
   }
 
