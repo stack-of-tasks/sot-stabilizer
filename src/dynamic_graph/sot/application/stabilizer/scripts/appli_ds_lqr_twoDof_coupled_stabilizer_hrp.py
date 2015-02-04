@@ -63,7 +63,6 @@ appli.gains['trunk'].setConstant(2)
 
 est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-1,)*6)))
 
-
 stabilizer.start()
 
 #comRef.value = (0.0,0.0,0.8)

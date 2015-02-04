@@ -215,7 +215,7 @@ class SeqPlayLqrTwoDofCoupledStabilizer(Application):
         '''End of application, go to final pose.'''
         self.featurePostureDes.errorIN.value = self.robot.halfSitting
         self.sot.clear()
-        self.comRef = self.seq.com
+        self.comRef = self.tasks['com-stabilized'].comRef
         self.push(self.tasks['balance'])
         self.push(self.taskPosture)
 
@@ -246,9 +246,7 @@ class SeqPlayLqrTwoDofCoupledStabilizer(Application):
         from dynamic_graph.sot.application.state_observation import MovingFrameTransformation
 
         if self.trunkStabilize:
-            ### waist
-            
-            
+            ### waist            
             self.transformerWaist = MovingFrameTransformation('tranformation_waist')
             plug(self.ccMc,self.transformerWaist.gMl) # inverted flexibility
             self.cMwaist = self.transformerWaist.lM0 # reference position in the world control frame
@@ -301,10 +299,10 @@ class SeqPlayLqrTwoDofCoupledStabilizer(Application):
     def stabilize(self):
 
 
-        '''Start to stabilize for the hand movements.'''
+        '''Start to stabilize'''
         self.sot.clear()
         
-        self.comRef = self.seq.com
+        self.comRef = self.tasks['com-stabilized'].comRef
         self.push(self.tasks['ankles'])
         self.push(self.tasks['com-stabilized'])
         self.push(self.taskTrunk)
@@ -373,17 +371,17 @@ class SeqPlayLqrTwoDofCoupledStabilizer(Application):
 	self.stateRefSeq.sin2.value = (0,)*11
 
         plug (self.seq.com, self.comRef)
-        plug (self.seq.com, self.featureComDes.errorIN)
-        plug (self.stateRefSeq.sout, self.tasks['com-stabilized'].stateRef)
+        plug (self.seq.comdot, self.comdot)
 
-        #plug (self.seq.comdot, self.comdot)
-        #plug (self.seq.comdot, self.featureComDes.errordotIN)
-	#task.stateRef.value=self.comRef.value+(0,)*2+(-0.000540322,0.00338134,-5.34856e-07)+(0,)*8
+        plug (self.seq.com, self.featureComDes.errorIN)
+        plug (self.seq.comdot, self.featureComDes.errordotIN)
+
+        plug (self.stateRefSeq.sout, self.tasks['com-stabilized'].stateRef)
         #plug (self.seq.comdot, self.tasks['com-stabilized'].comdotRef)
         #plug (self.seq.comddot, self.tasks['com-stabilized'].comddotRef)
-        #plug (self.seq.posture, self.featurePostureDes.errorIN)
 
-        
+	plug (self.seq.posture, self.featurePostureDes.errorIN)
+   
 
 
     def runSeqplay(self):
