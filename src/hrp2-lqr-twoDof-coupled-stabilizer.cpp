@@ -78,8 +78,12 @@ namespace sotStabilizer
     comDotSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comDot"),
     waistVelSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistVel"),
     flexAngVelVectSIN_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::flexAngVelVect"),
-    stateRefSIN_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::stateRef"),
-    comdotRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comdotRef"),
+    comRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comRef"),
+    waistOriRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistOriRef"),
+    flexOriRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::flexOriRef"),
+    comDotRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comDotRef"),
+    waistVelRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistVelRef"),
+    flexAngVelRefSIN_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::flexAngVelRef"),
     jacobianComSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::Jcom"),
     jacobianWaistSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::Jwaist"),
     leftFootPositionSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(HomoMatrix)::leftFootPosition"),
@@ -124,8 +128,12 @@ namespace sotStabilizer
     signalRegistration (comDotSIN_);
     signalRegistration (waistVelSIN_);
     signalRegistration (flexAngVelVectSIN_);
-    signalRegistration (stateRefSIN_);
-    signalRegistration (comdotRefSIN_);
+    signalRegistration (comRefSIN_);
+    signalRegistration (waistOriRefSIN_);
+    signalRegistration (flexOriRefSIN_);
+    signalRegistration (comDotRefSIN_);
+    signalRegistration (waistVelRefSIN_);
+    signalRegistration (flexAngVelRefSIN_);
     signalRegistration (jacobianComSIN_);
     signalRegistration (jacobianWaistSIN_);
     signalRegistration (leftFootPositionSIN_ << rightFootPositionSIN_ << forceRightFootSIN_ << forceLeftFootSIN_);
@@ -155,8 +163,12 @@ namespace sotStabilizer
     taskSOUT.addDependency (comDotSIN_);
     taskSOUT.addDependency (waistVelSIN_);
     taskSOUT.addDependency (flexAngVelVectSIN_);
-    taskSOUT.addDependency (stateRefSIN_);
-    taskSOUT.addDependency (comdotRefSIN_);
+    taskSOUT.addDependency (comRefSIN_);
+    taskSOUT.addDependency (waistOriRefSIN_);
+    taskSOUT.addDependency (flexOriRefSIN_);
+    taskSOUT.addDependency (comDotRefSIN_);
+    taskSOUT.addDependency (waistVelRefSIN_);
+    taskSOUT.addDependency (flexAngVelRefSIN_);
     taskSOUT.addDependency (jacobianComSIN_);
     taskSOUT.addDependency (jacobianWaistSIN_);
     taskSOUT.addDependency (leftFootPositionSIN_);
@@ -429,7 +441,7 @@ namespace sotStabilizer
     Qglob.resize(stateSize_,stateSize_);
     Qvec.resize(stateSize_);
     Qglob.setIdentity();
-    Qglob.noalias()=1*Qglob;
+    Qglob.noalias()=1000*Qglob;
     Qvec    <<  1,     // com
                 1,
                 1,
@@ -582,36 +594,38 @@ namespace sotStabilizer
   HRP2LQRTwoDofCoupledStabilizer::computeControlFeedback(VectorMultiBound& task,
       const int& time)
   {
-      std::cout << "\n\n time: " << time << std::endl;
+    std::cout << "\n\n time: " << time << std::endl;
 
-    // Control gain
-    const double& gain = controlGainSIN_.access (time);
+    // State
+    const stateObservation::Vector & com = convertVector<stateObservation::Vector>(comSIN_ (time));
+    const MatrixHomogeneous& waistHomo = waistHomoSIN_ (time);
+    const stateObservation::Vector & flexOriVect = convertVector<stateObservation::Vector>(flexOriVectSIN_.access(time));
+    const stateObservation::Vector & comDot = convertVector<stateObservation::Vector>(comDotSIN_ (time));
+    const stateObservation::Vector & waistVel = convertVector<stateObservation::Vector>(waistVelSIN_ (time));
+    const stateObservation::Vector & flexAngVelVect = convertVector<stateObservation::Vector>(flexAngVelVectSIN_.access(time));
+
+    // State Reference
+        // References of velocities and acceleration are equal to zero
+    const stateObservation::Vector & comRef = convertVector<stateObservation::Vector>(comRefSIN_ (time));
+    const stateObservation::Vector & waistOriRef = convertVector<stateObservation::Vector>(waistOriRefSIN_.access(time));
+    const stateObservation::Vector & flexOriRef = convertVector<stateObservation::Vector>(flexOriRefSIN_.access(time));
+    const stateObservation::Vector & comDotRef = convertVector<stateObservation::Vector>(comDotRefSIN_ (time));
+    const stateObservation::Vector & waistAngVelRef = convertVector<stateObservation::Vector>(waistVelRefSIN_ (time));
+    const stateObservation::Vector & flexAngVelRef = convertVector<stateObservation::Vector>(flexAngVelRefSIN_.access(time));
 
     // Determination of the number of support
     unsigned int nbSupport=computeNbSupport(time);
-
-    // Reference in the global frame
-    const stateObservation::Vector & stateRef = convertVector<stateObservation::Vector>(stateRefSIN_ (time));
-        // References of velocities and acceleration are equal to zero
-
-    // Com
-    const stateObservation::Vector & com = convertVector<stateObservation::Vector>(comSIN_ (time));
-    const stateObservation::Vector & comDot = convertVector<stateObservation::Vector>(comDotSIN_ (time));
+    // Control gain
+    const double& gain = controlGainSIN_.access (time);
 
     // Waist orientation
-    const MatrixHomogeneous& waistHomo = waistHomoSIN_ (time);
     MatrixRotation waistOriRot;
     VectorUTheta waistOriUTheta;
     stateObservation::Vector3 waistOri;
     waistHomo.extract(waistOriRot);
     waistOriUTheta.fromMatrix(waistOriRot);
     waistOri=convertVector<stateObservation::Vector>(waistOriUTheta);
-    const stateObservation::Vector3 & waistVel = convertVector<stateObservation::Vector>(waistVelSIN_ (time));
     const stateObservation::Vector3 & waistAngVel = waistVel.block(3,0,3,1);
-
-    // Flexibility
-    const stateObservation::Vector & flexOriVect = convertVector<stateObservation::Vector>(flexOriVectSIN_.access(time));
-    const stateObservation::Vector & flexAngVelVect = convertVector<stateObservation::Vector>(flexAngVelVectSIN_.access(time));
 
     // State reconstruction
     stateObservation::Vector xk;
@@ -624,6 +638,7 @@ namespace sotStabilizer
             flexAngVelVect.block(0,0,2,1);
     stateSOUT_.setConstant (convertVector<dynamicgraph::Vector>(xk));
 
+    // Extended state reconstruction
     stateObservation::Vector extxk;
     extxk.resize(stateSize_+4);
     extxk <<    com,
@@ -635,10 +650,20 @@ namespace sotStabilizer
     extendedStateSOUT_.setConstant (convertVector<dynamicgraph::Vector>(extxk));
     extendedStateSOUT_.setTime (time);
 
+    // Reference reconstruction
+    stateObservation::Vector xkRef;
+    xkRef.resize(stateSize_);
+    xkRef <<   comRef,
+               waistOriRef.block(0,0,2,1),
+               flexOriRef.block(0,0,2,1),
+               comDotRef,
+               waistAngVelRef.block(0,0,2,1),
+               flexAngVelRef.block(0,0,2,1);
+
     // State error
     stateObservation::Vector dxk;
     dxk.resize(stateSize_);
-    dxk=xk-stateRef;
+    dxk=xk-xkRef;
     errorStateSOUT_.setConstant (convertVector<dynamicgraph::Vector>(dxk));
 
     stateObservation::Vector u;
@@ -663,7 +688,7 @@ namespace sotStabilizer
                           0,kdth_,0,
                           0,0,kdth_;
 
-                computeDynamicsMatrix(stateRef.block(0,0,3,1),Kth_,Kdth_,time);
+                computeDynamicsMatrix(xkRef.block(0,0,3,1),Kth_,Kdth_,time);
                 controller_.setDynamicsMatrices(A_,B_);
                 nbSupport_=nbSupport;
                 computed_=true;
@@ -686,7 +711,7 @@ namespace sotStabilizer
 
                   // TODO: when feet are not aligned along the y axis
 
-                  computeDynamicsMatrix(stateRef.block(0,0,3,1),Kth_,Kdth_,time);
+                  computeDynamicsMatrix(xkRef.block(0,0,3,1),Kth_,Kdth_,time);
                   controller_.setDynamicsMatrices(A_,B_);
                   nbSupport_=nbSupport;
                   computed_=true;

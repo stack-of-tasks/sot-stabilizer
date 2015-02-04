@@ -229,10 +229,18 @@ namespace sotStabilizer
     SignalPtr <dynamicgraph::Vector, int> flexAngVelVectSIN_;
 
         /// Reference state
-    // Reference position of center of mass
-    SignalPtr < dynamicgraph::Vector, int> stateRefSIN_;
-    // Reference velocity of the center of mass
-    SignalPtr < dynamicgraph::Vector, int> comdotRefSIN_;
+    // Position of center of mass
+    SignalPtr < dynamicgraph::Vector, int> comRefSIN_;
+    // Homogeneous representation of the waist position
+    SignalPtr <dynamicgraph::Vector, int> waistOriRefSIN_;
+    // Orientation of the flexibility on vector form
+    SignalPtr <dynamicgraph::Vector, int> flexOriRefSIN_;
+    // Velocity of center of mass
+    SignalPtr < dynamicgraph::Vector, int> comDotRefSIN_;
+    // Refrence angular velocity of the waist
+    SignalPtr < dynamicgraph::Vector , int > waistVelRefSIN_;
+    // Velocity of the flexibility
+    SignalPtr <dynamicgraph::Vector, int> flexAngVelRefSIN_;
 
         /// Jacobians
     SignalPtr < dynamicgraph::Matrix, int> jacobianComSIN_;

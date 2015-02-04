@@ -80,6 +80,5 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
 
         plug(self.estimator.flexThetaU, self.flexOriVect ) # Out
         plug(self.estimator.flexOmega, self.flexAngVelVect )
-	plug(self.estimator.flexTransformationMatrix, self.stateFlex)
 
 

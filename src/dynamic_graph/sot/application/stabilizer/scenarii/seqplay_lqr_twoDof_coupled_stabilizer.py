@@ -366,17 +366,13 @@ class SeqPlayLqrTwoDofCoupledStabilizer(Application):
         plug (self.seq.leftAnkleVel, self.leftAnkle.velocity)
         plug (self.seq.rightAnkleVel, self.rightAnkle.velocity)
 
-	self.stateRefSeq = Stack_of_vector ('stateRefSeq')
-	plug(self.seq.com,self.stateRefSeq.sin1)
-	self.stateRefSeq.sin2.value = (0,)*11
-
         plug (self.seq.com, self.comRef)
         plug (self.seq.comdot, self.comdot)
 
         plug (self.seq.com, self.featureComDes.errorIN)
         plug (self.seq.comdot, self.featureComDes.errordotIN)
 
-        plug (self.stateRefSeq.sout, self.tasks['com-stabilized'].stateRef)
+        plug (self.seq.com, self.tasks['com-stabilized'].comRef)
         #plug (self.seq.comdot, self.tasks['com-stabilized'].comdotRef)
         #plug (self.seq.comddot, self.tasks['com-stabilized'].comddotRef)
 
