@@ -73,53 +73,38 @@ namespace sotStabilizer
   HRP2LQRTwoDofCoupledStabilizer::HRP2LQRTwoDofCoupledStabilizer(const std::string& inName) :
     TaskAbstract(inName),
     comSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::com"),
-    comDotSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comDot"),
-    stateRefSIN_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::stateRef"),
-    jacobianComSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::Jcom"),
-    comdotRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comdotRef"),
-    comddotRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comddotRef"),
-    waistOriSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistOri"),
-    waistVelSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistVel"),
-    waistAngAccSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistAngAcc"),
-    jacobianWaistSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::Jwaist"),
     waistHomoSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::waistHomo"),
-    zmpRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::zmpRef"),
-    leftFootPositionSIN_
-    (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(HomoMatrix)::leftFootPosition"),
-    rightFootPositionSIN_
-    (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(HomoMatrix)::rightFootPosition"),
-    forceLeftFootSIN_
-    (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::force_lf"),
-    forceRightFootSIN_
-    (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::force_rf"),
-    stateFlexSIN_
-    (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(HomoMatrix)::stateFlex"),
-    flexOriVectSIN_
-    (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::flexOriVect"),
-    flexAngVelVectSIN_
-    (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::flexAngVelVect"),
-    stateFlexDDotSIN_
-    (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::stateFlexDDot"),
-    controlGainSIN_
-    (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(double)::controlGain"),
+    flexOriVectSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::flexOriVect"),
+    comDotSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comDot"),
+    waistVelSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistVel"),
+    flexAngVelVectSIN_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::flexAngVelVect"),
+    stateRefSIN_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::stateRef"),
+    comdotRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comdotRef"),
+    jacobianComSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::Jcom"),
+    jacobianWaistSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::Jwaist"),
+    leftFootPositionSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(HomoMatrix)::leftFootPosition"),
+    rightFootPositionSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(HomoMatrix)::rightFootPosition"),
+    forceLeftFootSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::force_lf"),
+    forceRightFootSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::force_rf"),
+    controlGainSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(double)::controlGain"),
     inertiaSIN(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::inertia"),
-    comdotSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::comdot"),
-    comddotSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::comddot"),
-    comddotRefSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::comddotRefOUT"),
-    nbSupportSOUT_
-    ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(unsigned)::nbSupport"),
-    zmpRefSOUT_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::zmpRefOUT"),
-    errorSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::error"),
     stateSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::state"),
     errorStateSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::errorState"),
     extendedStateSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector):extendedState"),
+    errorSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::error"),
     controlSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::control"),
+    gainSOUT(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(matrix)::gain"),
+    nbSupportSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(unsigned)::nbSupport"),
     supportPos1SOUT_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::supportPos1"),
     supportPos2SOUT_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::supportPos2"),
-    inertiaSOUT(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(matrix)::inertiaOut"),
-    gainSOUT(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(matrix)::gain"),
     AmatrixSOUT(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(matrix)::Amatrix"),
     BmatrixSOUT(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(matrix)::Bmatrix"),
+    inertiaSOUT(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(matrix)::inertiaOut"), 
+    waistAngAccSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistAngAcc"),
+        comddotRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comddotRef"),
+    zmpRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::zmpRef"),
+    stateFlexDDotSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::stateFlexDDot"),
+    zmpRefSOUT_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::zmpRefOUT"),
     dt_ (.005), on_ (false),
     forceThreshold_ (.036 * constm_*stateObservation::cst::gravityConstant),
     supportPos1_(3), supportPos2_(3),
@@ -134,71 +119,71 @@ namespace sotStabilizer
 
     // Register signals into the entity.
     signalRegistration (comSIN_);
+    signalRegistration (waistHomoSIN_);
+    signalRegistration (flexOriVectSIN_);
     signalRegistration (comDotSIN_);
+    signalRegistration (waistVelSIN_);
+    signalRegistration (flexAngVelVectSIN_);
     signalRegistration (stateRefSIN_);
-        signalRegistration (jacobianComSIN_);
     signalRegistration (comdotRefSIN_);
-    signalRegistration (zmpRefSIN_);
-    signalRegistration (comddotRefSIN_);
-    signalRegistration (leftFootPositionSIN_ << rightFootPositionSIN_
-                        << forceRightFootSIN_ << forceLeftFootSIN_);
-    signalRegistration (stateFlexSIN_ << flexAngVelVectSIN_ << stateFlexDDotSIN_);
+    signalRegistration (jacobianComSIN_);
+    signalRegistration (jacobianWaistSIN_);
+    signalRegistration (leftFootPositionSIN_ << rightFootPositionSIN_ << forceRightFootSIN_ << forceLeftFootSIN_);
     signalRegistration (controlGainSIN_);
-    signalRegistration (comdotSOUT_);
-    signalRegistration (comddotSOUT_ <<comddotRefSOUT_);
-    signalRegistration (nbSupportSOUT_ << supportPos1SOUT_ << supportPos2SOUT_);
-    signalRegistration (errorSOUT_);
+    signalRegistration (inertiaSIN);
     signalRegistration (stateSOUT_);
     signalRegistration (errorStateSOUT_);
     signalRegistration (extendedStateSOUT_);
+    signalRegistration (errorSOUT_);
     signalRegistration (controlSOUT_);
-    signalRegistration (zmpRefSOUT_);
-    signalRegistration (inertiaSIN);
-    signalRegistration (inertiaSOUT);
     signalRegistration (gainSOUT);
+    signalRegistration (nbSupportSOUT_ << supportPos1SOUT_ << supportPos2SOUT_);
     signalRegistration (AmatrixSOUT);
     signalRegistration (BmatrixSOUT);
-
-    signalRegistration (waistOriSIN_);
-    signalRegistration (waistVelSIN_);
+    signalRegistration (inertiaSOUT);
     signalRegistration (waistAngAccSIN_);
-    signalRegistration (jacobianWaistSIN_);
-    signalRegistration (waistHomoSIN_);
+    signalRegistration (comddotRefSIN_);
+    signalRegistration (zmpRefSIN_);
+    signalRegistration (stateFlexDDotSIN_);
+    signalRegistration (zmpRefSOUT_);
 
-    signalRegistration (flexOriVectSIN_);
-
+    // Set dependencies
+        // taskSOUT dependencies
     taskSOUT.addDependency (comSIN_);
+    taskSOUT.addDependency (waistHomoSIN_);
+    taskSOUT.addDependency (flexOriVectSIN_);
+    taskSOUT.addDependency (comDotSIN_);
+    taskSOUT.addDependency (waistVelSIN_);
+    taskSOUT.addDependency (flexAngVelVectSIN_);
     taskSOUT.addDependency (stateRefSIN_);
     taskSOUT.addDependency (comdotRefSIN_);
-
-    taskSOUT.addDependency (stateFlexSIN_);
-    taskSOUT.addDependency (flexAngVelVectSIN_);
-    taskSOUT.addDependency (stateFlexDDotSIN_);
-
-    if (zmpMode_)
-    {
-      taskSOUT.addDependency(zmpRefSIN_);
-    }
-    else
-    {
-      taskSOUT.addDependency(comddotRefSIN_);
-    }
-
+    taskSOUT.addDependency (jacobianComSIN_);
+    taskSOUT.addDependency (jacobianWaistSIN_);
     taskSOUT.addDependency (leftFootPositionSIN_);
     taskSOUT.addDependency (rightFootPositionSIN_);
     taskSOUT.addDependency (forceRightFootSIN_);
     taskSOUT.addDependency (forceLeftFootSIN_);
-    taskSOUT.addDependency (stateFlexSIN_);
-    taskSOUT.addDependency (flexAngVelVectSIN_);
-    taskSOUT.addDependency (stateFlexDDotSIN_);
     taskSOUT.addDependency (controlGainSIN_);
-
+    taskSOUT.addDependency (inertiaSIN);
+        // jacobianSOUT dependencies
     jacobianSOUT.addDependency (jacobianComSIN_);
-
-    taskSOUT.setFunction (boost::bind(&HRP2LQRTwoDofCoupledStabilizer::computeControlFeedback,this,_1,_2));
-    jacobianSOUT.setFunction (boost::bind(&HRP2LQRTwoDofCoupledStabilizer::computeJacobian,
-                                          this,_1,_2));
+    jacobianSOUT.addDependency (jacobianWaistSIN_);
+        // nbSupportSOUT dependency
     nbSupportSOUT_.addDependency (taskSOUT);
+        // supports position dependencies
+    supportPos1SOUT_.addDependency (taskSOUT);
+    supportPos2SOUT_.addDependency (taskSOUT);
+
+    if (zmpMode_){
+      taskSOUT.addDependency(zmpRefSIN_);
+    }else{
+      taskSOUT.addDependency(comddotRefSIN_);
+    }
+
+    // Settinf methods for output signals
+    taskSOUT.setFunction (boost::bind(&HRP2LQRTwoDofCoupledStabilizer::computeControlFeedback,this,_1,_2));
+    jacobianSOUT.setFunction (boost::bind(&HRP2LQRTwoDofCoupledStabilizer::computeJacobian,this,_1,_2));
+
 
     std::string docstring;
     docstring =
@@ -428,7 +413,6 @@ namespace sotStabilizer
     vec.resize(2); vec.setZero();
     vect.resize(3); vect.setZero();
     comDotSIN_.setConstant(vect);
-    waistOriSIN_.setConstant(convertVector<dynamicgraph::Vector>(vec));
     flexOriVectSIN_.setConstant(vect);
     flexAngVelVectSIN_.setConstant(vect);
     vect.resize(6); vect.setZero();
@@ -615,21 +599,19 @@ namespace sotStabilizer
     const stateObservation::Vector & comDot = convertVector<stateObservation::Vector>(comDotSIN_ (time));
 
     // Waist orientation
-    //const stateObservation::Vector & waistOri = convertVector<stateObservation::Vector>(waistOriSIN_ (time));
-    const stateObservation::Vector & waistVel = convertVector<stateObservation::Vector>(waistVelSIN_ (time));
-    const stateObservation::Vector3 & waistAngVel = waistVel.block(3,0,3,1);
-    const stateObservation::Matrix & waistHomo = convertMatrix<stateObservation::Matrix>(waistHomoSIN_ (time));
-
-    stateObservation::Vector waistVect;
-    waistVect.resize(6);
+    const MatrixHomogeneous& waistHomo = waistHomoSIN_ (time);
+    MatrixRotation waistOriRot;
+    VectorUTheta waistOriUTheta;
     stateObservation::Vector3 waistOri;
-    waistVect = kine::homogeneousMatrixToVector6(waistHomo);
-    waistOri=waistVect.block(3,0,3,1);
+    waistHomo.extract(waistOriRot);
+    waistOriUTheta.fromMatrix(waistOriRot);
+    waistOri=convertVector<stateObservation::Vector>(waistOriUTheta);
+    const stateObservation::Vector3 & waistVel = convertVector<stateObservation::Vector>(waistVelSIN_ (time));
+    const stateObservation::Vector3 & waistAngVel = waistVel.block(3,0,3,1);
 
     // Flexibility
     const stateObservation::Vector & flexOriVect = convertVector<stateObservation::Vector>(flexOriVectSIN_.access(time));
     const stateObservation::Vector & flexAngVelVect = convertVector<stateObservation::Vector>(flexAngVelVectSIN_.access(time));
-    const MatrixHomogeneous& flexHomo = stateFlexSIN_.access(time);
 
     // State reconstruction
     stateObservation::Vector xk;
@@ -662,13 +644,6 @@ namespace sotStabilizer
     stateObservation::Vector u;
     u.resize(controlSize_);
     u.setZero();
-
-    stateObservation::Vector comRefl;
-    Vector flexPos(3);
-    Matrix flexRot(3,3);
-    flexHomo.extract(flexPos);
-    flexHomo.extract(flexRot);
-    comRefl= convertMatrix<stateObservation::Matrix>(flexRot).transpose()*(stateRef.block(0,0,3,1)-convertVector<stateObservation::Vector>(flexPos));
 
     switch (nbSupport)
     {
@@ -834,10 +809,12 @@ namespace sotStabilizer
   stateObservation::Matrix3 HRP2LQRTwoDofCoupledStabilizer::computeInert(const stateObservation::Vector& cl, const int& inTime)
 {
     const stateObservation::Matrix& inertiaSotWaistFrame=convertMatrix<stateObservation::Matrix>(inertiaSIN.access(inTime));
-    const stateObservation::Matrix& homoWaist=convertMatrix<stateObservation::Matrix>(waistHomoSIN_.access(inTime));
+    const MatrixHomogeneous& waistHomo = waistHomoSIN_.access(inTime);
+    Vector waistPos(3);
+    waistHomo.extract(waistPos);
 
     double m=inertiaSotWaistFrame(0,0); //<=== give 56.8;
-    stateObservation::Vector3 wl=homoWaist.block(0,3,3,1);
+    stateObservation::Vector3 wl=convertVector<stateObservation::Vector>(waistPos);
 
 
     stateObservation::Matrix3 inertiaControlFrame, inertiaComFrame, inertiaWaistFrame;

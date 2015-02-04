@@ -203,62 +203,42 @@ namespace sotStabilizer
 
   private:
 
-    /// Compute the number of supports
+    /// Methods
+    // Compute the number of supports
     unsigned int computeNbSupport(const int& time);
-
-    /// Compute the control law
-    VectorMultiBound& computeControlFeedback(VectorMultiBound& comdot,
-        const int& time);
-
+    // Compute the task
+    VectorMultiBound& computeControlFeedback(VectorMultiBound& comdot, const int& time);
+    // Compute the jacobian
     Matrix& computeJacobian(Matrix& jacobian, const int& time);
-
+    // Compute the inertia tensor
     stateObservation::Matrix3 computeInert(const stateObservation::Vector& com, const int& time);
 
-    // Reference position of center of mass
-    SignalPtr < dynamicgraph::Vector, int> stateRefSIN_;
-
-    // Reference velocity of the center of mass
-    SignalPtr < dynamicgraph::Vector, int> comdotRefSIN_;
-    // Reference com ddot
-    SignalPtr < dynamicgraph::Vector, int> comddotRefSIN_;
-
-    /// Com
+    /// Signals
+        /// State
     // Position of center of mass
     SignalPtr < dynamicgraph::Vector, int> comSIN_;
-    // Velocity of center of mass
-    SignalPtr < dynamicgraph::Vector, int> comDotSIN_;
-
-    /// Waist
-    // Orientation of the waist
-    SignalPtr < dynamicgraph::Vector, int > waistOriSIN_;
-        // Refrence angular velocity of the waist
-    SignalPtr < dynamicgraph::Vector , int > waistVelSIN_;
-    // Reference  angular acceleration of the waist
-    SignalPtr < dynamicgraph::Vector, int> waistAngAccSIN_;
-
     // Homogeneous representation of the waist position
     SignalPtr <dynamicgraph::Matrix, int> waistHomoSIN_;
-
-    /// Flexibility
-    // State of the flexibility
-    SignalPtr <MatrixHomogeneous, int> stateFlexSIN_;
-    // Velocity of the flexibility
-    SignalPtr <dynamicgraph::Vector, int> flexAngVelVectSIN_;
-    // Velocity of the flexibility
-    SignalPtr <dynamicgraph::Vector, int> stateFlexDDotSIN_;
     // Orientation of the flexibility on vector form
     SignalPtr <dynamicgraph::Vector, int> flexOriVectSIN_;
+    // Velocity of center of mass
+    SignalPtr < dynamicgraph::Vector, int> comDotSIN_;
+    // Refrence angular velocity of the waist
+    SignalPtr < dynamicgraph::Vector , int > waistVelSIN_;
+    // Velocity of the flexibility
+    SignalPtr <dynamicgraph::Vector, int> flexAngVelVectSIN_;
 
+        /// Reference state
+    // Reference position of center of mass
+    SignalPtr < dynamicgraph::Vector, int> stateRefSIN_;
+    // Reference velocity of the center of mass
+    SignalPtr < dynamicgraph::Vector, int> comdotRefSIN_;
 
-
+        /// Jacobians
     SignalPtr < dynamicgraph::Matrix, int> jacobianComSIN_;
     SignalPtr < dynamicgraph::Matrix, int> jacobianWaistSIN_;
-    SignalPtr <double, int> controlGainSIN_;
 
-    ///Reference ZMP
-    SignalPtr < dynamicgraph::Vector, int> zmpRefSIN_;
-
-    /// Signals to compute number of supports
+        /// Signals to compute number of supports
     // Position of left foot force sensor in global frame
     SignalPtr <MatrixHomogeneous, int> leftFootPositionSIN_;
     // Position of right foot force sensor in global frame
@@ -268,58 +248,59 @@ namespace sotStabilizer
     // Force in right foot sensor
     SignalPtr <dynamicgraph::Vector, int> forceRightFootSIN_;
 
+        /// Control gain for 0 supports case
+    SignalPtr <double, int> controlGainSIN_;
 
-    /// Signals to compute dynamics model
+        /// Signals to compute dynamics model
     dynamicgraph::SignalPtr < ::dynamicgraph::Matrix, int> inertiaSIN;
 
-    // Velocity of center of mass
-    SignalTimeDependent <dynamicgraph::Vector, int> comdotSOUT_;
-    // Acceleration of center of mass
-    SignalTimeDependent <dynamicgraph::Vector, int> comddotSOUT_;
-    // Reference acceleration of center of mass
-    SignalTimeDependent <dynamicgraph::Vector, int> comddotRefSOUT_;
+        /// Outputs
+    // state output
+    SignalTimeDependent <Vector, int> stateSOUT_;
+    // error state output
+    SignalTimeDependent <Vector, int> errorStateSOUT_;
+    // extended state output
+    SignalTimeDependent <Vector, int> extendedStateSOUT_;
+    // error output
+    SignalTimeDependent <Vector, int> errorSOUT_;
+    // control output
+    SignalTimeDependent <Vector, int> controlSOUT_;
+    // gains computed by the LQR controller
+    dynamicgraph::SignalPtr < ::dynamicgraph::Matrix, int> gainSOUT;
 
-    /// Number and position of supports
     // Number of support feet
     SignalTimeDependent <unsigned int, int> nbSupportSOUT_;
     // Contact Position
     SignalTimeDependent <Vector, int> supportPos1SOUT_;
     SignalTimeDependent <Vector, int> supportPos2SOUT_;
 
-    dynamicgraph::SignalPtr < ::dynamicgraph::Matrix, int> inertiaSOUT;
-
-    dynamicgraph::SignalPtr < ::dynamicgraph::Matrix, int> gainSOUT;
-
-    ///error output
-    SignalTimeDependent <Vector, int> errorSOUT_;
-
-    ///state output
-    SignalTimeDependent <Vector, int> stateSOUT_;
-    ///extended state output
-    SignalTimeDependent <Vector, int> extendedStateSOUT_;
-    ///error state output
-    SignalTimeDependent <Vector, int> errorStateSOUT_;
-
-    ///control output
-    SignalTimeDependent <Vector, int> controlSOUT_;
-
+    // A and B matrices computed by the computeDynamics method
     dynamicgraph::SignalPtr < ::dynamicgraph::Matrix, int> AmatrixSOUT;
     dynamicgraph::SignalPtr < ::dynamicgraph::Matrix, int> BmatrixSOUT;
+    // Inertia computed by the computeInert method
+    dynamicgraph::SignalPtr < ::dynamicgraph::Matrix, int> inertiaSOUT;
 
+        /// Unused signals
+    // angular acceleration of the waist
+    SignalPtr < dynamicgraph::Vector, int> waistAngAccSIN_;
+    // Reference com ddot
+    SignalPtr < dynamicgraph::Vector, int> comddotRefSIN_;
+    ///Reference ZMP
+    SignalPtr < dynamicgraph::Vector, int> zmpRefSIN_;
+    // Velocity of the flexibility
+    SignalPtr <dynamicgraph::Vector, int> stateFlexDDotSIN_;
     ///Reference ZMP
     SignalTimeDependent <Vector, int> zmpRefSOUT_;
 
+    /// Parameters
     // Time sampling period
     double dt_;
     // Whether stabilizer is on
     bool on_;
-
     // Number of feet in support
     unsigned int nbSupport_;
     double forceThreshold_; // Threshold on normal force above which the foot is considered in contact
     Vector supportPos1_, supportPos2_;
-
-    Vector zmp_;
 
     stateObservation::Matrix A_;
     stateObservation::Matrix B_;
@@ -336,9 +317,11 @@ namespace sotStabilizer
 
     bool fixedGains_;
     bool computed_;
-    bool zmpMode_;
 
     double hrp2Mass_;
+
+    Vector zmp_;
+    bool zmpMode_;
 
   }; // class Stabilizer
 } // namespace sotStabiilizer
