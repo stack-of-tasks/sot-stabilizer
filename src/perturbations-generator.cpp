@@ -161,8 +161,6 @@ namespace sotStabilizer
                 }
                 else if (perturbationMode_==2) //white noise
                 {
-
-
                     const dynamicgraph::Vector & perturbation = perturbationSIN(inTime);
                     const dynamicgraph::sot::Flags & selec = selecSIN(inTime);
 

@@ -15,12 +15,10 @@ appli.withTraces()
 est = appli.taskCoMStabilized.estimator
 stabilizer = appli.taskCoMStabilized
 
-#perturbator = VectorPerturbationsGenerator('comref')
-#comRef = perturbator.sin
-#comRef.value = appli.comRef.value
-#plug (perturbator.sout,appli.comRef)
-#perturbator.perturbation.value=(-0.5,0,0)
-#perturbator.selec.value = '111'
+perturbator = VectorPerturbationsGenerator('comref')
+comRef = perturbator.sin
+comRef.value = appli.comRef.value
+plug (perturbator.sout,appli.comRef)
 
 realcom = Multiply_matrixHomo_vector('real-com')
 plug(est.flexTransformationMatrix, realcom.sin1)
@@ -38,15 +36,16 @@ appli.robot.addTrace( est.name,'simulatedSensors' )
 appli.robot.addTrace( stabilizer.name,'task' )
 appli.robot.addTrace( stabilizer.name,'nbSupport' )
 appli.robot.addTrace( stabilizer.name,'error' )
-#appli.robot.addTrace( perturbator.name, 'sout')
+appli.robot.addTrace( perturbator.name, 'sout')
 appli.robot.addTrace( robot.device.name, 'forceLLEG')
 appli.robot.addTrace( robot.device.name, 'forceRLEG')
 appli.robot.addTrace( robot.device.name, 'accelerometer')
 appli.robot.addTrace( robot.device.name, 'gyrometer')
 appli.robot.addTrace( realcom.name, 'sout')
 appli.robot.addTrace ( stabilizer.name,'state')
-appli.robot.addTrace ( stabilizer.name,'errorState')
-appli.robot.addTrace ( stabilizer.name,'extendedState')
+appli.robot.addTrace ( stabilizer.name,'stateRef')
+appli.robot.addTrace ( stabilizer.name,'stateError')
+appli.robot.addTrace ( stabilizer.name,'stateExtended')
 appli.robot.addTrace ( stabilizer.name,'control')
 appli.robot.addTrace (robot.device.name,'velocity')
 appli.robot.addTrace (robot.dynamic.name,'waist')
@@ -65,15 +64,15 @@ est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-1,)*6)))
 
 stabilizer.start()
 
-#comRef.value = (0.0,0.0,0.8)
-#perturbator.perturbation.value=(0.001,0,0)
-#perturbator.setMode(1)
-#perturbator.setPeriod(3200)
-#perturbator.activate(True)
-
-stabilizer.setStateCost(matrixToTuple(5*np.diag((1,1,1,1,1,1,1,1,1,1,1,1,1,1))))
-stabilizer.setInputCost(matrixToTuple(1*np.diag((1,1,1,100,100))))
+stabilizer.setStateCost(matrixToTuple(1*np.diag((1,1,1,1,1,0.1,0.1,1,1,1,1,1,0.1,0.1))))
+stabilizer.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
 stabilizer.stateRef.value=(0.0096500000000000006, 0.0, 0.80777699999999997, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
 #stabilizer.setFixedGains(False)
 
+perturbator.perturbation.value=(-0.2,0,0)
+perturbator.setMode(1)
+perturbator.selec.value = '111'
+perturbator.setPeriod(3200)
+
+#perturbator.activate(True)
 appli.nextStep()

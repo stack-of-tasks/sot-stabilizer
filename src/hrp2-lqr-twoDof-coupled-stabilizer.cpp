@@ -93,8 +93,9 @@ namespace sotStabilizer
     controlGainSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(double)::controlGain"),
     inertiaSIN(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::inertia"),
     stateSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::state"),
-    errorStateSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::errorState"),
-    extendedStateSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector):extendedState"),
+    stateErrorSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::stateError"),
+    stateRefSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::stateRef"),
+    stateExtendedSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector):stateExtended"),
     errorSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::error"),
     controlSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::control"),
     gainSOUT(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(matrix)::gain"),
@@ -140,8 +141,9 @@ namespace sotStabilizer
     signalRegistration (controlGainSIN_);
     signalRegistration (inertiaSIN);
     signalRegistration (stateSOUT_);
-    signalRegistration (errorStateSOUT_);
-    signalRegistration (extendedStateSOUT_);
+    signalRegistration (stateRefSOUT_);
+    signalRegistration (stateErrorSOUT_);
+    signalRegistration (stateExtendedSOUT_);
     signalRegistration (errorSOUT_);
     signalRegistration (controlSOUT_);
     signalRegistration (gainSOUT);
@@ -441,7 +443,7 @@ namespace sotStabilizer
     Qglob.resize(stateSize_,stateSize_);
     Qvec.resize(stateSize_);
     Qglob.setIdentity();
-    Qglob.noalias()=1000*Qglob;
+    Qglob.noalias()=0.00001*Qglob;
     Qvec    <<  1,     // com
                 1,
                 1,
@@ -467,15 +469,15 @@ namespace sotStabilizer
     Rvec    <<  1,     // dd com
                 1,
                 1,
-                10,     // dd ori waist
-                10;
+                1,     // dd ori waist
+                1;
 
     Q_ = Qvec.asDiagonal()*Qglob;
     R_ = Rvec.asDiagonal()*Rglob;
 
     zmp_.setZero ();
 
-    int horizon = 200;
+    int horizon = 4000;
 
     nbSupport_=computeNbSupport(0);
 
@@ -594,6 +596,7 @@ namespace sotStabilizer
   HRP2LQRTwoDofCoupledStabilizer::computeControlFeedback(VectorMultiBound& task,
       const int& time)
   {
+
     std::cout << "\n\n time: " << time << std::endl;
 
     // State
@@ -647,8 +650,8 @@ namespace sotStabilizer
                 comDot,
                 waistAngVel,
                 flexAngVelVect;
-    extendedStateSOUT_.setConstant (convertVector<dynamicgraph::Vector>(extxk));
-    extendedStateSOUT_.setTime (time);
+    stateExtendedSOUT_.setConstant (convertVector<dynamicgraph::Vector>(extxk));
+    stateExtendedSOUT_.setTime (time);
 
     // Reference reconstruction
     stateObservation::Vector xkRef;
@@ -659,12 +662,18 @@ namespace sotStabilizer
                comDotRef,
                waistAngVelRef.block(0,0,2,1),
                flexAngVelRef.block(0,0,2,1);
+    stateRefSOUT_.setConstant (convertVector<dynamicgraph::Vector>(xkRef));
+
+    stateObservation::Vector controlDref;
+    controlDref.resize(controlSize_);
+    controlDref <<  comDotRef,
+                    waistAngVelRef.block(0,0,2,1);
 
     // State error
     stateObservation::Vector dxk;
     dxk.resize(stateSize_);
     dxk=xk-xkRef;
-    errorStateSOUT_.setConstant (convertVector<dynamicgraph::Vector>(dxk));
+    stateErrorSOUT_.setConstant (convertVector<dynamicgraph::Vector>(dxk));
 
     stateObservation::Vector u;
     u.resize(controlSize_);
@@ -674,7 +683,7 @@ namespace sotStabilizer
     {
         case 0: // No support
         {
-            preTask_ <<  -gain*dxk.block(0,0,5,1);
+            preTask_ <<  -gain*dxk.block(0,0,5,1)+controlDref;
         }
         break;
         case 1: // Single support
@@ -695,7 +704,7 @@ namespace sotStabilizer
              }
              controller_.setState(dxk,time);
              u=controller_.getControl(time);
-             preTask_+=dt_*u;
+             preTask_+=dt_*u+controlDref;
         }
         break;
         case 2 : // Double support
@@ -718,7 +727,7 @@ namespace sotStabilizer
               }
               controller_.setState(dxk,time);
               u=controller_.getControl(time);
-              preTask_+=dt_*u;
+              preTask_+=dt_*u+controlDref;
         }
         break;
         default: throw std::invalid_argument("Only 0, 1 and 2 number of supports cases are developped");

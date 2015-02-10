@@ -54,7 +54,7 @@ namespace sotStabilizer
             {
                 perturbationMode_ = k;
                 iterationNumber_ = 0;
-                timeSinceLast_=0;
+                timeSinceLast_= 0;
             }
 
             virtual void setPeriod (const int & k)

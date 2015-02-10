@@ -36,6 +36,9 @@
 #include <sot-stabilizer/controllers/discrete-time-lti-lqr.hh>
 #include <sot-state-observation/tools/definitions.hh>
 
+//#define NDEBUG
+#include <iostream>
+
 namespace sotStabilizer
 {
   using dynamicgraph::sot::TaskAbstract;
@@ -265,10 +268,12 @@ namespace sotStabilizer
         /// Outputs
     // state output
     SignalTimeDependent <Vector, int> stateSOUT_;
+    // state reference output
+    SignalTimeDependent <Vector, int> stateRefSOUT_;
     // error state output
-    SignalTimeDependent <Vector, int> errorStateSOUT_;
+    SignalTimeDependent <Vector, int> stateErrorSOUT_;
     // extended state output
-    SignalTimeDependent <Vector, int> extendedStateSOUT_;
+    SignalTimeDependent <Vector, int> stateExtendedSOUT_;
     // error output
     SignalTimeDependent <Vector, int> errorSOUT_;
     // control output
