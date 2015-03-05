@@ -272,8 +272,12 @@ namespace sotStabilizer
     SignalTimeDependent <Vector, int> stateRefSOUT_;
     // error state output
     SignalTimeDependent <Vector, int> stateErrorSOUT_;
+    // predicted state
+    SignalTimeDependent <Vector, int> stateSimulationSOUT_;
     // extended state output
     SignalTimeDependent <Vector, int> stateExtendedSOUT_;
+    // state model error
+    SignalTimeDependent <Vector, int> stateModelErrorSOUT_;
     // error output
     SignalTimeDependent <Vector, int> errorSOUT_;
     // control output
@@ -327,6 +331,9 @@ namespace sotStabilizer
     stateObservation::Matrix Kdth_;
 
     stateObservation::Vector preTask_;
+    stateObservation::Vector xpredicted_;
+
+    stateObservation::Vector comRef_;
 
     bool fixedGains_;
     bool computed_;

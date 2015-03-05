@@ -28,6 +28,7 @@
 
 #include <sot-stabilizer/hrp2-lqr-twoDof-coupled-stabilizer.hh>
 #include <stdexcept>
+#include <iostream>
 
 namespace sotStabilizer
 {
@@ -95,7 +96,9 @@ namespace sotStabilizer
     stateSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::state"),
     stateErrorSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::stateError"),
     stateRefSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::stateRef"),
+    stateSimulationSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::stateSimulation"),
     stateExtendedSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector):stateExtended"),
+    stateModelErrorSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector):stateModelError"),
     errorSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::error"),
     controlSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::control"),
     gainSOUT(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(matrix)::gain"),
@@ -114,7 +117,7 @@ namespace sotStabilizer
     forceThreshold_ (.036 * constm_*stateObservation::cst::gravityConstant),
     supportPos1_(3), supportPos2_(3),
     fixedGains_(true), zmpMode_(true), computed_(false),
-    zmp_ (3),
+    zmp_ (3), xpredicted_(stateSize_),
     controller_(stateSize_,controlSize_),
     A_(stateObservation::Matrix::Zero(stateSize_,stateSize_)),
     B_(stateObservation::Matrix::Zero(stateSize_,controlSize_)),
@@ -142,8 +145,10 @@ namespace sotStabilizer
     signalRegistration (inertiaSIN);
     signalRegistration (stateSOUT_);
     signalRegistration (stateRefSOUT_);
+    signalRegistration (stateSimulationSOUT_);
     signalRegistration (stateErrorSOUT_);
     signalRegistration (stateExtendedSOUT_);
+    signalRegistration (stateModelErrorSOUT_);
     signalRegistration (errorSOUT_);
     signalRegistration (controlSOUT_);
     signalRegistration (gainSOUT);
@@ -435,8 +440,8 @@ namespace sotStabilizer
     Kth_.resize(3,3);
     Kdth_.resize(3,3);
 
-    kth_=600;
-    kdth_=65;
+    kth_=60;
+    kdth_=6.5;
 
     stateObservation::Vector Qvec;
     stateObservation::Matrix Qglob;
@@ -688,7 +693,7 @@ namespace sotStabilizer
         break;
         case 1: // Single support
         {
-             if(nbSupport!=nbSupport_ || computed_==false || fixedGains_!=true)
+             if(nbSupport!=nbSupport_ || computed_==false || fixedGains_!=true || comRef!=comRef_)
              {
                 Kth_ <<   kth_,0,0,
                           0,kth_,0,
@@ -701,6 +706,7 @@ namespace sotStabilizer
                 controller_.setDynamicsMatrices(A_,B_);
                 nbSupport_=nbSupport;
                 computed_=true;
+                comRef_=comRef;
              }
              controller_.setState(dxk,time);
              u=controller_.getControl(time);
@@ -709,7 +715,7 @@ namespace sotStabilizer
         break;
         case 2 : // Double support
         {
-              if(nbSupport!=nbSupport_ || computed_ == false || fixedGains_!=true)
+              if(nbSupport!=nbSupport_ || computed_ == false || fixedGains_!=true || comRef!=comRef_)
               {
                   Kth_ <<    0.5*kth_*kth_,0,0,
                             0,kth_,0,
@@ -724,6 +730,7 @@ namespace sotStabilizer
                   controller_.setDynamicsMatrices(A_,B_);
                   nbSupport_=nbSupport;
                   computed_=true;
+                  comRef_=comRef;
               }
               controller_.setState(dxk,time);
               u=controller_.getControl(time);
@@ -752,6 +759,15 @@ namespace sotStabilizer
     BmatrixSOUT.setConstant(convertMatrix<dynamicgraph::Matrix>(B_));
    // std::cout << "A: " << A_ << std::endl;
    // std::cout << "B: " << B_ << std::endl;
+
+    // Validation of the model
+    stateObservation::Vector modelError;
+    modelError.resize(stateSize_);
+    modelError.setZero();
+    xpredicted_=A_*dxk+B_*u;
+    stateSimulationSOUT_.setConstant(convertVector<dynamicgraph::Vector>(xpredicted_));
+    modelError=xpredicted_-dxk;
+    stateModelErrorSOUT_.setConstant(convertVector<dynamicgraph::Vector>(modelError));
 
     return task;
   }
@@ -819,11 +835,17 @@ namespace sotStabilizer
     A_.block(3,10,2,2)=identity.block(0,0,2,2);
     A_.block(5,12,2,2)=identity.block(0,0,2,2);
     A_.block(12,0,2,3)=ddomega_cl.block(0,0,2,3);
+    std::cout << A_.block(12,0,2,3) << "\n" <<  std::endl;
     A_.block(12,3,2,2)=ddomega_omegach.block(0,0,2,2);
+    std::cout << A_.block(12,3,2,2) << "\n" <<  std::endl;
     A_.block(12,5,2,2)=ddomega_omega.block(0,0,2,2);
+    std::cout << A_.block(12,5,2,2) << "\n" <<  std::endl;
     A_.block(12,7,2,3)=ddomega_dcl.block(0,0,2,3);
+    std::cout << A_.block(12,7,2,3) << "\n" <<  std::endl;
     A_.block(12,10,2,2)=ddomega_domegach.block(0,0,2,2);
+    std::cout << A_.block(12,10,2,2) << "\n" <<  std::endl;
     A_.block(12,12,2,2)=ddomega_domega.block(0,0,2,2);
+    std::cout << A_.block(12,12,2,2) << "\n" <<  std::endl;
 
     stateObservation::Matrix Identity(stateObservation::Matrix::Zero(stateSize_,stateSize_));
     Identity.setIdentity();
