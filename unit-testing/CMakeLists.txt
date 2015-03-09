@@ -35,6 +35,7 @@ include_directories(${Boost_INCLUDE_DIR} ${PROJECT_INCLUDE_DIR})
 SET(tests
     test_state-space-linear-controller
     test_hrp2-linear-state-space-stabilizer
+    test_hrp2-lqr-twoDof-coupled-stabilizer
   )
 
 FOREACH(test ${tests})
