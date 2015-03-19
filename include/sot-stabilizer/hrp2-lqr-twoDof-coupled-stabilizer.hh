@@ -111,6 +111,8 @@ namespace sotStabilizer
     void start ()
     {
       on_ = true;
+
+      //flexOriRefSIN_.setConstant(flexOriVectSIN_);
     }
 
     /// Start stabilizer

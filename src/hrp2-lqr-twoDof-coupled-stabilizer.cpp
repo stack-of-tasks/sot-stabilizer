@@ -684,11 +684,14 @@ namespace sotStabilizer
     u.resize(controlSize_);
     u.setZero();
 
+    std::cout << flexOriVect << std::endl;
+
     switch (nbSupport)
     {
         case 0: // No support
         {
             preTask_ <<  -gain*dxk.block(0,0,5,1)+controlDref;
+            std::cout << "coucou" << std::endl;
         }
         break;
         case 1: // Single support
@@ -835,17 +838,11 @@ namespace sotStabilizer
     A_.block(3,10,2,2)=identity.block(0,0,2,2);
     A_.block(5,12,2,2)=identity.block(0,0,2,2);
     A_.block(12,0,2,3)=ddomega_cl.block(0,0,2,3);
-    std::cout << A_.block(12,0,2,3) << "\n" <<  std::endl;
     A_.block(12,3,2,2)=ddomega_omegach.block(0,0,2,2);
-    std::cout << A_.block(12,3,2,2) << "\n" <<  std::endl;
     A_.block(12,5,2,2)=ddomega_omega.block(0,0,2,2);
-    std::cout << A_.block(12,5,2,2) << "\n" <<  std::endl;
     A_.block(12,7,2,3)=ddomega_dcl.block(0,0,2,3);
-    std::cout << A_.block(12,7,2,3) << "\n" <<  std::endl;
     A_.block(12,10,2,2)=ddomega_domegach.block(0,0,2,2);
-    std::cout << A_.block(12,10,2,2) << "\n" <<  std::endl;
     A_.block(12,12,2,2)=ddomega_domega.block(0,0,2,2);
-    std::cout << A_.block(12,12,2,2) << "\n" <<  std::endl;
 
     stateObservation::Matrix Identity(stateObservation::Matrix::Zero(stateSize_,stateSize_));
     Identity.setIdentity();

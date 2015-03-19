@@ -14,9 +14,6 @@ class SeqPlayLqrTwoDofCoupledStabilizerHRP2(SeqPlayLqrTwoDofCoupledStabilizer):
     def createStabilizedCoMTask (self):
         task = HRP2LqrTwoDofCoupledStabilizer(self.robot)
         gain = GainAdaptive('gain'+task.name)
-	# References
-	#self.comRef.value=(0.00965, 0.0, 0.80777668336283626)
-	#task.stateRef.value=(0.00965, 0.0, 0.80777668336283626)+(0,)*11
         plug(self.comRef,task.comRef)
 	task.waistOriRef.value=(0,)*3
         task.flexOriRef.value=(0,)*3

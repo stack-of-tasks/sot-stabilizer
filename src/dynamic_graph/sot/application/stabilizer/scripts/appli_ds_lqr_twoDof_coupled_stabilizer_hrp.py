@@ -70,20 +70,23 @@ appli.startTracer()
 
 appli.gains['trunk'].setConstant(2)
 
-est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-1,)*6)))
+est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-6,)*6)))
 
 stabilizer.start()
 
-stabilizer.setStateCost(matrixToTuple(1*np.diag((1,1,1,1,1,0.1,0.1,1,1,1,1,1,0.1,0.1))))
-stabilizer.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
+stabilizer.setStateCost(matrixToTuple(10*np.diag((1,1,1,100,100,0.1,0.1,1,1,1,1,1,0.1,0.1))))
+stabilizer.setInputCost(matrixToTuple(1*np.diag((1,1,1,10,10))))
 stabilizer.stateRef.value=(0.0096500000000000006, 0.0, 0.80777699999999997, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+# Flexibility = 0
+stabilizer.stateRef.value=(0.01111, 0.0, 0.80777699999999997, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
 stabilizer.setFixedGains(True)
 stabilizer.setHorizon(200)
 
-perturbator.perturbation.value=(-0.2,0,0)
-perturbator.setMode(1)
-perturbator.selec.value = '111'
-perturbator.setPeriod(3200)
+est.setKfe(matrixToTuple(np.diag((40000,40000,40000))))
+est.setKfv(matrixToTuple(np.diag((600,600,600))))
+est.setKte(matrixToTuple(np.diag((600,600,600))))
+est.setKtv(matrixToTuple(np.diag((60,60,60))))
 
 #perturbator.activate(True)
+
 appli.nextStep()
