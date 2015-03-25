@@ -635,16 +635,38 @@ namespace sotStabilizer
     waistOri=convertVector<stateObservation::Vector>(waistOriUTheta);
     const stateObservation::Vector3 & waistAngVel = waistVel.block(3,0,3,1);
 
+    Vector6 flexVect;
+    flexVect << flexOriVect,
+                0,
+                0,
+                0;
+    Matrix3 flexOri=(kine::vector6ToHomogeneousMatrix(flexVect)).block(0,0,3,3);
+
+    /// State in the local frame
+
     // State reconstruction
     stateObservation::Vector xk;
     xk.resize(stateSize_);
     xk <<   com,
-            waistOri.block(0,0,2,1),
-            flexOriVect.block(0,0,2,1),
+            (waistOri).block(0,0,2,1),
+            (flexOriVect).block(0,0,2,1),
             comDot,
-            waistAngVel.block(0,0,2,1),
-            flexAngVelVect.block(0,0,2,1);
+            (waistAngVel).block(0,0,2,1),
+            (flexAngVelVect).block(0,0,2,1);
     stateSOUT_.setConstant (convertVector<dynamicgraph::Vector>(xk));
+
+    /// State in the world frame
+
+//    // State reconstruction
+//    stateObservation::Vector xk;
+//    xk.resize(stateSize_);
+//    xk <<   flexOri*com,
+//            (flexOriVect+waistOri).block(0,0,2,1),
+//            (flexOriVect).block(0,0,2,1),
+//            kine::skewSymmetric(flexOriVect)*flexOri*com+flexOri*comDot,
+//            (flexAngVelVect+flexOri*waistAngVel).block(0,0,2,1),
+//            (flexAngVelVect).block(0,0,2,1);
+//    stateSOUT_.setConstant (convertVector<dynamicgraph::Vector>(xk));
 
     // Extended state reconstruction
     stateObservation::Vector extxk;
@@ -684,7 +706,7 @@ namespace sotStabilizer
     u.resize(controlSize_);
     u.setZero();
 
-    std::cout << flexOriVect << std::endl;
+   // std::cout << flexOriVect << std::endl;
 
     switch (nbSupport)
     {
@@ -714,6 +736,7 @@ namespace sotStabilizer
              controller_.setState(dxk,time);
              u=controller_.getControl(time);
              preTask_+=dt_*u+controlDref;
+             std::cout << "1" << std::endl;
         }
         break;
         case 2 : // Double support
@@ -734,6 +757,7 @@ namespace sotStabilizer
                   nbSupport_=nbSupport;
                   computed_=true;
                   comRef_=comRef;
+                  std::cout << "2" << std::endl;
               }
               controller_.setState(dxk,time);
               u=controller_.getControl(time);
@@ -801,6 +825,8 @@ namespace sotStabilizer
     double g = stateObservation::cst::gravityConstant;
     double m = hrp2Mass_;
 
+    /// State in the local frame
+
     stateObservation::Matrix I = computeInert(cl,time);
     stateObservation::Matrix3 identity;
     identity.setIdentity();
@@ -832,6 +858,36 @@ namespace sotStabilizer
 
     ddomega_ddcl=-m*Inertia*kine::skewSymmetric(cl); //
     ddomega_ddomegach=-Inertia*I; //
+
+    /// State in the world frame
+
+//    stateObservation::Matrix I = computeInert(cl,time);
+//    stateObservation::Matrix3 identity;
+//    identity.setIdentity();
+//
+//    stateObservation::Matrix3 ddomega_cl, ddomega_omegach, ddomega_omega, ddomega_dcl,
+//                              ddomega_domegach, ddomega_domega, ddomega_ddcl, ddomega_ddomegach;
+//
+//    // usefull variables for code factorisation
+//    stateObservation::Vector3 uz;
+//    uz <<     0,
+//              0,
+//              1;
+//
+//    stateObservation::Matrix Inertia;
+//    Inertia = I;
+//    Inertia = Inertia.inverse();
+//
+//    // Caracteristic polynomial
+//    ddomega_cl=Inertia*g*m*kine::skewSymmetric(uz);
+//    ddomega_omegach=Inertia*kine::skewSymmetric(g*m*kine::skewSymmetric(cl)*uz)-kine::skewSymmetric(Inertia*g*m*kine::skewSymmetric(cl)*uz);
+//    ddomega_omega=-Inertia*Kth; //
+//    ddomega_dcl.setZero(); //
+//    ddomega_domegach.setZero(); //
+//    ddomega_domega=-Inertia*Kdth; //
+//
+//    ddomega_ddcl=-m*Inertia*kine::skewSymmetric(cl); //
+//    ddomega_ddomegach=-identity; //
 
     // A_ and B_ computation
     A_.block(0,7,3,3)=identity;

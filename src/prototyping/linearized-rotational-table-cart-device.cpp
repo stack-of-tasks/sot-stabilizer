@@ -16,6 +16,8 @@
 #include <dynamic-graph/command-bind.h>
 #include "command-increment.hh"
 
+#include <iostream>
+
 namespace sotStabilizer
 {
 DYNAMICGRAPH_FACTORY_ENTITY_PLUGIN(LinearizedRotationalTableCartDevice, "LinearizedRotationalTableCartDevice");
@@ -32,10 +34,16 @@ LinearizedRotationalTableCartDevice::LinearizedRotationalTableCartDevice(const s
   zmpSOUT_("LinearizedRotationalTableCartDevice("+inName+")::output(vector)::zmp"),
   cartMass_(58.0), I_ (3,3)
 {
-  A_.resize(18,18); B_.resize(18,18);
-  A_.setZero (); B_.setZero (); I_.setZero();
 
-  stiffness_ <<  100,0,0,
+  A_.resize(18,18);
+  B_.resize(18,18);
+  stiffness_.resize(3,3);
+  viscosity_.resize(3,3);
+  A_.setZero ();
+  B_.setZero ();
+  I_.setZero();
+
+  stiffness_ << 100,0,0,
                 0,100,0,
                 0,0,100;
 
