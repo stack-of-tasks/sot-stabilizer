@@ -61,6 +61,13 @@ namespace sotStabilizer {
         cartMass_ = inMass;
       }
 
+      /// \brief Set the mass of the cart
+      void setCartHeight (const double& inHeight) {
+        cl_ <<   0,
+                 0,
+                 inHeight;
+      }
+
       void recomputeMatrices();
 
       /// \brief Get the mass of the cart

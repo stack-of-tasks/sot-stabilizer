@@ -46,6 +46,7 @@ ADD_LIBRARY(${LIBRARY_NAME}
   prototyping/zmp-to-com-algebraic-controller.cpp
   prototyping/linearized-table-cart-device.cc
 #  prototyping/linearized-rotational-table-cart-device.cpp
+#  prototyping/non-linear-rotational-table-cart-device.cpp
   ${${PROJECT_NAME}_ABSOLUTE_HEADERS}
 )
 
@@ -136,7 +137,7 @@ INSTALL(FILES
   dynamic_graph/sot/application/stabilizer/scenarii/seqplay_stabilizer.py
   dynamic_graph/sot/application/stabilizer/scenarii/seqplay_stabilizer_hrp2.py
   dynamic_graph/sot/application/stabilizer/scenarii/seqplay_lqr_twoDof_coupled_stabilizer_hrp2.py
-    dynamic_graph/sot/application/stabilizer/scenarii/seqplay_lqr_twoDof_coupled_stabilizer.py
+  dynamic_graph/sot/application/stabilizer/scenarii/seqplay_lqr_twoDof_coupled_stabilizer.py
   dynamic_graph/sot/application/stabilizer/scenarii/hand_compensater_chicken.py
   dynamic_graph/sot/application/stabilizer/scenarii/hand_compensater_solver_kine.py
   dynamic_graph/sot/application/stabilizer/scenarii/leg_oscillator.py
