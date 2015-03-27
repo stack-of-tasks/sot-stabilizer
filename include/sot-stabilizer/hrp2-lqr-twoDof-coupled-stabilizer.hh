@@ -203,7 +203,18 @@ namespace sotStabilizer
         Kdth_=convertMatrix<stateObservation::Matrix>(m);
     }
 
+    void setInertia(const dynamicgraph::Matrix & I)
+    {
+        I_=I;
+    }
 
+    void constantInertia(const bool & b)
+    {
+        constantInertia_=b;
+    }
+
+
+    Vector& getControl(Vector& control, const int& time);
     inline void computeDynamicsMatrix(const stateObservation::Vector3 cl, const stateObservation::Matrix Kth, const stateObservation::Matrix Kdth, const int& time);
 
   private:
@@ -325,6 +336,9 @@ namespace sotStabilizer
     stateObservation::Matrix B_;
     stateObservation::Matrix Q_;
     stateObservation::Matrix R_;
+
+    dynamicgraph::Matrix I_;
+    bool constantInertia_;
 
     controller::DiscreteTimeLTILQR controller_;
 

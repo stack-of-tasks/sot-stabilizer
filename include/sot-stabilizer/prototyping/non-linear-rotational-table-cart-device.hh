@@ -62,6 +62,8 @@ namespace sotStabilizer {
         robotMassInv_ = 1/inMass;
       }
 
+      void setContactPosition(unsigned i, const Matrix4 & positionHomo);
+      Vector6 getContactPosition(unsigned i);
 
       struct Optimization
       {
@@ -184,8 +186,8 @@ namespace sotStabilizer {
 
 
       void computeElastContactForcesAndMoments
-                                (const Vector3& contactPosArray,
-                                 const Vector3& contactOriArray,
+                                (const IndexedMatrixArray& contactPosArray,
+                                 const IndexedMatrixArray& contactOriArray,
                                  const Vector3& position, const Vector3& linVelocity,
                                  const Vector3& oriVector, const Matrix3& orientation,
                                  const Vector3& angVel,
@@ -196,8 +198,8 @@ namespace sotStabilizer {
           const Vector3& accelerationCom, const Vector3& AngMomentum,
           const Vector3& dotAngMomentum,
           const Matrix3& Inertia, const Matrix3& dotInertia,
-          const Vector3& contactPosV,
-          const Vector3& contactOriV,
+          const IndexedMatrixArray& contactPosArray,
+          const IndexedMatrixArray& contactOriV,
           const Vector3& position, const Vector3& linVelocity, Vector3& linearAcceleration,
           const Vector3 &oriVector ,const Matrix3& orientation,
           const Vector3& angularVel, Vector3& angularAcceleration);
@@ -278,9 +280,25 @@ namespace sotStabilizer {
     private:
       /// Control
       dynamicgraph::SignalPtr< dynamicgraph::Vector, int > controlSIN_;
-      /// Real position of the center of mass
-            /// State of the table cart
+
+      /// State of the table cart
       dynamicgraph::Signal< ::dynamicgraph::Vector, int> stateSOUT_;
+      /// Control state of the table cart
+      dynamicgraph::Signal< ::dynamicgraph::Vector, int> controlStateSOUT_;
+
+      /// State
+      // Position of center of mass
+      dynamicgraph::SignalPtr < dynamicgraph::Vector, int> comSOUT_;
+      // Homogeneous representation of the waist position
+      dynamicgraph::SignalPtr <dynamicgraph::Matrix, int> waistHomoSOUT_;
+      // Orientation of the flexibility on vector form
+      dynamicgraph::SignalPtr <dynamicgraph::Vector, int> flexOriVectSOUT_;
+      // Velocity of center of mass
+      dynamicgraph::SignalPtr < dynamicgraph::Vector, int> comDotSOUT_;
+      // Refrence angular velocity of the waist
+      dynamicgraph::SignalPtr < dynamicgraph::Vector , int > waistVelSOUT_;
+      // Velocity of the flexibility
+      dynamicgraph::SignalPtr <dynamicgraph::Vector, int> flexAngVelVectSOUT_;
 
       /// \brief Mass of the cart
       double robotMass_;
@@ -302,6 +320,7 @@ namespace sotStabilizer {
       Vector tc_;
 
       unsigned int contactsNumber_;
+      std::vector <Vector3,Eigen::aligned_allocator<Vector3> > contactPositions_;
 
     };
 }

@@ -122,7 +122,8 @@ namespace sotStabilizer
     A_(stateObservation::Matrix::Zero(stateSize_,stateSize_)),
     B_(stateObservation::Matrix::Zero(stateSize_,controlSize_)),
     Q_(stateObservation::Matrix::Zero(stateSize_,stateSize_)),
-    R_(stateObservation::Matrix::Zero(controlSize_,controlSize_))
+    R_(stateObservation::Matrix::Zero(controlSize_,controlSize_)),
+    I_(3,3), constantInertia_(false)
   {
 
     // Register signals into the entity.
@@ -193,6 +194,8 @@ namespace sotStabilizer
     supportPos1SOUT_.addDependency (taskSOUT);
     supportPos2SOUT_.addDependency (taskSOUT);
 
+    controlSOUT_.addDependency (taskSOUT);
+
     if (zmpMode_){
       taskSOUT.addDependency(zmpRefSIN_);
     }else{
@@ -203,6 +206,7 @@ namespace sotStabilizer
     taskSOUT.setFunction (boost::bind(&HRP2LQRTwoDofCoupledStabilizer::computeControlFeedback,this,_1,_2));
     jacobianSOUT.setFunction (boost::bind(&HRP2LQRTwoDofCoupledStabilizer::computeJacobian,this,_1,_2));
 
+    controlSOUT_.setFunction (boost::bind(&HRP2LQRTwoDofCoupledStabilizer::getControl,this,_1,_2));
 
     std::string docstring;
     docstring =
@@ -347,6 +351,25 @@ namespace sotStabilizer
                new ::dynamicgraph::command::Setter <HRP2LQRTwoDofCoupledStabilizer,dynamicgraph::Matrix>
                 (*this, & HRP2LQRTwoDofCoupledStabilizer::setKdth ,docstring));
 
+    docstring  =
+            "\n"
+            "    Sets the inertia \n"
+            "\n";
+
+    addCommand(std::string("setInertia"),
+               new ::dynamicgraph::command::Setter <HRP2LQRTwoDofCoupledStabilizer,dynamicgraph::Matrix>
+                (*this, & HRP2LQRTwoDofCoupledStabilizer::setInertia ,docstring));
+
+    docstring  =
+            "\n"
+            "    constnant inertia \n"
+            "\n";
+
+    addCommand(std::string("constantInertia"),
+               new ::dynamicgraph::command::Setter <HRP2LQRTwoDofCoupledStabilizer,bool>
+                (*this, & HRP2LQRTwoDofCoupledStabilizer::constantInertia ,docstring));
+
+
     Vector rfconf(6);
     rfconf.setZero();
     Vector lfconf(6);
@@ -435,7 +458,7 @@ namespace sotStabilizer
     flexOriVectSIN_.setConstant(vect);
     flexAngVelVectSIN_.setConstant(vect);
     vect.resize(6); vect.setZero();
-    waistVelSIN_.setConstant(convertVector<dynamicgraph::Vector>(vec));
+    waistVelSIN_.setConstant(vect);
 
     Kth_.resize(3,3);
     Kdth_.resize(3,3);
@@ -509,6 +532,17 @@ namespace sotStabilizer
     gainSOUT.setConstant (gains);
     AmatrixSOUT.setConstant(convertMatrix<dynamicgraph::Matrix>(A_));
     BmatrixSOUT.setConstant(convertMatrix<dynamicgraph::Matrix>(B_));
+
+    dynamicgraph::Vector zero(6); zero.setZero();
+    controlSOUT_.setConstant(zero);
+
+  }
+
+  Vector& HRP2LQRTwoDofCoupledStabilizer::getControl(Vector& control, const int& time)
+  {
+      taskSOUT.access(time);
+      control=controlSOUT_.access (time);
+      return control;
   }
 
   unsigned int HRP2LQRTwoDofCoupledStabilizer::computeNbSupport(const int& time)//const MatrixHomogeneous& leftFootPosition, const MatrixHomogeneous& rightFootPosition, const Vector& forceLf, const Vector& forceRf, const int& time)
@@ -605,7 +639,7 @@ namespace sotStabilizer
     std::cout << "\n\n time: " << time << std::endl;
 
     // State
-    const stateObservation::Vector & com = convertVector<stateObservation::Vector>(comSIN_ (time));
+    const stateObservation::Vector & com = convertVector<stateObservation::Vector>(comSIN_.access(time));
     const MatrixHomogeneous& waistHomo = waistHomoSIN_ (time);
     const stateObservation::Vector & flexOriVect = convertVector<stateObservation::Vector>(flexOriVectSIN_.access(time));
     const stateObservation::Vector & comDot = convertVector<stateObservation::Vector>(comDotSIN_ (time));
@@ -623,6 +657,8 @@ namespace sotStabilizer
 
     // Determination of the number of support
     unsigned int nbSupport=computeNbSupport(time);
+
+
     // Control gain
     const double& gain = controlGainSIN_.access (time);
 
@@ -633,7 +669,7 @@ namespace sotStabilizer
     waistHomo.extract(waistOriRot);
     waistOriUTheta.fromMatrix(waistOriRot);
     waistOri=convertVector<stateObservation::Vector>(waistOriUTheta);
-    const stateObservation::Vector3 & waistAngVel = waistVel.block(3,0,3,1);
+    stateObservation::Vector3 waistAngVel = waistVel.block(3,0,3,1);
 
     Vector6 flexVect;
     flexVect << flexOriVect,
@@ -706,14 +742,12 @@ namespace sotStabilizer
     u.resize(controlSize_);
     u.setZero();
 
-   // std::cout << flexOriVect << std::endl;
-
     switch (nbSupport)
     {
         case 0: // No support
         {
             preTask_ <<  -gain*dxk.block(0,0,5,1)+controlDref;
-            std::cout << "coucou" << std::endl;
+            std::cout << "coucou nbSupport=0" << std::endl;
         }
         break;
         case 1: // Single support
@@ -781,6 +815,7 @@ namespace sotStabilizer
     errorSOUT_.setTime (time);
 
     controlSOUT_.setConstant (convertVector<dynamicgraph::Vector>(u));
+    controlSOUT_.setTime (time);
     gainSOUT.setConstant (convertMatrix<dynamicgraph::Matrix>(controller_.getLastGain()));
     AmatrixSOUT.setConstant(convertMatrix<dynamicgraph::Matrix>(A_));
     BmatrixSOUT.setConstant(convertMatrix<dynamicgraph::Matrix>(B_));
@@ -827,7 +862,15 @@ namespace sotStabilizer
 
     /// State in the local frame
 
-    stateObservation::Matrix I = computeInert(cl,time);
+    stateObservation::Matrix I;
+    if(constantInertia_!=true)
+    {
+        I = computeInert(cl,time);
+    }
+    else
+    {
+        I=convertMatrix<stateObservation::Matrix>(I_);
+    }
     stateObservation::Matrix3 identity;
     identity.setIdentity();
 

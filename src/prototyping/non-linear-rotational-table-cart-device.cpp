@@ -14,9 +14,12 @@
 #include <dynamic-graph/command-direct-getter.h>
 #include <sot-stabilizer/prototyping/non-linear-rotational-table-cart-device.hh>
 #include <dynamic-graph/command-bind.h>
-#include "command-increment.hh"
+#include "command-increment_NonLinearRotationalTableCartDevice.hh"
 
 #include <iostream>
+
+using dynamicgraph::command::makeDirectSetter;
+using dynamicgraph::command::makeDirectGetter;
 
 namespace sotStabilizer
 {
@@ -26,6 +29,13 @@ NonLinearRotationalTableCartDevice::NonLinearRotationalTableCartDevice(const std
   Entity(inName),
   controlSIN_(NULL, "NonLinearRotationalTableCartDevice("+inName+")::input(vector)::control"),
   stateSOUT_("NonLinearRotationalTableCartDevice("+inName+")::output(vector)::state"),
+  controlStateSOUT_("NonLinearRotationalTableCartDevice("+inName+")::output(vector)::controlState"),
+  comSOUT_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::com"),
+  waistHomoSOUT_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(matrix)::waistHomo"),
+  flexOriVectSOUT_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::flexOriVect"),
+  comDotSOUT_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::comDot"),
+  waistVelSOUT_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::waistVel"),
+  flexAngVelVectSOUT_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::flexAngVelVect"),
   robotMass_(58.0), robotMassInv_(1/58.0), I_ (3,3), cl_(3), contactsNumber_(2)
 {
 
@@ -54,15 +64,100 @@ NonLinearRotationalTableCartDevice::NonLinearRotationalTableCartDevice(const std
   // Register signals into the entity.
   signalRegistration (controlSIN_);
   signalRegistration (stateSOUT_);
+  signalRegistration (comSOUT_);
+  signalRegistration (waistHomoSOUT_);
+  signalRegistration (flexOriVectSOUT_);
+  signalRegistration (comDotSOUT_);
+  signalRegistration (waistVelSOUT_);
+  signalRegistration (flexAngVelVectSOUT_);
+
+//  comSOUT_.addDependency (controlSIN_);
+//  waistHomoSOUT_.addDependency (controlSIN_);
+//  flexOriVectSOUT_.addDependency (controlSIN_);
+//  comDotSOUT_.addDependency (controlSIN_);
+//  waistVelSOUT_.addDependency (controlSIN_);
+//  flexAngVelVectSOUT_.addDependency (controlSIN_);
 
   // Set signals as constant to size them
-  dynamicgraph::Vector state (20); state.fill (0.);
-  stateSOUT_.setConstant(state);
-  dynamicgraph::Vector control (6); control.setZero ();
-  controlSIN_.setConstant (control);
+  stateObservation::Vector state;
+  state.resize(24);
+  state <<  0.00949,
+            0,
+            0.80771,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0.0111,
+            -0.00027,
+            0.01537,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0;
+  stateSOUT_.setConstant(convertVector<dynamicgraph::Vector>(state));
+
+  stateObservation::Vector com;
+  com.resize(3);
+  com <<  0.009490463094,
+          0,
+          0.80771000000000004;
+  comSOUT_.setConstant(convertVector<dynamicgraph::Vector>(com));
+
+  stateObservation::Matrix4 homoWaist;
+  homoWaist <<      0.99998573432883131, -0.0053403256847235764, 0.00010981989355530105, -1.651929567364003e-05,
+                    0.0053403915800877009, 0.99998555471196726, -0.00060875707006170711, 0.0008733516988761506,
+                    -0.00010656734615829933, 0.00060933486696839291, 0.99999980867719196, 0.64869730032049466,
+                    0.0, 0.0, 0.0, 1.0;
+  waistHomoSOUT_.setConstant(convertMatrix<dynamicgraph::Matrix>(homoWaist));
+
+  dynamicgraph::Vector vect;
+  stateObservation::Vector vec;
+  vec.resize(2); vec.setZero();
+  vect.resize(3); vect.setZero();
+  comDotSOUT_.setConstant(vect);
+  flexOriVectSOUT_.setConstant(vect);
+  flexAngVelVectSOUT_.setConstant(vect);
+  vect.resize(6); vect.setZero();
+  waistVelSOUT_.setConstant(vect);
+
+  stateObservation::Matrix4 positionHomo;
+  positionHomo  <<  1,-9.18094e-18,-1.52169e-16,0.00949046,
+                    9.184e-18,1,-1.10345e-16,-0.095,
+                    1.68756e-16,1.10345e-16,1,2.55006e-07,
+                    0,0,0,1;
+  setContactPosition(0, positionHomo);
+  positionHomo  <<  1,1.94301e-07,2.363e-10,0.0094903,
+                    -1.94301e-07,1,-2.70566e-12,0.0949988,
+                    -2.363e-10,2.70562e-12,1,3.03755e-06,
+                    0,0,0,1;
+  setContactPosition(1, positionHomo);
+
+  std::cout << (getContactPosition(0)).transpose() << std::endl;
+  std::cout << (getContactPosition(1)).transpose() << std::endl;
 
   // Commands
   std::string docstring;
+
+  // Incr
+  docstring =
+    "\n"
+    "    Integrate dynamics for time step provided as input\n"
+    "\n"
+    "      take one floating point number as input\n"
+    "\n";
+  addCommand(std::string("incr"),
+             new command::Increment1(*this, docstring));
 
   // setCartMass
   docstring =
@@ -181,13 +276,30 @@ NonLinearRotationalTableCartDevice::~NonLinearRotationalTableCartDevice()
 {
 }
 
+void NonLinearRotationalTableCartDevice::setContactPosition
+                                    (unsigned i, const Matrix4 & positionHomo)
+{
+    stateObservation::Vector6 positionVect;
+    positionVect=kine::homogeneousMatrixToVector6(positionHomo);
+    op_.contactPosV.setValue(positionVect.block(0,0,3,1),i);
+    op_.contactOriV.setValue(positionVect.block(3,0,3,1),i);
+}
+
+Vector6 NonLinearRotationalTableCartDevice::getContactPosition(unsigned i)
+{
+    stateObservation::Vector6 contactPosVect;
+    contactPosVect  <<  op_.contactPosV[i],
+                        op_.contactOriV[i];
+    return contactPosVect;
+}
+
 void NonLinearRotationalTableCartDevice::computeAccelerations
    (const Vector3& positionCom, const Vector3& velocityCom,
     const Vector3& accelerationCom, const Vector3& AngMomentum,
     const Vector3& dotAngMomentum,
     const Matrix3& Inertia, const Matrix3& dotInertia,
-    const Vector3& contactPosV,
-    const Vector3& contactOriV,
+    const IndexedMatrixArray& contactPosV,
+    const IndexedMatrixArray& contactOriV,
     const Vector3& position, const Vector3& linVelocity, Vector3& linearAcceleration,
     const Vector3 &oriVector ,const Matrix3& orientation,
     const Vector3& angularVel, Vector3& angularAcceleration)
@@ -247,8 +359,8 @@ Matrix3& NonLinearRotationalTableCartDevice::computeRotation_
 }
 
 void NonLinearRotationalTableCartDevice::computeElastContactForcesAndMoments
-                          (const Vector3& contactPosArray,
-                           const Vector3& contactOriArray,
+                          (const IndexedMatrixArray& contactPosArray,
+                           const IndexedMatrixArray& contactOriArray,
                            const Vector3& position, const Vector3& linVelocity,
                            const Vector3& oriVector, const Matrix3& orientation,
                            const Vector3& angVel,
@@ -263,9 +375,9 @@ void NonLinearRotationalTableCartDevice::computeElastContactForcesAndMoments
 
   for (unsigned i = 0; i<nbContacts ; ++i)
   {
-    op_.contactPos = contactPosArray;
+    op_.contactPos = contactPosArray[i];
 
-    op_.Rci = computeRotation_(contactOriArray,i+2);
+    op_.Rci = computeRotation_(contactOriArray[i],i+2);
     op_.Rcit.noalias()= op_.Rci.transpose();
 
     op_.RciContactPos.noalias()= orientation*op_.contactPos;
@@ -297,12 +409,10 @@ stateObservation::Vector NonLinearRotationalTableCartDevice::computeDynamics(
                                   stateObservation::Vector &xn,
                                   stateObservation::Vector &un)
 {
-
   double dt = inTimeStep;
 
   Vector3 linearAcceleration;
   Vector3 angularAcceleration;
-
   Vector3 positionCom=xn.block(0,0,3,1);
   Vector3 velocityCom=xn.block(12,0,3,1);
   Vector3 accelerationCom=un.block(0,0,3,1);
@@ -310,14 +420,11 @@ stateObservation::Vector NonLinearRotationalTableCartDevice::computeDynamics(
   Vector3 dotAngMomentum;
   Matrix3 Inertia;
   Matrix3 dotInertia;
-  Vector3 contactPosV;
-  Vector3 contactOriV;
   Vector3 position=xn.block(9,0,3,1);
   Vector3 linVelocity=xn.block(21,0,3,1);
   Vector3 oriVector=xn.block(6,0,3,1);
   Matrix3 orientation;
   Vector3 angularVel=xn.block(18,0,3,1);
-
   Vector6 waistOriVect;
   waistOriVect <<   xn.block(3,0,3,1),
                     0,
@@ -325,12 +432,9 @@ stateObservation::Vector NonLinearRotationalTableCartDevice::computeDynamics(
                     0;
   Matrix3 waistOri=(kine::vector6ToHomogeneousMatrix(waistOriVect)).block(0,0,3,3);
   Vector3 waistAngVel=xn.block(15,0,3,1);
-
-  Vector3 waistAngAcc=un.block(3,0,3,1);
-
-  contactPosV.setZero();
-  contactOriV.setZero();
-
+  Vector3 waistAngAcc;
+  waistAngAcc   <<  un.block(3,0,2,1),
+                    0;
   Inertia=waistOri*I_*waistOri.transpose()-robotMass_*kine::skewSymmetric2(positionCom);
   dotInertia.setZero();
   AngMomentum=waistOri*I_*waistOri.transpose()*waistAngVel+robotMass_*kine::skewSymmetric(positionCom)*velocityCom;
@@ -341,14 +445,15 @@ stateObservation::Vector NonLinearRotationalTableCartDevice::computeDynamics(
       accelerationCom, AngMomentum,
       dotAngMomentum,
       Inertia, dotInertia,
-      contactPosV,
-      contactOriV,
+      op_.contactPosV,
+      op_.contactOriV,
       position, linVelocity, linearAcceleration,
       oriVector , orientation,
       angularVel, angularAcceleration);
 
-
   stateObservation::Vector xn1;
+  xn1.resize(24);
+
   xn1   <<  velocityCom,
             waistAngVel,
             angularVel,
@@ -377,14 +482,50 @@ void NonLinearRotationalTableCartDevice::incr(double inTimeStep)
   stateObservation::Vector xn = convertVector<stateObservation::Vector>(stateSOUT_ (t));
   stateObservation::Vector un = convertVector<stateObservation::Vector>(controlSIN_ (t));
 
+  std::cout << "xn:" << xn.transpose() << std::endl;
+  std::cout << "un:" << un.transpose() << std::endl;
+
   stateObservation::Vector nextState = computeDynamics(
         inTimeStep,
         xn, un);
 
   cl.resize(3);
   cl=cl_;
+
   stateSOUT_.setConstant(convertVector<dynamicgraph::Vector>(nextState));
   stateSOUT_.setTime (t+1);
+
+  stateObservation::Vector nextControlState;
+  nextControlState.resize(18);
+  nextControlState  <<  nextState.block(0,0,9,1),
+                        nextState.block(12,0,9,1);
+
+  controlStateSOUT_.setConstant(convertVector<dynamicgraph::Vector>(nextControlState));
+  controlStateSOUT_.setTime(t+1);
+
+  stateObservation::Vector6 waistPosVect;
+  waistPosVect <<   nextControlState.block(3,0,3,1),
+                    0,
+                    0,
+                    0;
+
+  comSOUT_.setConstant(convertVector<dynamicgraph::Vector>(nextControlState.block(0,0,3,1)));
+  comSOUT_.setTime(t+1);
+  waistHomoSOUT_.setConstant(convertMatrix<dynamicgraph::Matrix>(kine::vector6ToHomogeneousMatrix(waistPosVect)));
+  waistHomoSOUT_.setTime(t+1);
+  flexOriVectSOUT_.setConstant(convertVector<dynamicgraph::Vector>(nextControlState.block(6,0,3,1)));
+  flexOriVectSOUT_.setTime(t+1);
+  comDotSOUT_.setConstant(convertVector<dynamicgraph::Vector>(nextControlState.block(9,0,3,1)));
+  comDotSOUT_.setTime(t+1);
+  stateObservation::Vector6 waistVel;
+  waistVel  <<  0,
+                0,
+                0,
+                nextControlState.block(12,0,3,1);
+  waistVelSOUT_.setConstant(convertVector<dynamicgraph::Vector>(waistVel));
+  waistVelSOUT_.setTime(t+1);
+  flexAngVelVectSOUT_.setConstant(convertVector<dynamicgraph::Vector>(nextControlState.block(15,0,3,1)));
+  flexAngVelVectSOUT_.setTime(t+1);
 
 }
 

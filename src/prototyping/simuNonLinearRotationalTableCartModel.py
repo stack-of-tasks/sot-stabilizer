@@ -10,11 +10,12 @@ import math
 model = NonLinearRotationalTableCartDevice("model")
 stab = HRP2LQRTwoDofCoupledStabilizer("stabilizer")
 
-model.setRobotMass(59.8)
-#model.setMomentOfInertia()
+I=((8.15831,-0.00380455,0.236677,),(-0.00380453,6.94757,-0.0465754),(0.236677,-0.0465754,1.73429))
 
 # Model
 
+model.setRobotMass(59.8)
+model.setMomentOfInertia(I)
 model.setKfe(matrixToTuple(1*np.diag((53200.0*0.2,53200.0*0.2,53200.0*0.2))))
 model.setKfv(matrixToTuple(1*np.diag((100,100,100))))
 model.setKte(matrixToTuple(1*np.diag((53200.0*0.2,53200.0*0.2,53200.0*0.2))))
@@ -32,29 +33,29 @@ gain = GainAdaptive('gain'+stab.name)
 plug(gain.gain, stab.controlGain)
 plug(stab.error, gain.error) 
 
-stab.start()
-
 stab.setStateCost(matrixToTuple(10*np.diag((1,1,1,100,100,0.1,0.1,1,1,1,1,1,0.1,0.1))))
 stab.setInputCost(matrixToTuple(1*np.diag((1,1,1,10,10))))
+stab.setFixedGains(True)
+stab.setHorizon(200)
+stab.constantInertia(True)
 
+plug(stab.control,model.control)
+plug(model.com,stab.com)
+plug(model.waistHomo,stab.waistHomo)
+plug(model.flexOriVect,stab.flexOriVect)
+plug(model.comDot,stab.comDot)
+plug(model.waistVel,stab.waistVel)
+plug(model.flexAngVelVect,stab.flexAngVelVect)
 
+stab.start()
 
-
-    plug(cart.comHeight,controller.comHeight)
-    plug(cart.state,controller.comIn)
-    controller.comddotIN.value = (0.0,)
-    plug(controller.comddot,cart.control)
-
-    plug(cart.comHeight,controller.comHeight)
-    plug(cart.comreal,controller.comIn)
-    plug(cart.flexcomddot,controller.comddotIN)
-    plug(controller.comddot,cart.control)
-
-stepTime = 0.05
-simuTime = 9
+stepTime = 0
+simuTime =9
+dt = 0.005
 
 for i in range(int(stepTime/dt),int(simuTime/dt)):
-    print(i)
-    model.incr(dt)
+   stab.task.recompute(i)
+   model.incr(dt)
+
 
 

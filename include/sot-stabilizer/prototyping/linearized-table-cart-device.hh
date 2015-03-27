@@ -115,9 +115,9 @@ namespace sotStabilizer {
                              const dynamicgraph::Vector& inControl,
                              const double& inForce,
                              double inTimeStep,
-                 dynamicgraph::Vector & flexddot,
-                                 dynamicgraph::Vector & realcom,
-                                 dynamicgraph::Vector & zmp,
+                             dynamicgraph::Vector & flexddot,
+                             dynamicgraph::Vector & realcom,
+                             dynamicgraph::Vector & zmp,
                              dynamicgraph::Vector& output);
 
     private:
