@@ -13,7 +13,7 @@ import time
   
 
 # Initialisation de l'appli
-appli = HandCompensater(robot, True, True)
+appli = HandCompensater(robot, True, False)
 appli.withTraces()
 
 est1 = HRP2ModelBaseFlexEstimator(robot)
@@ -27,7 +27,7 @@ flexdot = est1.signal('flexInverseVelocityVector')
 
 # contacts definition
 contactNbr.value = 2
-est1.setContactModelNumber(2)
+est1.setContactModel(2)
 	# Position of the anchorage in the global frame
 Peg = (0,0,4.60)
 	# Positions of the contacts on the robot (in the local frame) with respect to the chest
@@ -73,8 +73,8 @@ plug(est1.contacts.sout,est1.inputVector.contactsPosition)
 
 
 # Simulation: Stifness and damping
-kfe=4000
-kfv=250 #600
+kfe=40000
+kfv=600 #600
 kte=600
 ktv=60
 est1.setKfe(matrixToTuple(np.diag((kfe,kfe,kfe))))
