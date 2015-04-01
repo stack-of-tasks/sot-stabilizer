@@ -38,13 +38,13 @@ ADD_LIBRARY(${LIBRARY_NAME}
   hrp2-lqr-decoupled-stabilizer.cpp
   hrp2-linear-state-space-stabilizer.cpp
   perturbations-generator.cpp
-  discrete-time-non-alg-riccati-eqn.cpp  
+  discrete-time-non-alg-riccati-eqn.cpp
   discrete-time-lti-lqr.cpp
   state-space-linear-controller.cpp
   prototyping/decoupled-elastic-inv-pendulum-simulator.cpp
   prototyping/zmp-to-com-algebraic-controller.cpp
   prototyping/linearized-table-cart-device.cc
-  prototyping/linearized-rotational-table-cart-device.cpp
+#  prototyping/linearized-rotational-table-cart-device.cpp
   ${${PROJECT_NAME}_ABSOLUTE_HEADERS}
 )
 
@@ -135,6 +135,7 @@ INSTALL(FILES
   dynamic_graph/sot/application/stabilizer/scenarii/seqplay_stabilizer_hrp2.py
   dynamic_graph/sot/application/stabilizer/scenarii/hand_compensater_chicken.py
   dynamic_graph/sot/application/stabilizer/scenarii/hand_compensater_solver_kine.py
+  dynamic_graph/sot/application/stabilizer/scenarii/leg_oscillator.py
   dynamic_graph/sot/application/stabilizer/scenarii/hrp2_stabilizer_simulated_decoupled_model.py
   dynamic_graph/sot/application/stabilizer/scenarii/hrp2_stabilizer.py
   dynamic_graph/sot/application/stabilizer/scenarii/hrp2_linear_stabilizer.py
@@ -151,5 +152,6 @@ INSTALL(FILES
   dynamic_graph/sot/application/stabilizer/scripts/appli_ds_stabilizer_hrp.py
   dynamic_graph/sot/application/stabilizer/scripts/appli_ds_linear_stabilizer_hrp.py
   dynamic_graph/sot/application/stabilizer/scripts/appli_seqplay_stabilizer_hrp.py
+
   DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/application/stabilizer/scripts
   )
