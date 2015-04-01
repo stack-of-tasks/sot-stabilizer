@@ -3,16 +3,17 @@ import sys
 import numpy as np
 from dynamic_graph import plug
 import dynamic_graph.signal_base as dgsb
-from dynamic_graph.sot.core import Stack_of_vector, OpPointModifier, MatrixHomoToPose, MatrixHomoToPoseRollPitchYaw 
+from dynamic_graph.sot.core import Stack_of_vector, OpPointModifier, MatrixHomoToPose, MatrixHomoToPoseUTheta,MatrixHomoToPoseRollPitchYaw, Selec_of_vector
 from dynamic_graph.sot.application.state_observation.initializations.hrp2_model_base_flex_estimator import HRP2ModelBaseFlexEstimator, PositionStateReconstructor 
 from dynamic_graph.sot.application.stabilizer.scenarii.hand_compensater import HandCompensater
 from dynamic_graph.sot.core.matrix_util import matrixToTuple
 from dynamic_graph.sot.application.state_observation import InputReconstructor
+from dynamic_graph.sot.dynamics.zmp_from_forces import ZmpFromForces
 import time
-  
+
 
 # Initialisation de l'appli
-appli = HandCompensater(robot, True, True)
+appli = HandCompensater(robot, True, False)
 appli.withTraces()
 
 est1 = HRP2ModelBaseFlexEstimator(robot)
@@ -23,9 +24,9 @@ contactNbr = est1.signal('contactNbr')
 
 # Definition des contacts
 contactNbr.value = 2
-est1.setContactModelNumber(1)
-rFootPos = MatrixHomoToPoseRollPitchYaw('rFootFramePos')
-lFootPos = MatrixHomoToPoseRollPitchYaw('lFootFramePos')
+est1.setContactModel(1)
+rFootPos = MatrixHomoToPoseUTheta('rFootFramePos')
+lFootPos = MatrixHomoToPoseUTheta('lFootFramePos')
 plug(robot.frames['rightFootForceSensor'].position,rFootPos.sin)
 plug(robot.frames['leftFootForceSensor'].position,lFootPos.sin)
 
@@ -118,10 +119,36 @@ appli.robot.addTrace( est1.name,'flexThetaU' )
 appli.robot.addTrace( est1.name,'flexOmega' )
 appli.robot.addTrace( deriv.name,'sout')
 appli.robot.addTrace( integr.name,'sout')
-appli.startTracer()
+
+zmp = ZmpFromForces('zmp')
+plug (robot.device.forceRLEG , zmp.force_0)
+plug (robot.device.forceLLEG, zmp.force_1)
+plug (robot.frames['rightFootForceSensor'].position , zmp.sensorPosition_0)
+plug (robot.frames['leftFootForceSensor'].position, zmp.sensorPosition_1)
+appli.robot.addTrace( zmp.name, 'zmp')
+
+
+zmpestimated = ZmpFromForces('zmpestimated')
+firstContactForceEst = Selec_of_vector('firstContactForceEst')
+secondContactForceEst = Selec_of_vector('secondContactForceEst')
+firstContactForceEst.selec(0,6)
+secondContactForceEst.selec(6,12)
+plug ( est1.forcesAndMoments, firstContactForceEst.sin)
+plug ( est1.forcesAndMoments, secondContactForceEst.sin)
+plug (firstContactForceEst.sout , zmpestimated.force_0)
+plug (secondContactForceEst.sout, zmpestimated.force_1)
+plug (robot.frames['rightFootForceSensor'].position , zmpestimated.sensorPosition_0)
+plug (robot.frames['leftFootForceSensor'].position, zmpestimated.sensorPosition_1)
+appli.robot.addTrace( zmpestimated.name, 'zmp')
 
 plug(flex,appli.ccMc)
 plug(flexdot,appli.ccVc)
+
+appli.startTracer()
+
+
+
+
 
 est1.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-2,)*3+(1e-6,)*3)))
 appli.gains['trunk'].setConstant(2)
