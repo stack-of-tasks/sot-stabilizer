@@ -4,7 +4,7 @@ import numpy as np
 from dynamic_graph import plug
 import dynamic_graph.signal_base as dgsb
 from dynamic_graph.sot.core import Stack_of_vector, OpPointModifier, MatrixHomoToPose 
-from dynamic_graph.sot.application.state_observation.initializations.hrp2_flexibility_estimator import HRP2FlexibilityEstimator 
+from dynamic_graph.sot.application.state_observation.initializations.hrp2_model_free_flex_estimator import HRP2ModelFreeFlexEstimator 
 from dynamic_graph.sot.application.stabilizer.scenarii.hand_compensater_oscillator import HandCompensaterOscillator
 
 from dynamic_graph.sot.core.matrix_util import matrixToTuple
@@ -14,7 +14,7 @@ appli = HandCompensaterOscillator(robot, True, True)
 
 appli.withTraces()
 
-est = HRP2FlexibilityEstimator(robot)
+est = HRP2ModelFreeFlexEstimator(robot)
 
 meas = est.signal('measurement')
 inputs = est.signal('input')
