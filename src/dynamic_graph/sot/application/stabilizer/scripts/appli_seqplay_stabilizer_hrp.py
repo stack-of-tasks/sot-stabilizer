@@ -75,8 +75,6 @@ appli.robot.addTrace( seq.name, 'rightAnkleVel')
 
 appli.robot.addTrace( appli.features['waist'].name, 'position')
 
-appli.startTracer()
-
 appli.gains['trunk'].setConstant(10)
 
 est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-2,)*3+(1e-6,)*3)))
@@ -122,6 +120,8 @@ plug(stabilizer.comddot, realcom.lA0)
 appli.robot.addTrace( robot.dynamic.name, 'com')
 appli.robot.addTrace( realcom.name, 'gP0')
 appli.robot.addTrace( realcom.name, 'gA0')
+
+appli.startTracer()
 
 #stabilizer.setKth(395)
 
