@@ -1,5 +1,5 @@
 /*
- * Copyright 2010,
+ * Copyright 2015,
  * Alexis Mifsud
  *
  * CNRS
@@ -182,7 +182,7 @@ namespace sotStabilizer {
 
           return curRotation3;
         }
-      } op_;
+      } opti_;
 
 
       void computeElastContactForcesAndMoments
@@ -299,6 +299,11 @@ namespace sotStabilizer {
       dynamicgraph::SignalPtr < dynamicgraph::Vector , int > waistVelSOUT_;
       // Velocity of the flexibility
       dynamicgraph::SignalPtr <dynamicgraph::Vector, int> flexAngVelVectSOUT_;
+
+      // Angular acceleration of the flexibility
+      dynamicgraph::SignalPtr <dynamicgraph::Vector, int> flexAngAccVectSOUT_;
+      // Linear acceleration of the flexibility
+      dynamicgraph::SignalPtr <dynamicgraph::Vector, int> flexLinAccSOUT_;
 
       /// \brief Mass of the cart
       double robotMass_;

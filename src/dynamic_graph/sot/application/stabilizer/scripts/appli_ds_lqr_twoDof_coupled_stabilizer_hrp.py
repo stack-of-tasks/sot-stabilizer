@@ -9,12 +9,18 @@ from dynamic_graph.sot.application.stabilizer.scenarii.ds_lqr_twoDof_coupled_sta
 from dynamic_graph.sot.application.stabilizer import VectorPerturbationsGenerator
 from dynamic_graph.sot.core.matrix_util import matrixToTuple
 from dynamic_graph.sot.dynamics.zmp_from_forces import ZmpFromForces
+import time
+
 
 appli =  DSLqrTwoDofCoupledStabilizerHRP2(robot, False, False, False)
 appli.withTraces()
 
 est = appli.taskCoMStabilized.estimator
 stabilizer = appli.taskCoMStabilized
+
+appli.comRef.value=(0.00965, 0.0, 0.80771)
+# Flexibility = 0
+#stabilizer.stateRef.value=(0.01111, 0.0, 0.80777699999999997, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
 
 perturbator = VectorPerturbationsGenerator('comref')
 comRef = perturbator.sin
@@ -72,13 +78,6 @@ appli.gains['trunk'].setConstant(2)
 
 est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-6,)*6)))
 
-stabilizer.start()
-
-stabilizer.setStateCost(matrixToTuple(10*np.diag((1,1,1,100,100,0.1,0.1,1,1,1,1,1,0.1,0.1))))
-stabilizer.setInputCost(matrixToTuple(1*np.diag((1,1,1,10,10))))
-stabilizer.stateRef.value=(0.0096500000000000006, 0.0, 0.80777699999999997, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
-# Flexibility = 0
-stabilizer.stateRef.value=(0.01111, 0.0, 0.80777699999999997, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
 stabilizer.setFixedGains(True)
 stabilizer.setHorizon(200)
 
@@ -87,6 +86,33 @@ est.setKfv(matrixToTuple(np.diag((600,600,600))))
 est.setKte(matrixToTuple(np.diag((600,600,600))))
 est.setKtv(matrixToTuple(np.diag((60,60,60))))
 
-#perturbator.activate(True)
+stabilizer.setStateCost(matrixToTuple(1*np.diag((20000,20000,20000,20000,20000,1,1,1,1,1,1,1,1,1))))
+stabilizer.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
+
+stabilizer.start()
+
+perturbator.perturbation.value=(1,0,0)
+perturbator.selec.value = '111'
+perturbator.setMode(0)
+perturbator.setPeriod(500)
+perturbator.activate(False)
 
 appli.nextStep()
+
+perturbator.activate(True)
+perturbator.perturbation.value=(1,0,0)
+time.sleep(50)
+perturbator.perturbation.value=(0,0,0)
+time.sleep(10)
+perturbator.perturbation.value=(-1,0,0)
+time.sleep(50)
+perturbator.perturbation.value=(0,0,0)
+time.sleep(10)
+perturbator.perturbation.value=(0,0.2,0)
+time.sleep(50)
+perturbator.perturbation.value=(0,0,0)
+time.sleep(10)
+perturbator.perturbation.value=(0,-0.2,0)
+time.sleep(50)
+perturbator.perturbation.value=(0,0,0)
+time.sleep(10)
