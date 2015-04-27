@@ -3,6 +3,7 @@ from numpy import linalg as LA
 import matplotlib.pyplot as plt
 from dynamic_graph import plug
 from dynamic_graph.sot.application.stabilizer import NonLinearRotationalTableCartDevice, HRP2LQRTwoDofCoupledStabilizer
+from dynamic_graph.sot.application.stabilizer import VectorPerturbationsGenerator
 from dynamic_graph.sot.core.matrix_util import matrixToTuple
 from dynamic_graph.sot.core.meta_tasks import GainAdaptive
 import math
@@ -29,7 +30,7 @@ model.setKtv(matrixToTuple(np.diag((ktv,ktv,ktv))))
 
 # Stabilizer
 
-stab.comRef.value=(0.00965, 0.0, 0.80771)
+stab.comRef.value=(0.00949, 0.0, 0.80771)
 stab.waistOriRef.value=(0,)*3
 stab.flexOriRef.value=(0,)*3
 stab.comDotRef.value=(0,)*3
@@ -40,7 +41,7 @@ gain = GainAdaptive('gain'+stab.name)
 plug(gain.gain, stab.controlGain)
 plug(stab.error, gain.error) 
 
-Qdiag=20000*np.diag((1,1,1,1,1,1,1,1,1,1,1,1,1,1))
+Qdiag=1*np.diag((20000,20000,20000,20000,20000,1,1,1,1,1,1,1,1,1))
 Rdiag=1*np.diag((1,1,1,1,1))
 
 Q11=np.zeros((3,3))
@@ -83,9 +84,21 @@ plug(model.comDot,stab.comDot)
 plug(model.waistVel,stab.waistVel)
 plug(model.flexAngVelVect,stab.flexAngVelVect)
 
+perturbator = VectorPerturbationsGenerator('comref')
+comRef = perturbator.sin
+comRef.value = stab.comRef.value
+plug (perturbator.sout,stab.comRef)
+#perturbator.perturbation.value=(19.87305,0,0)
+perturbator.perturbation.value=(1,0,0)
+perturbator.selec.value = '111'
+perturbator.setMode(0)
+perturbator.setPeriod(2000)
+perturbator.activate(True)
+
 stab.start()
 
 stepTime = 5
+step2Time=10
 simuTime =20
 dt = 0.005
 
@@ -108,9 +121,23 @@ for i in range(int(0/dt),int(stepTime/dt)):
    logFlexAcc[i,1:4]=model.flexAngAccVect.value
    logFlexAcc[i,4:7]=model.flexLinAcc.value
 
-stab.comRef.value=(0.05, 0.0, 0.80771)
+#stab.comRef.value=(0.05, 0.0, 0.80771)
 
-for i in range(int(stepTime/dt),int(simuTime/dt)):
+for i in range(int(stepTime/dt),int(step2Time/dt)):
+   stab.task.recompute(i)
+   model.incr(dt)
+   print 'boucle 2:'+str(i)
+   logState[i,0] = i
+   logState[i,1:] = model.state.value
+   logControl[i,0] = i
+   logControl[i,1:] = model.control.value
+   logFlexAcc[i,0]=i
+   logFlexAcc[i,1:4]=model.flexAngAccVect.value
+   logFlexAcc[i,4:7]=model.flexLinAcc.value
+
+#stab.comRef.value=(0.00949, 0.0, 0.80771)
+
+for i in range(int(step2Time/dt),int(simuTime/dt)):
    stab.task.recompute(i)
    model.incr(dt)
    print 'boucle 2:'+str(i)

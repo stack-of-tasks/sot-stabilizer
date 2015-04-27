@@ -18,7 +18,7 @@ appli.withTraces()
 est = appli.taskCoMStabilized.estimator
 stabilizer = appli.taskCoMStabilized
 
-appli.comRef.value=(0.00965, 0.0, 0.80771)
+appli.comRef.value=(0.0111, 0.0, 0.80771)
 # Flexibility = 0
 #stabilizer.stateRef.value=(0.01111, 0.0, 0.80777699999999997, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
 
@@ -46,7 +46,7 @@ appli.robot.addTrace( est.name,'flexMatrixInverse' )
 appli.robot.addTrace( est.name,'input')
 appli.robot.addTrace( est.name,'measurement')
 appli.robot.addTrace( est.name,'simulatedSensors' )
-appli.robot.addTrace( stabilizer.name,'task' )
+a1*np.diag((20000,20000,20000,1,10,20000,20000,1,1,1,1,1,1,1))ppli.robot.addTrace( stabilizer.name,'task' )
 appli.robot.addTrace( stabilizer.name,'nbSupport' )
 appli.robot.addTrace( stabilizer.name,'error' )
 appli.robot.addTrace( perturbator.name, 'sout')
@@ -86,17 +86,52 @@ est.setKfv(matrixToTuple(np.diag((600,600,600))))
 est.setKte(matrixToTuple(np.diag((600,600,600))))
 est.setKtv(matrixToTuple(np.diag((60,60,60))))
 
-stabilizer.setStateCost(matrixToTuple(1*np.diag((20000,20000,20000,20000,20000,1,1,1,1,1,1,1,1,1))))
-stabilizer.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
+Q=1*np.diag((20000,20000,20000,1,10,20000,20000,1,1,1,1,1,1,1))
+R=1*np.diag((1,1,1,1,1))
 
-stabilizer.start()
+Q11=np.zeros((3,3))
+Q12=np.zeros((3,2)) # Cl Omegach
+Q13=np.mat('[0,10000;10000,0;0,0]') #np.zeros((3,2)) ### Cl Omega
+Q14=np.zeros((3,3)) # Cl dCl
+Q15=np.zeros((3,2)) # Cl dOmegach
+Q16=np.mat('[0,0;0,0;0,0]') #np.zeros((3,2)) ## Cl dOmega
 
-perturbator.perturbation.value=(1,0,0)
+Q22=np.zeros((2,2))
+Q23=np.mat('[10000,0;0,10000]') #np.zeros((2,2)) ### Omegach Omega
+Q24=np.zeros((2,3)) # Omegach dCl
+Q25=np.zeros((2,2)) # Omegach dOmegach
+Q26=np.mat('[1,0;0,1]') #np.zeros((2,2)) ## Omegach dOmega
+
+Q33=np.zeros((2,2))
+Q34=np.mat('[0,0,0;0,0,0]') #np.mat('[0,1,0;1,0,0]') #np.zeros((2,3)) ### Omega dCl
+Q35=np.zeros((2,2)) ### Omega dOmegach
+Q36=np.mat('[0,0;0,0]') #np.mat('[1,0;0,1]') #np.zeros((2,2)) ### Omega dOmega
+
+Q44=np.zeros((3,3))
+Q45=np.zeros((3,2)) # dCl dOmegach
+Q46=np.mat('[0,0;0,0;0,0]') #np.mat('[0,1;1,0;0,0]') #np.zeros((3,2)) ## dCl dOmega
+
+Q55=np.zeros((2,2))
+Q56=np.mat('[0,0;0,0]') #np.mat('[1,0;0,1]') #np.zeros((2,2)) ## dOmegach dOmega
+
+Q66=np.zeros((2,2))
+
+Qcoupl=np.bmat(([[Q11,Q12,Q13,Q14,Q15,Q16],[np.transpose(Q12),Q22,Q23,Q24,Q25,Q26],[np.transpose(Q13),np.transpose(Q23),Q33,Q34,Q35,Q36],[np.transpose(Q14),np.transpose(Q24),np.transpose(Q34),Q44,Q45,Q46],[np.transpose(Q15),np.transpose(Q25),np.transpose(Q35),np.transpose(Q45),Q55,Q56],[np.transpose(Q16),np.transpose(Q26),np.transpose(Q36),np.transpose(Q46),np.transpose(Q56),Q66]]))
+
+#Q=Qdiag+Qcoupl
+#R=Rdiag
+stabilizer.setStateCost(matrixToTuple(1*np.diag((20000,20000,20000,1,10,20000,20000,1,1,1,1,1,1,1))))
+stabilizer.setInputCost(matrixToTuple(R))
+
+#stabilizer.start()
+
+perturbator.perturbation.value=(0,0.2,0)
 perturbator.selec.value = '111'
 perturbator.setMode(0)
 perturbator.setPeriod(500)
 perturbator.activate(False)
 
+stabilizer.stop()
 appli.nextStep()
 
 perturbator.activate(True)

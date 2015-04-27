@@ -392,9 +392,9 @@ namespace sotStabilizer
 
     stateObservation::Vector com;
     com.resize(3);
-    com <<  0.009490463094,
+    com <<  0.00949,
             0,
-            0.80771000000000004;
+            0.80771;
     comSIN_.setConstant(convertVector<dynamicgraph::Vector>(com));
 
     stateObservation::Matrix4 homoWaist;
@@ -416,15 +416,15 @@ namespace sotStabilizer
 
     stateObservation::Matrix leftFootPos;
     leftFootPos.resize(4,4);
-    leftFootPos <<  1,1.94301e-07,2.363e-10,0.0094903,
-                    -1.94301e-07,1,-2.70566e-12,0.0949988,
+    leftFootPos <<  1,1.94301e-07,2.363e-10,0.00949046,
+                    -1.94301e-07,1,-2.70566e-12,0.095,
                     -2.363e-10,2.70562e-12,1,3.03755e-06,
                     0,0,0,1;
     leftFootPositionSIN_.setConstant(convertMatrix<dynamicgraph::Matrix>(leftFootPos));
 
     stateObservation::Matrix rightFootPos;
     rightFootPos.resize(4,4);
-    rightFootPos <<  1,-9.18094e-18,-1.52169e-16,0.00949046,
+    rightFootPos <<  1,-9.18094e-18,-1.52169e-16,0.009496046,
                     9.184e-18,1,-1.10345e-16,-0.095,
                     1.68756e-16,1.10345e-16,1,2.55006e-07,
                     0,0,0,1;
@@ -626,6 +626,9 @@ namespace sotStabilizer
         nbSupport=0;
       }
 
+      std::cout << "lfpos " << convertVector<stateObservation::Vector>(lfpos).transpose() << std::endl;
+      std::cout << "rfpos " <<  convertVector<stateObservation::Vector>(rfpos).transpose() << std::endl;
+
       return nbSupport;
   }
 
@@ -680,29 +683,29 @@ namespace sotStabilizer
 
     /// State in the local frame
 
-//    // State reconstruction
-//    stateObservation::Vector xk;
-//    xk.resize(stateSize_);
-//    xk <<   com,
-//            (waistOri).block(0,0,2,1),
-//            (flexOriVect).block(0,0,2,1),
-//            comDot,
-//            (waistAngVel).block(0,0,2,1),
-//            (flexAngVelVect).block(0,0,2,1);
-//    stateSOUT_.setConstant (convertVector<dynamicgraph::Vector>(xk));
-
-    /// State in the world frame
-
     // State reconstruction
     stateObservation::Vector xk;
     xk.resize(stateSize_);
-    xk <<   flexOri*com,
-            (flexOriVect+waistOri).block(0,0,2,1),
+    xk <<   com,
+            (waistOri).block(0,0,2,1),
             (flexOriVect).block(0,0,2,1),
-            kine::skewSymmetric(flexOriVect)*flexOri*com+flexOri*comDot,
-            (flexAngVelVect+flexOri*waistAngVel).block(0,0,2,1),
+            comDot,
+            (waistAngVel).block(0,0,2,1),
             (flexAngVelVect).block(0,0,2,1);
     stateSOUT_.setConstant (convertVector<dynamicgraph::Vector>(xk));
+
+    /// State in the world frame
+
+//    // State reconstruction
+//    stateObservation::Vector xk;
+//    xk.resize(stateSize_);
+//    xk <<   flexOri*com,
+//            (flexOriVect+waistOri).block(0,0,2,1),
+//            (flexOriVect).block(0,0,2,1),
+//            kine::skewSymmetric(flexOriVect)*flexOri*com+flexOri*comDot,
+//            (flexAngVelVect+flexOri*waistAngVel).block(0,0,2,1),
+//            (flexAngVelVect).block(0,0,2,1);
+//    stateSOUT_.setConstant (convertVector<dynamicgraph::Vector>(xk));
 
     // Extended state reconstruction
     stateObservation::Vector extxk;
@@ -752,7 +755,7 @@ namespace sotStabilizer
         break;
         case 1: // Single support
         {
-             if(nbSupport!=nbSupport_ || computed_==false || fixedGains_!=true || comRef!=comRef_)
+             if(nbSupport!=nbSupport_ || computed_==false || fixedGains_!=true) // || comRef!=comRef_)
              {
                 Kth_ <<   kth_,0,0,
                           0,kth_,0,
@@ -775,7 +778,7 @@ namespace sotStabilizer
         break;
         case 2 : // Double support
         {
-              if(nbSupport!=nbSupport_ || computed_ == false || fixedGains_!=true || comRef!=comRef_)
+              if(nbSupport!=nbSupport_ || computed_ == false || fixedGains_!=true) // || comRef!=comRef_)
               {
                   Kth_ <<    0.5*kth_*kth_,0,0,
                             0,kth_,0,
@@ -862,49 +865,15 @@ namespace sotStabilizer
 
     /// State in the local frame
 
-//    stateObservation::Matrix I;
-//    if(constantInertia_!=true)
-//    {
-//        I = computeInert(cl,time);
-//    }
-//    else
-//    {
-//        I=convertMatrix<stateObservation::Matrix>(I_);
-//    }
-//    stateObservation::Matrix3 identity;
-//    identity.setIdentity();
-//
-//    stateObservation::Matrix3 ddomega_cl, ddomega_omegach, ddomega_omega, ddomega_dcl,
-//                              ddomega_domegach, ddomega_domega, ddomega_ddcl, ddomega_ddomegach;
-//
-//    // usefull variables for code factorisation
-//    stateObservation::Vector3 uz;
-//    uz <<     0,
-//              0,
-//              1;
-//
-//    stateObservation::Matrix Inertia;
-//    Inertia = I;
-//    Inertia -= m * kine::skewSymmetric2(cl);
-//    Inertia = Inertia.inverse();
-//
-//    stateObservation::Vector3 v;
-//    v=-g*m*Inertia*kine::skewSymmetric(cl)*uz;
-//
-//    // Caracteristic polynomial
-//    ddomega_cl=Inertia*m*(2*kine::skewSymmetric(cl)*kine::skewSymmetric(v)-kine::skewSymmetric(v)*kine::skewSymmetric(cl)-g*kine::skewSymmetric(uz));
-//    ddomega_omegach=Inertia*I*kine::skewSymmetric(v)-Inertia*kine::skewSymmetric(I*v);
-//    ddomega_omega=kine::skewSymmetric(v)-Inertia*(Kth-g*m*kine::skewSymmetric(cl)*kine::skewSymmetric(uz)); //
-//    ddomega_dcl.setZero(); //
-//    ddomega_domegach.setZero(); //
-//    ddomega_domega=-Inertia*Kdth; //
-//
-//    ddomega_ddcl=-m*Inertia*kine::skewSymmetric(cl); //
-//    ddomega_ddomegach=-Inertia*I; //
-
-    /// State in the world frame
-
-    stateObservation::Matrix I = computeInert(cl,time);
+    stateObservation::Matrix I;
+    if(constantInertia_!=true)
+    {
+        I = computeInert(cl,time);
+    }
+    else
+    {
+        I=convertMatrix<stateObservation::Matrix>(I_);
+    }
     stateObservation::Matrix3 identity;
     identity.setIdentity();
 
@@ -919,18 +888,52 @@ namespace sotStabilizer
 
     stateObservation::Matrix Inertia;
     Inertia = I;
+    Inertia -= m * kine::skewSymmetric2(cl);
     Inertia = Inertia.inverse();
 
+    stateObservation::Vector3 v;
+    v=-g*m*Inertia*kine::skewSymmetric(cl)*uz;
+
     // Caracteristic polynomial
-    ddomega_cl=Inertia*g*m*kine::skewSymmetric(uz);
-    ddomega_omegach=Inertia*kine::skewSymmetric(g*m*kine::skewSymmetric(cl)*uz)-kine::skewSymmetric(Inertia*g*m*kine::skewSymmetric(cl)*uz);
-    ddomega_omega=-Inertia*Kth; //
+    ddomega_cl=Inertia*m*(2*kine::skewSymmetric(cl)*kine::skewSymmetric(v)-kine::skewSymmetric(v)*kine::skewSymmetric(cl)-g*kine::skewSymmetric(uz));
+    ddomega_omegach=Inertia*I*kine::skewSymmetric(v)-Inertia*kine::skewSymmetric(I*v);
+    ddomega_omega=kine::skewSymmetric(v)-Inertia*(Kth-g*m*kine::skewSymmetric(cl)*kine::skewSymmetric(uz)); //
     ddomega_dcl.setZero(); //
     ddomega_domegach.setZero(); //
     ddomega_domega=-Inertia*Kdth; //
 
     ddomega_ddcl=-m*Inertia*kine::skewSymmetric(cl); //
-    ddomega_ddomegach=-identity; //
+    ddomega_ddomegach=-Inertia*I; //
+
+    /// State in the world frame
+
+//    stateObservation::Matrix I = computeInert(cl,time);
+//    stateObservation::Matrix3 identity;
+//    identity.setIdentity();
+//
+//    stateObservation::Matrix3 ddomega_cl, ddomega_omegach, ddomega_omega, ddomega_dcl,
+//                              ddomega_domegach, ddomega_domega, ddomega_ddcl, ddomega_ddomegach;
+//
+//    // usefull variables for code factorisation
+//    stateObservation::Vector3 uz;
+//    uz <<     0,
+//              0,
+//              1;
+//
+//    stateObservation::Matrix Inertia;
+//    Inertia = I;
+//    Inertia = Inertia.inverse();
+//
+//    // Caracteristic polynomial
+//    ddomega_cl=Inertia*g*m*kine::skewSymmetric(uz);
+//    ddomega_omegach=Inertia*kine::skewSymmetric(g*m*kine::skewSymmetric(cl)*uz)-kine::skewSymmetric(Inertia*g*m*kine::skewSymmetric(cl)*uz);
+//    ddomega_omega=-Inertia*Kth; //
+//    ddomega_dcl.setZero(); //
+//    ddomega_domegach.setZero(); //
+//    ddomega_domega=-Inertia*Kdth; //
+//
+//    ddomega_ddcl=-m*Inertia*kine::skewSymmetric(cl); //
+//    ddomega_ddomegach=-identity; //
 
     // A_ and B_ computation
     A_.block(0,7,3,3)=identity;

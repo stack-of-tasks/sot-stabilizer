@@ -89,7 +89,7 @@ NonLinearRotationalTableCartDevice::NonLinearRotationalTableCartDevice(const std
 //  state <<  0.00949046,
 //            0,
 //            0.80771,
-  state <<  0.00949046,
+  state <<  0.00949,
             0,
             0.80777699999999997,
             0,
@@ -131,7 +131,7 @@ NonLinearRotationalTableCartDevice::NonLinearRotationalTableCartDevice(const std
 //  com <<  0.00949046,
 //          0,
 //          0.80771;
-  com <<  0.00965,
+  com <<  0.00949, //0.00965,
           0,
           0.80777699999999997;
   comSOUT_.setConstant(convertVector<dynamicgraph::Vector>(com));
