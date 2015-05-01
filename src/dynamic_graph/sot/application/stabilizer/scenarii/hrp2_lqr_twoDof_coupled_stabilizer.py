@@ -36,7 +36,6 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
 	self.waistMatrixToUTheta = MatrixToUTheta('waistMatrixToUTheta')
 	plug(self.waistHomoToMatrix.sout,self.waistMatrixToUTheta.sin)
 
-
 	# Control state
 	plug(robot.dynamic.waist,self.waistHomo)
 
@@ -80,5 +79,10 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
 
         plug(self.estimator.flexThetaU, self.flexOriVect ) # Out
         plug(self.estimator.flexOmega, self.flexAngVelVect )
+
+	plug(self.estimator.flexPosition, self.tflex)
+	plug(self.estimator.flexVelocity, self.dtflex)
+	plug(self.estimator.flexAcceleration, self.ddtflex)
+
 
 

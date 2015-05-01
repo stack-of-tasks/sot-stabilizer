@@ -244,6 +244,14 @@ namespace sotStabilizer
     // Velocity of the flexibility
     SignalPtr <dynamicgraph::Vector, int> flexAngVelVectSIN_;
 
+        /// Translational part of flexibility
+    // Position
+    SignalPtr < dynamicgraph::Vector, int> tflexSIN_;
+    // Vitesse
+    SignalPtr < dynamicgraph::Vector, int> dtflexSIN_;
+    // Acceleration
+    SignalPtr < dynamicgraph::Vector, int> ddtflexSIN_;
+
         /// Reference state
     // Position of center of mass
     SignalPtr < dynamicgraph::Vector, int> comRefSIN_;
@@ -281,6 +289,8 @@ namespace sotStabilizer
         /// Outputs
     // state output
     SignalTimeDependent <Vector, int> stateSOUT_;
+    // state output in the world frame
+    SignalTimeDependent <Vector, int> stateWorldSOUT_;
     // state reference output
     SignalTimeDependent <Vector, int> stateRefSOUT_;
     // error state output

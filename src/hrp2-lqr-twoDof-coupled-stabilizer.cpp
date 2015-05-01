@@ -79,6 +79,9 @@ namespace sotStabilizer
     comDotSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comDot"),
     waistVelSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistVel"),
     flexAngVelVectSIN_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::flexAngVelVect"),
+    tflexSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::tflex"),
+    dtflexSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::dtflex"),
+    ddtflexSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::ddtflex"),
     comRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comRef"),
     waistOriRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistOriRef"),
     flexOriRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::flexOriRef"),
@@ -94,6 +97,7 @@ namespace sotStabilizer
     controlGainSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(double)::controlGain"),
     inertiaSIN(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::inertia"),
     stateSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::state"),
+    stateWorldSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::stateWorld"),
     stateErrorSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::stateError"),
     stateRefSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::stateRef"),
     stateSimulationSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::stateSimulation"),
@@ -133,6 +137,9 @@ namespace sotStabilizer
     signalRegistration (comDotSIN_);
     signalRegistration (waistVelSIN_);
     signalRegistration (flexAngVelVectSIN_);
+    signalRegistration (tflexSIN_);
+    signalRegistration (dtflexSIN_);
+    signalRegistration (ddtflexSIN_);
     signalRegistration (comRefSIN_);
     signalRegistration (waistOriRefSIN_);
     signalRegistration (flexOriRefSIN_);
@@ -145,6 +152,7 @@ namespace sotStabilizer
     signalRegistration (controlGainSIN_);
     signalRegistration (inertiaSIN);
     signalRegistration (stateSOUT_);
+    signalRegistration (stateWorldSOUT_);
     signalRegistration (stateRefSOUT_);
     signalRegistration (stateSimulationSOUT_);
     signalRegistration (stateErrorSOUT_);
@@ -459,6 +467,10 @@ namespace sotStabilizer
     flexAngVelVectSIN_.setConstant(vect);
     vect.resize(6); vect.setZero();
     waistVelSIN_.setConstant(vect);
+    tflexSIN_.setConstant(vect);
+    dtflexSIN_.setConstant(vect);
+    ddtflexSIN_.setConstant(vect);
+
 
     Kth_.resize(3,3);
     Kdth_.resize(3,3);
@@ -520,6 +532,10 @@ namespace sotStabilizer
     computeDynamicsMatrix(com,Kth_,Kdth_,0);
     controller_.setDynamicsMatrices(A_, B_);
     controller_.setCostMatrices(Q_,R_);
+
+    Vector v(stateSize_);
+    v.setZero();
+    stateWorldSOUT_.setConstant(v);
 
     preTask_.resize(controlSize_);
     preTask_.setZero();
@@ -643,11 +659,16 @@ namespace sotStabilizer
 
     // State
     const stateObservation::Vector & com = convertVector<stateObservation::Vector>(comSIN_.access(time));
-    const MatrixHomogeneous& waistHomo = waistHomoSIN_ (time);
+    const Matrix4& waistHomo = convertMatrix<stateObservation::Matrix>(waistHomoSIN_ (time));
     const stateObservation::Vector & flexOriVect = convertVector<stateObservation::Vector>(flexOriVectSIN_.access(time));
     const stateObservation::Vector & comDot = convertVector<stateObservation::Vector>(comDotSIN_ (time));
     const stateObservation::Vector & waistVel = convertVector<stateObservation::Vector>(waistVelSIN_ (time));
     const stateObservation::Vector & flexAngVelVect = convertVector<stateObservation::Vector>(flexAngVelVectSIN_.access(time));
+
+    // Translational part of the flexibility
+    const stateObservation::Vector & tflex = convertVector<stateObservation::Vector>(tflexSIN_.access(time));
+    const stateObservation::Vector & dtflex = convertVector<stateObservation::Vector>(dtflexSIN_.access(time));
+    const stateObservation::Vector & ddtflex = convertVector<stateObservation::Vector>(ddtflexSIN_.access(time));
 
     // State Reference
         // References of velocities and acceleration are equal to zero
@@ -666,20 +687,13 @@ namespace sotStabilizer
     const double& gain = controlGainSIN_.access (time);
 
     // Waist orientation
-    MatrixRotation waistOriRot;
-    VectorUTheta waistOriUTheta;
-    stateObservation::Vector3 waistOri;
-    waistHomo.extract(waistOriRot);
-    waistOriUTheta.fromMatrix(waistOriRot);
-    waistOri=convertVector<stateObservation::Vector>(waistOriUTheta);
-    stateObservation::Vector3 waistAngVel = waistVel.block(3,0,3,1);
+    Matrix3 waistOri=waistHomo.block(0,0,3,3);
+    stateObservation::Vector3 waistOriVect;
+    waistOriVect=kine::rotationMatrixToRotationVector(waistOri);
+    stateObservation::Vector3 waistAngVel = waistVel.tail(3);
 
-    Vector6 flexVect;
-    flexVect << flexOriVect,
-                0,
-                0,
-                0;
-    Matrix3 flexOri=(kine::vector6ToHomogeneousMatrix(flexVect)).block(0,0,3,3);
+    // flex orientation
+    Matrix3 flexOri=kine::rotationVectorToRotationMatrix(flexOriVect);
 
     /// State in the local frame
 
@@ -687,7 +701,7 @@ namespace sotStabilizer
     stateObservation::Vector xk;
     xk.resize(stateSize_);
     xk <<   com,
-            (waistOri).block(0,0,2,1),
+            (waistOriVect).block(0,0,2,1),
             (flexOriVect).block(0,0,2,1),
             comDot,
             (waistAngVel).block(0,0,2,1),
@@ -711,13 +725,24 @@ namespace sotStabilizer
     stateObservation::Vector extxk;
     extxk.resize(stateSize_+4);
     extxk <<    com,
-                waistOri,
+                waistOriVect,
                 flexOriVect,
                 comDot,
                 waistAngVel,
                 flexAngVelVect;
     stateExtendedSOUT_.setConstant (convertVector<dynamicgraph::Vector>(extxk));
     stateExtendedSOUT_.setTime (time);
+
+    // State in the world frame
+    stateObservation::Vector xkworld;
+    xkworld.resize(stateSize_);
+    xkworld <<  flexOri*com+tflex,
+                (kine::rotationMatrixToRotationVector(flexOri*waistOri)).block(0,0,2,1),
+                (flexOriVect).block(0,0,2,1),
+                kine::skewSymmetric(flexAngVelVect)*flexOri*com+flexOri*comDot+dtflex,
+                (kine::rotationMatrixToRotationVector(kine::skewSymmetric(flexAngVelVect)*flexOri*waistOri+flexOri*kine::skewSymmetric(waistAngVel)*waistOri)).block(0,0,2,1),
+                (flexAngVelVect).block(0,0,2,1);
+    stateWorldSOUT_.setConstant (convertVector<dynamicgraph::Vector>(xkworld));
 
     // Reference reconstruction
     stateObservation::Vector xkRef;
