@@ -117,6 +117,7 @@ namespace sotStabilizer
     zmpRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::zmpRef"),
     stateFlexDDotSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::stateFlexDDot"),
     zmpRefSOUT_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::zmpRefOUT"),
+    energySOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::energy"),
     dt_ (.005), on_ (false),
     forceThreshold_ (.036 * constm_*stateObservation::cst::gravityConstant),
     supportPos1_(3), supportPos2_(3),
@@ -170,6 +171,7 @@ namespace sotStabilizer
     signalRegistration (zmpRefSIN_);
     signalRegistration (stateFlexDDotSIN_);
     signalRegistration (zmpRefSOUT_);
+    signalRegistration (energySOUT_);
 
     // Set dependencies
         // taskSOUT dependencies
@@ -552,6 +554,9 @@ namespace sotStabilizer
     dynamicgraph::Vector zero(6); zero.setZero();
     controlSOUT_.setConstant(zero);
 
+    vect.resize(4);
+    energySOUT_.setConstant(vect);
+
   }
 
   Vector& HRP2LQRTwoDofCoupledStabilizer::getControl(Vector& control, const int& time)
@@ -740,7 +745,7 @@ namespace sotStabilizer
                 (kine::rotationMatrixToRotationVector(flexOri*waistOri)).block(0,0,2,1),
                 (flexOriVect).block(0,0,2,1),
                 kine::skewSymmetric(flexAngVelVect)*flexOri*com+flexOri*comDot+dtflex,
-                (kine::rotationMatrixToRotationVector(kine::skewSymmetric(flexAngVelVect)*flexOri*waistOri+flexOri*kine::skewSymmetric(waistAngVel)*waistOri)).block(0,0,2,1),
+                (flexAngVelVect+flexOri*waistAngVel).block(0,0,2,1),
                 (flexAngVelVect).block(0,0,2,1);
     stateWorldSOUT_.setConstant (convertVector<dynamicgraph::Vector>(xkworld));
 
@@ -829,6 +834,23 @@ namespace sotStabilizer
         default: throw std::invalid_argument("Only 0, 1 and 2 number of supports cases are developped");
     };
 
+    // Energy
+    double Etot, Eflex, Ecom, Ewaist;
+    Eflex=0.5*Kth_(0,0)*flexOriVect.squaredNorm();
+    Ecom=0.5*constm_*(xkworld.block(7,0,3,1)).squaredNorm();
+    stateObservation::Vector3 L;
+    L.setZero(); // TODO: put the right angular momentum
+    Ewaist=0.5*L.dot(waistAngVel);
+    Etot=Eflex+Ecom+Ewaist;
+    stateObservation::Vector energy;
+    energy.resize(4);
+    energy <<   Etot,
+                Ecom,
+                Eflex,
+                Ewaist;
+    energySOUT_.setConstant(convertVector<dynamicgraph::Vector>(energy));
+
+
     task.resize (controlSize_);
     int i;
     for (i=0;i<controlSize_;i++)
@@ -897,7 +919,7 @@ namespace sotStabilizer
     }
     else
     {
-        I=convertMatrix<stateObservation::Matrix>(I_);
+        I=I_;
     }
     stateObservation::Matrix3 identity;
     identity.setIdentity();
@@ -1003,6 +1025,7 @@ namespace sotStabilizer
     inertiaComFrame = inertiaWaistFrame + m * kine::skewSymmetric2(cl-wl);
 
     inertiaSOUT.setConstant (convertMatrix<dynamicgraph::Matrix>(inertiaComFrame));
+    I_=inertiaComFrame;
     return inertiaComFrame;
 }
 

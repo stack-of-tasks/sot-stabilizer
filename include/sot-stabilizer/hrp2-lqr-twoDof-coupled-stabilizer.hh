@@ -205,7 +205,7 @@ namespace sotStabilizer
 
     void setInertia(const dynamicgraph::Matrix & I)
     {
-        I_=I;
+        I_=convertMatrix<stateObservation::Matrix>(I);
     }
 
     void constantInertia(const bool & b)
@@ -320,6 +320,9 @@ namespace sotStabilizer
     // Inertia computed by the computeInert method
     dynamicgraph::SignalPtr < ::dynamicgraph::Matrix, int> inertiaSOUT;
 
+    // Energy
+    SignalTimeDependent <Vector, int> energySOUT_;
+
         /// Unused signals
     // angular acceleration of the waist
     SignalPtr < dynamicgraph::Vector, int> waistAngAccSIN_;
@@ -331,6 +334,7 @@ namespace sotStabilizer
     SignalPtr <dynamicgraph::Vector, int> stateFlexDDotSIN_;
     ///Reference ZMP
     SignalTimeDependent <Vector, int> zmpRefSOUT_;
+
 
     /// Parameters
     // Time sampling period
@@ -347,7 +351,7 @@ namespace sotStabilizer
     stateObservation::Matrix Q_;
     stateObservation::Matrix R_;
 
-    dynamicgraph::Matrix I_;
+    stateObservation::Matrix3 I_;
     bool constantInertia_;
 
     controller::DiscreteTimeLTILQR controller_;
