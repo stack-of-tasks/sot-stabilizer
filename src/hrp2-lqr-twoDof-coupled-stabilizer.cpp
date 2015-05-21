@@ -647,9 +647,6 @@ namespace sotStabilizer
         nbSupport=0;
       }
 
-      std::cout << "lfpos " << convertVector<stateObservation::Vector>(lfpos).transpose() << std::endl;
-      std::cout << "rfpos " <<  convertVector<stateObservation::Vector>(rfpos).transpose() << std::endl;
-
       return nbSupport;
   }
 
@@ -660,7 +657,7 @@ namespace sotStabilizer
       const int& time)
   {
 
-    std::cout << "\n\n time: " << time << std::endl;
+    //std::cout << "\n\n time: " << time << std::endl;
 
     // State
     const stateObservation::Vector & com = convertVector<stateObservation::Vector>(comSIN_.access(time));
@@ -780,7 +777,6 @@ namespace sotStabilizer
         case 0: // No support
         {
             preTask_ <<  -gain*dxk.block(0,0,5,1)+controlDref;
-            std::cout << "coucou nbSupport=0" << std::endl;
         }
         break;
         case 1: // Single support
@@ -803,7 +799,6 @@ namespace sotStabilizer
              controller_.setState(dxk,time);
              u=controller_.getControl(time);
              preTask_+=dt_*u+controlDref;
-             std::cout << "1" << std::endl;
         }
         break;
         case 2 : // Double support
@@ -824,7 +819,6 @@ namespace sotStabilizer
                   nbSupport_=nbSupport;
                   computed_=true;
                   comRef_=comRef;
-                  std::cout << "2" << std::endl;
               }
               controller_.setState(dxk,time);
               u=controller_.getControl(time);
