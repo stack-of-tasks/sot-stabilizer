@@ -64,6 +64,7 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
         plug(self.supportPos2,self.estimator.contacts.sin2)
 	self.estimator.contacts.selec1 (0, 6)
 	self.estimator.contacts.selec2 (0, 6)
+	plug(self.nbSupport,self.estimator.calibration.contactsNbr)
 	plug(self.estimator.contacts.sout,self.estimator.calibration.contactsPositionIn)
 	plug(self.estimator.calibration.contactsPositionOut,self.estimator.inputVector.contactsPosition)
 
