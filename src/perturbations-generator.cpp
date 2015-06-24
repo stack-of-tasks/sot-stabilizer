@@ -29,7 +29,8 @@ namespace sotStabilizer
         selecVectorSIN(0x0 ,
                         "VectorPerturbationsGenerator("+inName+")::input(Vector)::selecVector"),
         on_(false),
-        currentTime_(0)
+        currentTime_(0),
+        sinLess_(false)
     {
         signalRegistration (sinSIN);
         signalRegistration (soutSOUT);
@@ -81,6 +82,11 @@ namespace sotStabilizer
 	     dynamicgraph::command::Setter <VectorPerturbationsGenerator,bool>
             (*this, &VectorPerturbationsGenerator::activate, docstring));
 
+        addCommand(std::string("setSinLessMode"),
+             new
+             dynamicgraph::command::Setter <VectorPerturbationsGenerator,bool>
+            (*this, &VectorPerturbationsGenerator::setSinLessMode, docstring));
+
     }
 
     VectorPerturbationsGenerator::~VectorPerturbationsGenerator()
@@ -104,7 +110,13 @@ namespace sotStabilizer
             {
                 if (perturbationMode_==0) //dirac
                 {
-                    output = sin;
+                    if(sinLess_==false){
+                        output = sin;
+                    }
+                    else if(sinLess_==true){
+                        output.resize(sin.size());
+                        output.setZero();
+                    }
 
                     if (timeSinceLast_==perturbationPeriod_)
                     {
@@ -133,7 +145,13 @@ namespace sotStabilizer
                 }
                 else if (perturbationMode_==1) //step
                 {
-                    output = sin;
+                    if(sinLess_==false){
+                        output = sin;
+                    }
+                    else if(sinLess_==true){
+                        output.resize(sin.size());
+                        output.setZero();
+                    }
 
                     if (timeSinceLast_==perturbationPeriod_)
                     {
@@ -183,11 +201,16 @@ namespace sotStabilizer
 
                     ++timeSinceLast_;
                 }
-
             }
             else
             {
-                output = sin;
+                if(sinLess_==false){
+                    output = sin;
+                }
+                else if(sinLess_==true){
+                    output.resize(sin.size());
+                    output.setZero();
+                }
             }
 
             return currentOutput_=output;

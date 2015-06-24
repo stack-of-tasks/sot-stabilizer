@@ -84,6 +84,7 @@ namespace sotStabilizer
     dtflexSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::dtflex"),
     ddtflexSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::ddtflex"),
     comRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comRef"),
+    perturbationSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::perturbation"),
     waistOriRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistOriRef"),
     flexOriRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::flexOriRef"),
     comDotRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comDotRef"),
@@ -145,6 +146,7 @@ namespace sotStabilizer
     signalRegistration (dtflexSIN_);
     signalRegistration (ddtflexSIN_);
     signalRegistration (comRefSIN_);
+    signalRegistration (perturbationSIN_);
     signalRegistration (waistOriRefSIN_);
     signalRegistration (flexOriRefSIN_);
     signalRegistration (comDotRefSIN_);
@@ -573,6 +575,9 @@ namespace sotStabilizer
     vect.resize(4);
     energySOUT_.setConstant(vect);
 
+    vect.resize(3);
+    perturbationSIN_.setConstant(vect);
+
   }
 
   Vector& HRP2LQRTwoDofCoupledStabilizer::getControl(Vector& control, const int& time)
@@ -673,7 +678,7 @@ namespace sotStabilizer
       const int& time)
   {
 
-    //std::cout << "\n\n time: " << time << std::endl;
+    std::cout << "\n\n time: " << time << std::endl;
 
     // State
     const stateObservation::Vector & com = convertVector<stateObservation::Vector>(comSIN_.access(time));
@@ -691,6 +696,7 @@ namespace sotStabilizer
     // State Reference
         // References of velocities and acceleration are equal to zero
     const stateObservation::Vector & comRef = convertVector<stateObservation::Vector>(comRefSIN_ (time));
+    const stateObservation::Vector & perturbation = convertVector<stateObservation::Vector>(perturbationSIN_ (time));
     const stateObservation::Vector & waistOriRef = convertVector<stateObservation::Vector>(waistOriRefSIN_.access(time));
     const stateObservation::Vector & flexOriRef = convertVector<stateObservation::Vector>(flexOriRefSIN_.access(time));
     const stateObservation::Vector & comDotRef = convertVector<stateObservation::Vector>(comDotRefSIN_ (time));
@@ -699,7 +705,6 @@ namespace sotStabilizer
 
     // Determination of the number of support
     unsigned int nbSupport=computeNbSupport(time);
-
 
     // Control gain
     const double& gain = controlGainSIN_.access (time);
@@ -717,7 +722,6 @@ namespace sotStabilizer
     const stateObservation::Vector & angularmomentum = convertVector<stateObservation::Vector>(angularmomentumSIN.access(time));
 
     /// State in the local frame
-
     // State reconstruction
     stateObservation::Vector xk;
     xk.resize(stateSize_);
@@ -795,7 +799,7 @@ namespace sotStabilizer
     {
         case 0: // No support
         {
-            preTask_ <<  -gain*dxk.block(0,0,5,1)+controlDref;
+            preTask_ <<  -gain*dxk.block(0,0,5,1);
         }
         break;
         case 1: // Single support
@@ -817,7 +821,7 @@ namespace sotStabilizer
              }
              controller_.setState(dxk,time);
              u=controller_.getControl(time);
-             preTask_+=dt_*u+controlDref;
+             preTask_+=dt_*u;
         }
         break;
         case 2 : // Double support
@@ -841,7 +845,7 @@ namespace sotStabilizer
               }
               controller_.setState(dxk,time);
               u=controller_.getControl(time);
-              preTask_+=dt_*u+controlDref;
+              preTask_+=dt_*u;
         }
         break;
         default: throw std::invalid_argument("Only 0, 1 and 2 number of supports cases are developped");
@@ -861,10 +865,15 @@ namespace sotStabilizer
                 Ewaist;
     energySOUT_.setConstant(convertVector<dynamicgraph::Vector>(energy));
 
+    std::cout << "perturbation:" << perturbation.transpose() << std::endl;
 
     task.resize (taskSize_);
     int i;
-    for (i=0;i<controlSize_;i++)
+    for (i=0;i<3;i++)
+    {
+        task [i].setSingleBound (preTask_(i)+perturbation(i));
+    }
+    for (i=3;i<controlSize_;i++)
     {
         task [i].setSingleBound (preTask_(i));
     }

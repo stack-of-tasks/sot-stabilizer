@@ -73,11 +73,30 @@ appli.robot.addTrace (stabilizer.name,'supportPos1')
 appli.robot.addTrace (stabilizer.name,'supportPos2')
 appli.robot.addTrace (stabilizer.name,'energy')
 
+# Perturbation Generator on task
+perturbatorTask = VectorPerturbationsGenerator('perturbatedTask')
+perturbatorTask.setSinLessMode(True)
+vect = perturbatorTask.sin
+vect.value = appli.comRef.value
+plug (perturbatorTask.sout,stabilizer.perturbation)
+appli.robot.addTrace( perturbatorTask.name, 'sout')
+perturbatorTask.perturbation.value=(0,1,0)
+perturbatorTask.selec.value = '111'
+perturbatorTask.setMode(4)
+perturbatorTask.setPeriod(0)
+perturbatorTask.activate(False)
+
+# Perturbation Generator on comRef
 perturbator = VectorPerturbationsGenerator('comref')
 comRef = perturbator.sin
 comRef.value = appli.comRef.value
 plug (perturbator.sout,appli.comRef)
 appli.robot.addTrace( perturbator.name, 'sout')
+perturbator.perturbation.value=(0,1,0)
+perturbator.selec.value = '111'
+perturbator.setMode(0)
+perturbator.setPeriod(0)
+perturbator.activate(False)
 
 appli.startTracer()
 
@@ -122,6 +141,7 @@ Q35=np.zeros((2,2)) ### Omega dOmegach
 Q36=np.mat('[0,0;0,0]') #np.mat('[1,0;0,1]') #np.zeros((2,2)) ### Omega dOmega
 
 Q44=np.zeros((3,3))
+
 Q45=np.zeros((3,2)) # dCl dOmegach
 Q46=np.mat('[0,0;0,0;0,0]') #np.mat('[0,1;1,0;0,0]') #np.zeros((3,2)) ## dCl dOmega
 
@@ -144,16 +164,29 @@ stabilizer.setHorizon(200)
 
 appli.nextStep()
 
-# Perturbation Generator
+# Perturbation Generator on comRef
 perturbator = VectorPerturbationsGenerator('comref')
 comRef = perturbator.sin
 comRef.value = appli.comRef.value
 plug (perturbator.sout,appli.comRef)
 appli.robot.addTrace( perturbator.name, 'sout')
-perturbator.perturbation.value=(1,0,0)
+perturbator.perturbation.value=(0,1,0)
 perturbator.selec.value = '111'
 perturbator.setMode(0)
-perturbator.setPeriod(500)
+perturbator.setPeriod(0)
+perturbator.activate(False)
+
+# Perturbation Generator on task
+perturbator = VectorPerturbationsGenerator('perturbatedTask')
+perturbator.setSinLessMode(True)
+comRef1 = perturbator1.sin
+comRef1.value = appli.comRef.value
+plug (perturbator.sout,stabilizer.perturbation)
+appli.robot.addTrace( perturbator.name, 'sout')
+perturbator.perturbation.value=(0,1,0)
+perturbator.selec.value = '111'
+perturbator.setMode(4)
+perturbator.setPeriod(0)
 perturbator.activate(False)
 
 # To test CalibrateImu
@@ -175,6 +208,7 @@ appli.waist.error.value=(-0.2,0,0)
 time.sleep(5)
 appli.waist.error.value=(0,0,0)
 time.sleep(10)
+
 appli.waist.error.value=(0,0.2,0)
 time.sleep(5)
 appli.waist.error.value=(0,-0.2,0)
@@ -215,6 +249,16 @@ stabilizer.setStateCost(matrixToTuple(Q))
 Q=1*np.diag((10000,10000,10000,10000,10000,1,1,1,1,1,1,1,1,1))
 stabilizer.setStateCost(matrixToTuple(Q))
 
+Q=1*np.diag((20000,20000,20000,20000,20000,1,1,1,1,1,1,1,1,1))
+stabilizer.setStateCost(matrixToTuple(Q))
+
 R=1*np.diag((1,1,1,1,1))
+stabilizer.setInputCost(matrixToTuple(R))
+
+
+Q=1*np.diag((2000,2000,2000,1,1,2000,2000,1,1,1,1,1,1,1))
+stabilizer.setStateCost(matrixToTuple(Q))
+
+R=1*np.diag((1,20000,1,1,1))
 stabilizer.setInputCost(matrixToTuple(R))
 

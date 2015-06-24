@@ -274,6 +274,8 @@ namespace sotStabilizer
         /// Reference state
     // Position of center of mass
     SignalPtr < dynamicgraph::Vector, int> comRefSIN_;
+    // Perturbation
+    SignalPtr < dynamicgraph::Vector, int> perturbationSIN_;
     // Homogeneous representation of the waist position
     SignalPtr <dynamicgraph::Vector, int> waistOriRefSIN_;
     // Orientation of the flexibility on vector form

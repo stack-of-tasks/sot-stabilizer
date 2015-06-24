@@ -72,6 +72,11 @@ namespace sotStabilizer
                 }
             }
 
+            virtual void setSinLessMode(const bool & b)
+            {
+                sinLess_=b;
+            }
+
             /**
             \name Parameters
             @{
@@ -126,7 +131,11 @@ namespace sotStabilizer
 
             unsigned currentTime_;
 
+<<<<<<< HEAD
             stateObservation::GaussianWhiteNoise gwn_;
+=======
+            bool sinLess_;
+>>>>>>> adding bang bang perturbation in perturbatorGenerator
         };
 
 } // namespace sotStateObservation
