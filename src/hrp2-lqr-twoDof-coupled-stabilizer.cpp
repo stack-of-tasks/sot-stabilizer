@@ -56,6 +56,7 @@ namespace sotStabilizer
 
   const unsigned stateSize_=14;
   const unsigned controlSize_=5;
+  const unsigned taskSize_=7;
 
   DYNAMICGRAPH_FACTORY_ENTITY_PLUGIN (HRP2LQRTwoDofCoupledStabilizer, "HRP2LQRTwoDofCoupledStabilizer");
 
@@ -83,6 +84,7 @@ namespace sotStabilizer
     dtflexSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::dtflex"),
     ddtflexSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::ddtflex"),
     comRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comRef"),
+    comRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comRef"),
     waistOriRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistOriRef"),
     flexOriRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::flexOriRef"),
     comDotRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comDotRef"),
@@ -90,12 +92,14 @@ namespace sotStabilizer
     flexAngVelRefSIN_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::flexAngVelRef"),
     jacobianComSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::Jcom"),
     jacobianWaistSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::Jwaist"),
+    jacobianChestSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::Jchest"),
     leftFootPositionSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(HomoMatrix)::leftFootPosition"),
     rightFootPositionSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(HomoMatrix)::rightFootPosition"),
     forceLeftFootSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::force_lf"),
     forceRightFootSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::force_rf"),
     controlGainSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(double)::controlGain"),
     inertiaSIN(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::inertia"),
+    angularmomentumSIN(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::angularmomentum"),
     stateSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::state"),
     stateWorldSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::stateWorld"),
     stateErrorSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::stateError"),
@@ -149,9 +153,11 @@ namespace sotStabilizer
     signalRegistration (flexAngVelRefSIN_);
     signalRegistration (jacobianComSIN_);
     signalRegistration (jacobianWaistSIN_);
+    signalRegistration (jacobianChestSIN_);
     signalRegistration (leftFootPositionSIN_ << rightFootPositionSIN_ << forceRightFootSIN_ << forceLeftFootSIN_);
     signalRegistration (controlGainSIN_);
     signalRegistration (inertiaSIN);
+    signalRegistration (angularmomentumSIN);
     signalRegistration (stateSOUT_);
     signalRegistration (stateWorldSOUT_);
     signalRegistration (stateRefSOUT_);
@@ -329,6 +335,17 @@ namespace sotStabilizer
     addCommand("getLastGains",
                new dynamicgraph::command::Getter<HRP2LQRTwoDofCoupledStabilizer, Matrix>
                (*this, &HRP2LQRTwoDofCoupledStabilizer::getLastGain, docstring));
+
+    docstring =
+      "\n"
+      "    Get the last floored Gain matrix for simple support (x axis)\n"
+      "\n"
+      "      output:\n"
+      "        Matrix\n"
+      "\n";
+    addCommand("getLastFloorGains",
+               new dynamicgraph::command::Getter<HRP2LQRTwoDofCoupledStabilizer, Matrix>
+               (*this, &HRP2LQRTwoDofCoupledStabilizer::getLastFloorGain, docstring));
 
     docstring =
       "\n"
@@ -697,6 +714,9 @@ namespace sotStabilizer
     // flex orientation
     Matrix3 flexOri=kine::rotationVectorToRotationMatrix(flexOriVect);
 
+    // Angular momentum
+    const stateObservation::Vector & angularmomentum = convertVector<stateObservation::Vector>(angularmomentumSIN.access(time));
+
     /// State in the local frame
 
     // State reconstruction
@@ -832,9 +852,7 @@ namespace sotStabilizer
     double Etot, Eflex, Ecom, Ewaist;
     Eflex=0.5*Kth_(0,0)*flexOriVect.squaredNorm();
     Ecom=0.5*constm_*(xkworld.block(7,0,3,1)).squaredNorm();
-    stateObservation::Vector3 L;
-    L.setZero(); // TODO: put the right angular momentum
-    Ewaist=0.5*L.dot(waistAngVel);
+    Ewaist=0.5*angularmomentum.dot(waistAngVel);
     Etot=Eflex+Ecom+Ewaist;
     stateObservation::Vector energy;
     energy.resize(4);
@@ -845,11 +863,15 @@ namespace sotStabilizer
     energySOUT_.setConstant(convertVector<dynamicgraph::Vector>(energy));
 
 
-    task.resize (controlSize_);
+    task.resize (taskSize_);
     int i;
     for (i=0;i<controlSize_;i++)
     {
         task [i].setSingleBound (preTask_(i));
+    }
+    for (i=controlSize_;i<taskSize_;i++)
+    {
+        task [i].setSingleBound (preTask_(i-taskSize_+controlSize_));
     }
 
     stateObservation::Vector error;
@@ -884,14 +906,17 @@ namespace sotStabilizer
 
     const stateObservation::Matrix & jacobianCom=convertMatrix<stateObservation::Matrix>(jacobianComSIN_(time));
     const stateObservation::Matrix & jacobianWaist=convertMatrix<stateObservation::Matrix>(jacobianWaistSIN_(time));
+    const stateObservation::Matrix & jacobianChest=convertMatrix<stateObservation::Matrix>(jacobianChestSIN_(time));
 
     stateObservation::Matrix jacobianWaistOri = jacobianWaist.block(3,0,2,jacobianWaist.cols());
+    stateObservation::Matrix jacobianChestOri = jacobianChest.block(3,0,2,jacobianChest.cols());
 
     stateObservation::Matrix preJacobian;
-    preJacobian.resize(jacobianCom.rows()+jacobianWaistOri.rows(),jacobianCom.cols());
+    preJacobian.resize(jacobianCom.rows()+jacobianWaistOri.rows()+jacobianChestOri.rows(),jacobianCom.cols());
 
     preJacobian.block(0,0,jacobianCom.rows(),jacobianCom.cols())= jacobianCom;
     preJacobian.block(jacobianCom.rows(),0,jacobianWaistOri.rows(),jacobianWaistOri.cols())= jacobianWaistOri;
+    preJacobian.block(jacobianCom.rows()+jacobianWaistOri.rows(),0,jacobianChestOri.rows(),jacobianChestOri.cols())= jacobianChestOri;
 
     jacobian = convertMatrix<dynamicgraph::Matrix>(preJacobian);
 

@@ -192,6 +192,25 @@ namespace sotStabilizer
       return sotStateObservation::convertMatrix<Matrix>(controller_.getLastGain());
     }
 
+    Matrix getLastFloorGain() const
+    {
+      stateObservation::Matrix matInit;
+      matInit=controller_.getLastGain();
+      Eigen::MatrixXi mat;
+      mat.resize(matInit.rows(),matInit.cols());
+
+      int i, u;
+
+      for(i=0;i<mat.rows();i++)
+      {
+          for(u=0;u<mat.cols();u++)
+          {
+              mat(i,u)=floor(matInit(i,u));
+          }
+      }
+
+      return convertMatrix<dynamicgraph::Matrix>(mat);
+  }
 
     void setKth(const dynamicgraph::Matrix & m)
     {
@@ -269,6 +288,7 @@ namespace sotStabilizer
         /// Jacobians
     SignalPtr < dynamicgraph::Matrix, int> jacobianComSIN_;
     SignalPtr < dynamicgraph::Matrix, int> jacobianWaistSIN_;
+    SignalPtr < dynamicgraph::Matrix, int> jacobianChestSIN_;
 
         /// Signals to compute number of supports
     // Position of left foot force sensor in global frame
@@ -285,6 +305,7 @@ namespace sotStabilizer
 
         /// Signals to compute dynamics model
     dynamicgraph::SignalPtr < ::dynamicgraph::Matrix, int> inertiaSIN;
+    dynamicgraph::SignalPtr < ::dynamicgraph::Vector, int> angularmomentumSIN;
 
         /// Outputs
     // state output

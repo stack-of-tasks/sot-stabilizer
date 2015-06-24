@@ -47,6 +47,11 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
 	plug ( robot.dynamic.inertia, self.inertia)
 	plug(self.DWaist.sout,self.waistVel)
 
+	plug ( robot.dynamic.Jchest, self.Jchest)
+
+	# Angular momentum
+        plug(robot.dynamic.angularmomentum,self.angularmomentum)
+
 	# For determining nbSupport
         plug (robot.device.forceLLEG,self.force_lf)
         plug (robot.device.forceRLEG,self.force_rf)
