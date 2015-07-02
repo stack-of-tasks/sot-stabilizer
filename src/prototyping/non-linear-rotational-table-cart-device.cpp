@@ -15,6 +15,7 @@
 #include <sot-stabilizer/prototyping/non-linear-rotational-table-cart-device.hh>
 #include <dynamic-graph/command-bind.h>
 #include "command-increment_NonLinearRotationalTableCartDevice.hh"
+#include <sot/core/matrix-homogeneous.hh>
 
 #include <iostream>
 
@@ -38,6 +39,14 @@ NonLinearRotationalTableCartDevice::NonLinearRotationalTableCartDevice(const std
   flexAngVelVectSOUT_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::flexAngVelVect"),
   flexAngAccVectSOUT_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::flexAngAccVect"),
   flexLinAccSOUT_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::flexLinAcc"),
+  contact1PosSOUT_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(MatrixHomogeneous)::contact1Pos"),
+  contact1ForcesSOUT_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::contact1Forces"),
+  contact2PosSOUT_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(MatrixHomogeneous)::contact2Pos"),
+  contact2ForcesSOUT_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::contact2Forces"),
+  inertiaSOUT_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(matrix)::inertia"),
+  dotInertiaSOUT_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(matrix)::dotInertia"),
+  angularMomentumSOUT_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::angularMomentum"),
+  dotAngularMomentumSOUT_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::dotAngularMomentum"),
   robotMass_(58.0), robotMassInv_(1/58.0), I_ (3,3), cl_(3), contactsNumber_(2)
 {
 
@@ -74,6 +83,14 @@ NonLinearRotationalTableCartDevice::NonLinearRotationalTableCartDevice(const std
   signalRegistration (flexAngVelVectSOUT_);
   signalRegistration (flexAngAccVectSOUT_);
   signalRegistration (flexLinAccSOUT_);
+  signalRegistration (contact1PosSOUT_);
+  signalRegistration (contact1ForcesSOUT_);
+  signalRegistration (contact2PosSOUT_);
+  signalRegistration (contact2ForcesSOUT_);
+  signalRegistration (inertiaSOUT_);
+  signalRegistration (dotInertiaSOUT_);
+  signalRegistration (angularMomentumSOUT_);
+  signalRegistration (dotAngularMomentumSOUT_);
 
 
 //  comSOUT_.addDependency (controlSIN_);
@@ -155,9 +172,16 @@ NonLinearRotationalTableCartDevice::NonLinearRotationalTableCartDevice(const std
   flexOriVectSOUT_.setTime(0);
   flexAngVelVectSOUT_.setConstant(vect);
   flexAngVelVectSOUT_.setTime(0);
+  angularMomentumSOUT_.setConstant(vect);
+  dotAngularMomentumSOUT_.setConstant(vect);
   vect.resize(6); vect.setZero();
   waistVelSOUT_.setConstant(vect);
   waistVelSOUT_.setTime(0);
+
+  dynamicgraph::Matrix mat;
+  mat.resize(3,3); mat.setZero();
+  inertiaSOUT_.setConstant(mat);
+  dotInertiaSOUT_.setConstant(mat);
 
   flexAngAccVectSOUT_.setConstant(vect);
   flexAngAccVectSOUT_.setTime(0);
@@ -165,16 +189,23 @@ NonLinearRotationalTableCartDevice::NonLinearRotationalTableCartDevice(const std
   flexLinAccSOUT_.setTime(0);
 
   stateObservation::Matrix4 positionHomo;
-  positionHomo  <<  1,-9.18094e-18,-1.52169e-16,0.00949046,
-                    9.184e-18,1,-1.10345e-16,-0.095,
-                    1.68756e-16,1.10345e-16,1,2.55006e-07,
-                    0,0,0,1;
+  positionHomo  <<  0.99999999999999967, 2.5968437190932057e-08, 6.257471633701753e-11, 0.0094083933100463195,
+                    -2.5968437190709582e-08, 0.99999999999999967, -2.5764338781213246e-09, -0.095000634597334363,
+                    -6.2574838892307319e-11, 2.5764338764907862e-09, 1.0000000000000002, 0.00024947900550372382,
+                     0.0, 0.0, 0.0, 1.0;
   setContactPosition(0, positionHomo);
-  positionHomo  <<  1,1.94301e-07,2.363e-10,0.00949046,
-                    -1.94301e-07,1,-2.70566e-12,0.095,
-                    -2.363e-10,2.70562e-12,1,3.03755e-06,
-                    0,0,0,1;
+  contact1PosSOUT_.setConstant(convertMatrix<dynamicgraph::sot::MatrixHomogeneous>(positionHomo));
+  positionHomo  <<  0.99999999999999956, 2.5964823352109814e-08, 6.2554585725676566e-11, 0.0094057577737093473,
+                    -2.5964823352024697e-08, 0.99999999999999978, -2.5759706733995109e-09, 0.09499935165331555,
+                    -6.2554685064698801e-11, 2.5759706713355034e-09, 1.0000000000000002, 0.00025455387809316277,
+                     0.0, 0.0, 0.0, 1.0;
   setContactPosition(1, positionHomo);
+  contact2PosSOUT_.setConstant(convertMatrix<dynamicgraph::sot::MatrixHomogeneous>(positionHomo));
+
+  stateObservation::Vector6 forces;
+  forces.setZero();
+  contact1ForcesSOUT_.setConstant(convertVector<dynamicgraph::Vector>(forces));
+  contact2ForcesSOUT_.setConstant(convertVector<dynamicgraph::Vector>(forces));
 
   // Commands
   std::string docstring;
@@ -300,6 +331,15 @@ NonLinearRotationalTableCartDevice::NonLinearRotationalTableCartDevice(const std
                new ::dynamicgraph::command::Getter<NonLinearRotationalTableCartDevice, dynamicgraph::Matrix>
                (*this, &NonLinearRotationalTableCartDevice::getMomentOfInertia, docstring));
 
+    // setState
+    docstring =
+      "\n"
+      "    Set state\n"
+      "\n";
+    addCommand(std::string("setState"),
+               new ::dynamicgraph::command::Setter<NonLinearRotationalTableCartDevice, dynamicgraph::Vector>
+               (*this, &NonLinearRotationalTableCartDevice::setState, docstring));
+
 }
 
 NonLinearRotationalTableCartDevice::~NonLinearRotationalTableCartDevice()
@@ -322,6 +362,8 @@ Vector6 NonLinearRotationalTableCartDevice::getContactPosition(unsigned i)
                         opti_.contactOriV[i];
     return contactPosVect;
 }
+
+
 
 void NonLinearRotationalTableCartDevice::computeAccelerations
    (const Vector3& positionCom, const Vector3& velocityCom,
@@ -402,6 +444,9 @@ void NonLinearRotationalTableCartDevice::computeElastContactForcesAndMoments
     forces.setZero();
     moments.setZero();
 
+    stateObservation::Matrix forcesOut;
+    forcesOut.resize(6,2);
+    forcesOut.setZero();
 
   for (unsigned i = 0; i<nbContacts ; ++i)
   {
@@ -428,9 +473,17 @@ void NonLinearRotationalTableCartDevice::computeElastContactForcesAndMoments
 
     tc_.segment<3>(3*i)= opti_.momenti;
 
-    moments.noalias() += opti_.momenti + kine::skewSymmetric(opti_.globalContactPos)*opti_.forcei;;
+    moments.noalias() += opti_.momenti + kine::skewSymmetric(opti_.globalContactPos)*opti_.forcei;
 
+    forcesOut.block(0,i,6,1) <<  fc_.segment<3>(3*i),
+                                 tc_.segment<3>(3*i);
     }
+
+    stateObservation::Vector6 force1, force2;
+    force1=forcesOut.block(0,0,6,1);
+    force2=forcesOut.block(0,1,6,1);
+    contact1ForcesSOUT_.setConstant(convertVector<dynamicgraph::Vector>(force1));
+    contact2ForcesSOUT_.setConstant(convertVector<dynamicgraph::Vector>(force2));
 
 }
 
@@ -475,9 +528,16 @@ stateObservation::Vector NonLinearRotationalTableCartDevice::computeDynamics(
   waistAngAcc   <<  un.block(3,0,2,1),
                     0;
   Inertia=waistOri*I_*waistOri.transpose()-robotMass_*kine::skewSymmetric2(positionCom);
-  dotInertia.setZero();
+  dotInertia=kine::skewSymmetric(waistAngVel)*waistOri*I_*waistOri.transpose()-waistOri*I_*waistOri.transpose()*kine::skewSymmetric(waistAngVel)
+             -robotMass_*kine::skewSymmetric(velocityCom)*kine::skewSymmetric(positionCom)-robotMass_*kine::skewSymmetric(positionCom)*kine::skewSymmetric(velocityCom);
   AngMomentum=waistOri*I_*waistOri.transpose()*waistAngVel+robotMass_*kine::skewSymmetric(positionCom)*velocityCom;
-  dotAngMomentum.setZero();
+  dotAngMomentum=waistOri*I_*waistOri.transpose()*waistAngAcc+kine::skewSymmetric(waistAngVel)*waistOri*I_*waistOri.transpose()*waistAngVel
+                 +robotMass_*kine::skewSymmetric(positionCom)*velocityCom;
+
+  inertiaSOUT_.setConstant(convertMatrix<dynamicgraph::Matrix>(Inertia));
+  dotInertiaSOUT_.setConstant(convertMatrix<dynamicgraph::Matrix>(dotInertia));
+  angularMomentumSOUT_.setConstant(convertVector<dynamicgraph::Vector>(AngMomentum));
+  dotAngularMomentumSOUT_.setConstant(convertVector<dynamicgraph::Vector>(dotAngMomentum));
 
   computeAccelerations
      (positionCom, velocityCom,

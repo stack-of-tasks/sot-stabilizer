@@ -28,6 +28,8 @@
 #include <sot-state-observation/tools/definitions.hh>
 #include <state-observation/tools/miscellaneous-algorithms.hpp>
 
+#include <sot/core/matrix-homogeneous.hh>
+
 namespace sotStabilizer {
 
     using namespace sotStateObservation;
@@ -264,6 +266,18 @@ namespace sotStabilizer {
           contactsNumber_= nb;
       }
 
+      void setState(const dynamicgraph::Vector& inState)
+      {
+          controlStateSOUT_.setConstant(inState);
+          stateObservation::Vector state;
+          state=convertVector<stateObservation::Vector>(inState);
+          comSOUT_.setConstant(convertVector<dynamicgraph::Vector>(state.block(0,0,3,1)));
+          flexOriVectSOUT_.setConstant(convertVector<dynamicgraph::Vector>(state.block(6,0,3,1)));
+          comDotSOUT_.setConstant(convertVector<dynamicgraph::Vector>(state.block(12,0,3,1)));
+          waistVelSOUT_.setConstant(convertVector<dynamicgraph::Vector>(state.block(15,0,3,1)));
+          flexAngVelVectSOUT_.setConstant(convertVector<dynamicgraph::Vector>(state.block(18,0,3,1)));
+      }
+
       inline Matrix3& computeRotation_(const Vector3 & x, int i);
       /**
          @}
@@ -304,6 +318,18 @@ namespace sotStabilizer {
       dynamicgraph::SignalPtr <dynamicgraph::Vector, int> flexAngAccVectSOUT_;
       // Linear acceleration of the flexibility
       dynamicgraph::SignalPtr <dynamicgraph::Vector, int> flexLinAccSOUT_;
+
+      // contacts positions and forces
+      dynamicgraph::SignalPtr <dynamicgraph::sot::MatrixHomogeneous, int> contact1PosSOUT_;
+      dynamicgraph::SignalPtr <dynamicgraph::Vector, int> contact1ForcesSOUT_;
+      dynamicgraph::SignalPtr <dynamicgraph::sot::MatrixHomogeneous, int> contact2PosSOUT_;
+      dynamicgraph::SignalPtr <dynamicgraph::Vector, int> contact2ForcesSOUT_;
+
+      // Inertial values
+      dynamicgraph::SignalPtr <dynamicgraph::Matrix, int> inertiaSOUT_;
+      dynamicgraph::SignalPtr <dynamicgraph::Matrix, int> dotInertiaSOUT_;
+      dynamicgraph::SignalPtr <dynamicgraph::Vector, int> angularMomentumSOUT_;
+      dynamicgraph::SignalPtr <dynamicgraph::Vector, int> dotAngularMomentumSOUT_;
 
       /// \brief Mass of the cart
       double robotMass_;

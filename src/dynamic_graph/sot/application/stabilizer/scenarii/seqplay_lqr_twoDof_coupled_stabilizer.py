@@ -309,7 +309,7 @@ class SeqPlayLqrTwoDofCoupledStabilizer(Application):
         if self.hands:
             self.push(self.taskRH)
             self.push(self.taskLH)
-        self.taskCoMStabilized.start()
+        #self.taskCoMStabilized.start()
              
         if self.trunkStabilize:
             #waist

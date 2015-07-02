@@ -28,7 +28,7 @@
 
 #include <sot-stabilizer/hrp2-lqr-twoDof-coupled-stabilizer.hh>
 #include <stdexcept>
-#include <iostream>
+//#include <iostream>
 
 namespace sotStabilizer
 {
@@ -84,7 +84,8 @@ namespace sotStabilizer
     dtflexSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::dtflex"),
     ddtflexSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::ddtflex"),
     comRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comRef"),
-    perturbationSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::perturbation"),
+    perturbationVelSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::perturbationVel"),
+    perturbationAccSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::perturbationAcc"),
     waistOriRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistOriRef"),
     flexOriRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::flexOriRef"),
     comDotRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comDotRef"),
@@ -146,7 +147,8 @@ namespace sotStabilizer
     signalRegistration (dtflexSIN_);
     signalRegistration (ddtflexSIN_);
     signalRegistration (comRefSIN_);
-    signalRegistration (perturbationSIN_);
+    signalRegistration (perturbationVelSIN_);
+    signalRegistration (perturbationAccSIN_);
     signalRegistration (waistOriRefSIN_);
     signalRegistration (flexOriRefSIN_);
     signalRegistration (comDotRefSIN_);
@@ -485,12 +487,12 @@ namespace sotStabilizer
     comDotSIN_.setConstant(vect);
     flexOriVectSIN_.setConstant(vect);
     flexAngVelVectSIN_.setConstant(vect);
-    vect.resize(6); vect.setZero();
-    waistVelSIN_.setConstant(vect);
     tflexSIN_.setConstant(vect);
     dtflexSIN_.setConstant(vect);
     ddtflexSIN_.setConstant(vect);
-
+    angularmomentumSIN.setConstant(vect);
+    vect.resize(6); vect.setZero();
+    waistVelSIN_.setConstant(vect);
 
     Kth_.resize(3,3);
     Kdth_.resize(3,3);
@@ -576,8 +578,13 @@ namespace sotStabilizer
     energySOUT_.setConstant(vect);
 
     vect.resize(3);
-    perturbationSIN_.setConstant(vect);
+    vect.setZero();
+    perturbationVelSIN_.setConstant(vect);
+    perturbationAccSIN_.setConstant(vect);
 
+    I_ <<   8.15831,-0.00380455,0.236677,
+            -0.00380453,6.94757,-0.0465754,
+            0.236677,-0.0465754,1.73429;
   }
 
   Vector& HRP2LQRTwoDofCoupledStabilizer::getControl(Vector& control, const int& time)
@@ -677,9 +684,6 @@ namespace sotStabilizer
   HRP2LQRTwoDofCoupledStabilizer::computeControlFeedback(VectorMultiBound& task,
       const int& time)
   {
-
-    std::cout << "\n\n time: " << time << std::endl;
-
     // State
     const stateObservation::Vector & com = convertVector<stateObservation::Vector>(comSIN_.access(time));
     const Matrix4& waistHomo = convertMatrix<stateObservation::Matrix>(waistHomoSIN_ (time));
@@ -696,12 +700,17 @@ namespace sotStabilizer
     // State Reference
         // References of velocities and acceleration are equal to zero
     const stateObservation::Vector & comRef = convertVector<stateObservation::Vector>(comRefSIN_ (time));
-    const stateObservation::Vector & perturbation = convertVector<stateObservation::Vector>(perturbationSIN_ (time));
+    const stateObservation::Vector & perturbationVel = convertVector<stateObservation::Vector>(perturbationVelSIN_ (time));
+    const stateObservation::Vector & perturbationAcc = convertVector<stateObservation::Vector>(perturbationAccSIN_ (time));
+
     const stateObservation::Vector & waistOriRef = convertVector<stateObservation::Vector>(waistOriRefSIN_.access(time));
     const stateObservation::Vector & flexOriRef = convertVector<stateObservation::Vector>(flexOriRefSIN_.access(time));
     const stateObservation::Vector & comDotRef = convertVector<stateObservation::Vector>(comDotRefSIN_ (time));
     const stateObservation::Vector & waistAngVelRef = convertVector<stateObservation::Vector>(waistVelRefSIN_ (time));
     const stateObservation::Vector & flexAngVelRef = convertVector<stateObservation::Vector>(flexAngVelRefSIN_.access(time));
+
+    // For energy
+    const stateObservation::Vector & angularmomentum = convertVector<stateObservation::Vector>(angularmomentumSIN.access(time));
 
     // Determination of the number of support
     unsigned int nbSupport=computeNbSupport(time);
@@ -717,9 +726,6 @@ namespace sotStabilizer
 
     // flex orientation
     Matrix3 flexOri=kine::rotationVectorToRotationMatrix(flexOriVect);
-
-    // Angular momentum
-    const stateObservation::Vector & angularmomentum = convertVector<stateObservation::Vector>(angularmomentumSIN.access(time));
 
     /// State in the local frame
     // State reconstruction
@@ -813,7 +819,7 @@ namespace sotStabilizer
                           0,kdth_,0,
                           0,0,kdth_;
 
-                computeDynamicsMatrix(xkRef.block(0,0,3,1),Kth_,Kdth_,time);
+                computeDynamicsMatrix(dxk.block(0,0,3,1),Kth_,Kdth_,time);
                 controller_.setDynamicsMatrices(A_,B_);
                 nbSupport_=nbSupport;
                 computed_=true;
@@ -821,6 +827,7 @@ namespace sotStabilizer
              }
              controller_.setState(dxk,time);
              u=controller_.getControl(time);
+             u.block(0,0,3,1)+=perturbationAcc;
              preTask_+=dt_*u;
         }
         break;
@@ -837,7 +844,7 @@ namespace sotStabilizer
 
                   // TODO: when feet are not aligned along the y axis
 
-                  computeDynamicsMatrix(xkRef.block(0,0,3,1),Kth_,Kdth_,time);
+                  computeDynamicsMatrix(dxk.block(0,0,3,1),Kth_,Kdth_,time);
                   controller_.setDynamicsMatrices(A_,B_);
                   nbSupport_=nbSupport;
                   computed_=true;
@@ -845,6 +852,7 @@ namespace sotStabilizer
               }
               controller_.setState(dxk,time);
               u=controller_.getControl(time);
+              u.block(0,0,3,1)+=perturbationAcc;
               preTask_+=dt_*u;
         }
         break;
@@ -865,13 +873,11 @@ namespace sotStabilizer
                 Ewaist;
     energySOUT_.setConstant(convertVector<dynamicgraph::Vector>(energy));
 
-    std::cout << "perturbation:" << perturbation.transpose() << std::endl;
-
     task.resize (taskSize_);
     int i;
     for (i=0;i<3;i++)
     {
-        task [i].setSingleBound (preTask_(i)+perturbation(i));
+        task [i].setSingleBound (preTask_(i)+perturbationVel(i));
     }
     for (i=3;i<controlSize_;i++)
     {
@@ -900,7 +906,7 @@ namespace sotStabilizer
     stateObservation::Vector modelError;
     modelError.resize(stateSize_);
     modelError.setZero();
-    xpredicted_=A_*dxk+B_*u;
+    xpredicted_=A_*dxk+B_*u+xk;
     stateSimulationSOUT_.setConstant(convertVector<dynamicgraph::Vector>(xpredicted_));
     modelError=xpredicted_-dxk;
     stateModelErrorSOUT_.setConstant(convertVector<dynamicgraph::Vector>(modelError));
@@ -970,8 +976,8 @@ namespace sotStabilizer
 
     // Caracteristic polynomial
     ddomega_cl=Inertia*m*(2*kine::skewSymmetric(cl)*kine::skewSymmetric(v)-kine::skewSymmetric(v)*kine::skewSymmetric(cl)-g*kine::skewSymmetric(uz));
-    ddomega_omegach=Inertia*I*kine::skewSymmetric(v)-Inertia*kine::skewSymmetric(I*v);
-    ddomega_omega=kine::skewSymmetric(v)-Inertia*(Kth-g*m*kine::skewSymmetric(cl)*kine::skewSymmetric(uz)); //
+    ddomega_omegach=g*m*I_*kine::skewSymmetric(kine::skewSymmetric(cl)*uz)-g*m*kine::skewSymmetric(I_*kine::skewSymmetric(cl)*uz); //Inertia*I*kine::skewSymmetric(v)-Inertia*kine::skewSymmetric(I*v);
+    ddomega_omega=kine::skewSymmetric(g*m*Inertia*kine::skewSymmetric(cl)*uz)-Inertia*(Kth-g*m*kine::skewSymmetric(cl)*kine::skewSymmetric(uz)); //kine::skewSymmetric(v)-Inertia*(Kth-g*m*kine::skewSymmetric(cl)*kine::skewSymmetric(uz)); //
     ddomega_dcl.setZero(); //
     ddomega_domegach.setZero(); //
     ddomega_domega=-Inertia*Kdth; //

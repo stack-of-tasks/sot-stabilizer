@@ -7,30 +7,38 @@ from dynamic_graph.sot.application.stabilizer import VectorPerturbationsGenerato
 from dynamic_graph.sot.core.matrix_util import matrixToTuple
 from dynamic_graph.sot.core.meta_tasks import GainAdaptive
 import math
+from dynamic_graph.sot.dynamics.zmp_from_forces import ZmpFromForces
 
 model = NonLinearRotationalTableCartDevice("model")
 stab = HRP2LQRTwoDofCoupledStabilizer("stabilizer")
 
-I=((8.15831,-0.00380455,0.236677,),(-0.00380453,6.94757,-0.0465754),(0.236677,-0.0465754,1.73429))
+I=((8.15831,-0.00380455,0.236677),(-0.00380453,6.94757,-0.0465754),(0.236677,-0.0465754,1.73429))
+kfe=40000
+kfv=600
+kte=600
+ktv=60
 
 # Model
 
 model.setRobotMass(59.8)
 model.setMomentOfInertia(I)
 
-kfe=40000
-kfv=600
-kte=600
-ktv=60
-
 model.setKfe(matrixToTuple(np.diag((kfe,kfe,kfe))))
 model.setKfv(matrixToTuple(np.diag((kfv,kfv,kfv))))
 model.setKte(matrixToTuple(np.diag((kte,kte,kte))))
 model.setKtv(matrixToTuple(np.diag((ktv,ktv,ktv))))
 
+model.setState((0.0, 0.0, 0.80771, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
+
 # Stabilizer
 
+stab.setInertia(I)
+
+stab.setKth(matrixToTuple(np.diag((kte,kte,kte))))
+stab.setKdth(matrixToTuple(np.diag((ktv,ktv,ktv))))
+
 stab.comRef.value=(0.00949, 0.0, 0.80771)
+stab.comRef.value=(0.0, 0.0, 0.80771)
 stab.waistOriRef.value=(0,)*3
 stab.flexOriRef.value=(0,)*3
 stab.comDotRef.value=(0,)*3
@@ -40,37 +48,6 @@ stab.flexAngVelRef.value=(0,)*3
 gain = GainAdaptive('gain'+stab.name)
 plug(gain.gain, stab.controlGain)
 plug(stab.error, gain.error) 
-
-Qdiag=1*np.diag((20000,20000,20000,20000,20000,1,1,1,1,1,1,1,1,1))
-Rdiag=1*np.diag((1,1,1,1,1))
-
-Q11=np.zeros((3,3))
-Q12=np.zeros((3,2)) # Cl Omegach
-Q13=np.mat('[0,0;0,0;0,0]') #np.zeros((3,2)) ### Cl Omega
-Q14=np.zeros((3,3)) # Cl dCl
-Q15=np.zeros((3,2)) # Cl dOmegach
-Q16=np.zeros((3,2)) ## Cl dOmega
-Q22=np.zeros((2,2))
-Q23=np.mat('[0,0;0,0]') #np.zeros((2,2)) ### Omegach Omega
-Q24=np.zeros((2,3)) # Omegach dCl
-Q25=np.zeros((2,2)) # Omegach dOmegach
-Q26=np.zeros((2,2)) ## Omegach dOmega
-Q33=np.zeros((2,2))
-Q34=np.zeros((2,3)) ### Omega dCl
-Q35=np.zeros((2,2)) ### Omega dOmegach
-Q36=np.zeros((2,2)) ### Omega dOmega
-Q44=np.zeros((3,3))
-Q45=np.zeros((3,2)) # dCl dOmegach
-Q46=np.zeros((3,2)) ## dCl dOmega
-Q55=np.zeros((2,2))
-Q56=np.mat('[0,0;0,0]') #np.zeros((2,2)) ## dOmegach dOmega
-Q66=np.zeros((2,2))
-Qcoupl=np.bmat(([[Q11,Q12,Q13,Q14,Q15,Q16],[np.transpose(Q12),Q22,Q23,Q24,Q25,Q26],[np.transpose(Q13),np.transpose(Q23),Q33,Q34,Q35,Q36],[np.transpose(Q14),np.transpose(Q24),np.transpose(Q34),Q44,Q45,Q46],[np.transpose(Q15),np.transpose(Q25),np.transpose(Q35),np.transpose(Q45),Q55,Q56],[np.transpose(Q16),np.transpose(Q26),np.transpose(Q36),np.transpose(Q46),np.transpose(Q56),Q66]]))
-
-Q=Qdiag+Qcoupl
-R=Rdiag
-stab.setStateCost(matrixToTuple(Q))
-stab.setInputCost(matrixToTuple(R))
 
 stab.setFixedGains(True)
 stab.setHorizon(200)
@@ -83,23 +60,27 @@ plug(model.flexOriVect,stab.flexOriVect)
 plug(model.comDot,stab.comDot)
 plug(model.waistVel,stab.waistVel)
 plug(model.flexAngVelVect,stab.flexAngVelVect)
+plug(model.contact1Pos,stab.leftFootPosition)
+plug(model.contact2Pos,stab.rightFootPosition)
+plug(model.contact1Forces,stab.force_lf)
+plug(model.contact2Forces,stab.force_rf)
 
-perturbator = VectorPerturbationsGenerator('comref')
-comRef = perturbator.sin
-comRef.value = stab.comRef.value
-plug (perturbator.sout,stab.comRef)
-#perturbator.perturbation.value=(19.87305,0,0)
+perturbator = VectorPerturbationsGenerator('perturbation')
+perturbator.setSinLessMode(True)
+vect = perturbator.sin
+vect.value = stab.comRef.value
+plug (perturbator.sout,stab.perturbationAcc)
 perturbator.perturbation.value=(1,0,0)
 perturbator.selec.value = '111'
 perturbator.setMode(0)
-perturbator.setPeriod(2000)
+perturbator.setPeriod(1000)
 perturbator.activate(True)
 
 stab.start()
 
 stepTime = 5
 step2Time=10
-simuTime =20
+simuTime =15
 dt = 0.005
 
 logState = np.array([])
@@ -108,9 +89,27 @@ logControl = np.array([])
 logControl.resize(simuTime/dt,6)
 logFlexAcc = np.array([])
 logFlexAcc.resize(simuTime/dt,7)
+logZmp = np.array([])
+logZmp.resize(simuTime/dt,4)
+logForces1 = np.array([])
+logForces1.resize(simuTime/dt,7)
+logForces2 = np.array([])
+logForces2.resize(simuTime/dt,7)
+logStabSimulatedState = np.array([])
+logStabSimulatedState.resize(simuTime/dt,15)
+
+zmp = ZmpFromForces('zmp')
+plug (model.contact1Forces, zmp.force_0)
+plug (model.contact2Forces, zmp.force_1)
+plug (model.contact1Pos, zmp.sensorPosition_0)
+plug (model.contact2Pos, zmp.sensorPosition_1)
+
+stab.setStateCost(matrixToTuple(1*np.diag((2000,2000,2000,2000,2000,1,1,1,1,1,1,1,1,1))))
+stab.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
 
 for i in range(int(0/dt),int(stepTime/dt)):
    stab.task.recompute(i)
+   zmp.zmp.recompute(i)
    model.incr(dt)
    print 'boucle 1:'+str(i)
    logState[i,0] = i
@@ -120,11 +119,23 @@ for i in range(int(0/dt),int(stepTime/dt)):
    logFlexAcc[i,0]=i
    logFlexAcc[i,1:4]=model.flexAngAccVect.value
    logFlexAcc[i,4:7]=model.flexLinAcc.value
+   logZmp[i,0]=i
+   logZmp[i,1:]=zmp.zmp.value
+   logForces1[i,0]=i
+   logForces1[i,1:]=model.contact1Forces.value
+   logForces2[i,0]=i
+   logForces2[i,1:]=model.contact1Forces.value
+   logStabSimulatedState[i,0]=i
+   logStabSimulatedState[i,1:]=stab.stateSimulation.value
 
-#stab.comRef.value=(0.05, 0.0, 0.80771)
+stab.setStateCost(matrixToTuple(1*np.diag((2000,2000,2000,200000,200000,2000,2000,1,1,1,1,1,1,1))))
+stab.setInputCost(matrixToTuple(1*np.diag((2000,2000,2000,200000,200000))))
+stab.setStateCost(matrixToTuple(100*np.diag((1,1,1,1,1,1,1,1,1,1,1,1,1,1))))
+stab.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
 
 for i in range(int(stepTime/dt),int(step2Time/dt)):
    stab.task.recompute(i)
+   zmp.zmp.recompute(i)
    model.incr(dt)
    print 'boucle 2:'+str(i)
    logState[i,0] = i
@@ -134,11 +145,21 @@ for i in range(int(stepTime/dt),int(step2Time/dt)):
    logFlexAcc[i,0]=i
    logFlexAcc[i,1:4]=model.flexAngAccVect.value
    logFlexAcc[i,4:7]=model.flexLinAcc.value
+   logZmp[i,0]=i
+   logZmp[i,1:]=zmp.zmp.value
+   logForces1[i,0]=i
+   logForces1[i,1:]=model.contact1Forces.value
+   logForces2[i,0]=i
+   logForces2[i,1:]=model.contact1Forces.value
+   logStabSimulatedState[i,0]=i
+   logStabSimulatedState[i,1:]=stab.stateSimulation.value
 
-#stab.comRef.value=(0.00949, 0.0, 0.80771)
+stab.setStateCost(matrixToTuple(100*np.diag((1,1,1,1,1,1,1,1,1,1,1,1,1,1))))
+stab.setInputCost(matrixToTuple(1*np.diag((1,1,1,10,10))))
 
 for i in range(int(step2Time/dt),int(simuTime/dt)):
    stab.task.recompute(i)
+   zmp.zmp.recompute(i)
    model.incr(dt)
    print 'boucle 2:'+str(i)
    logState[i,0] = i
@@ -148,8 +169,16 @@ for i in range(int(step2Time/dt),int(simuTime/dt)):
    logFlexAcc[i,0]=i
    logFlexAcc[i,1:4]=model.flexAngAccVect.value
    logFlexAcc[i,4:7]=model.flexLinAcc.value
+   logZmp[i,0]=i
+   logZmp[i,1:]=zmp.zmp.value
+   logForces1[i,0]=i
+   logForces1[i,1:]=model.contact1Forces.value
+   logForces2[i,0]=i
+   logForces2[i,1:]=model.contact1Forces.value
+   logStabSimulatedState[i,0]=i
+   logStabSimulatedState[i,1:]=stab.stateSimulation.value
 
-
+# Plot state
 fig = plt.figure(); 
 
 axfig = fig.add_subplot(241)
@@ -195,6 +224,7 @@ axfig.plot(logState[:,0], logState[:,24], label='dt Z')
 handles, labels = axfig.get_legend_handles_labels()
 axfig.legend(handles, labels)
 
+# Plot control
 fig = plt.figure(); 
 
 axfig = fig.add_subplot(121)
@@ -209,17 +239,129 @@ axfig.plot(logControl[:,0], logControl[:,5], label='ddOmegaCH Y')
 handles, labels = axfig.get_legend_handles_labels()
 axfig.legend(handles, labels)
 
+# Flex acc
+#fig = plt.figure(); 
+
+#axfig = fig.add_subplot(121)
+#axfig.plot(logFlexAcc[:,0], logFlexAcc[:,1], label='ddOmega X')
+#axfig.plot(logFlexAcc[:,0], logFlexAcc[:,2], label='ddOmega Y')
+#axfig.plot(logFlexAcc[:,0], logFlexAcc[:,3], label='ddOmega Z')
+
+#axfig = fig.add_subplot(122)
+#axfig.plot(logFlexAcc[:,0], logFlexAcc[:,4], label='ddt X')
+#axfig.plot(logFlexAcc[:,0], logFlexAcc[:,5], label='ddt Y')
+#axfig.plot(logFlexAcc[:,0], logFlexAcc[:,6], label='ddt Z')
+
+#handles, labels = axfig.get_legend_handles_labels()
+#axfig.legend(handles, labels)
+
+# ZMP
 fig = plt.figure(); 
 
-axfig = fig.add_subplot(121)
-axfig.plot(logFlexAcc[:,0], logFlexAcc[:,1], label='ddOmega X')
-axfig.plot(logFlexAcc[:,0], logFlexAcc[:,2], label='ddOmega Y')
-axfig.plot(logFlexAcc[:,0], logFlexAcc[:,3], label='ddOmega Z')
+axfig = fig.add_subplot(111)
+axfig.plot(logZmp[:,0], logZmp[:,1], label='ZMP X')
+axfig.plot(logZmp[:,0], logZmp[:,2], label='ZMP Y')
+axfig.plot(logZmp[:,0], logZmp[:,3], label='ZMP Z')
 
-axfig = fig.add_subplot(122)
-axfig.plot(logFlexAcc[:,0], logFlexAcc[:,4], label='ddt X')
-axfig.plot(logFlexAcc[:,0], logFlexAcc[:,5], label='ddt Y')
-axfig.plot(logFlexAcc[:,0], logFlexAcc[:,6], label='ddt Z')
+handles, labels = axfig.get_legend_handles_labels()
+axfig.legend(handles, labels)
+
+# contact 1 forces
+#fig = plt.figure(); 
+
+#axfig = fig.add_subplot(121)
+#axfig.plot(logForces1[:,0], logForces1[:,1], label='force X')
+#axfig.plot(logForces1[:,0], logForces1[:,2], label='force Y')
+#axfig.plot(logForces1[:,0], logForces1[:,3], label='force Z')
+
+#axfig = fig.add_subplot(122)
+#axfig.plot(logForces1[:,0], logForces1[:,4], label='moment X')
+#axfig.plot(logForces1[:,0], logForces1[:,5], label='moment Y')
+#axfig.plot(logForces1[:,0], logForces1[:,6], label='moment Z')
+
+#handles, labels = axfig.get_legend_handles_labels()
+#axfig.legend(handles, labels)
+
+# contact 2 forces
+#fig = plt.figure(); 
+
+#axfig = fig.add_subplot(121)
+#axfig.plot(logForces2[:,0], logForces2[:,1], label='force X')
+#axfig.plot(logForces2[:,0], logForces2[:,2], label='force Y')
+#axfig.plot(logForces2[:,0], logForces2[:,3], label='force Z')
+
+#axfig = fig.add_subplot(122)
+#axfig.plot(logForces2[:,0], logForces2[:,4], label='moment X')
+#axfig.plot(logForces2[:,0], logForces2[:,5], label='moment Y')
+#axfig.plot(logForces2[:,0], logForces2[:,6], label='moment Z')
+
+#handles, labels = axfig.get_legend_handles_labels()
+#axfig.legend(handles, labels)
+
+# models comparaison
+fig = plt.figure();
+
+i=1
+axfig = fig.add_subplot(2,7,i)
+axfig.plot(logState[:,0], logState[:,1], label='model state')
+axfig.plot(logStabSimulatedState[:,0], logStabSimulatedState[:,i], label='stabilizer state')
+i=2
+axfig = fig.add_subplot(2,7,i)
+axfig.plot(logState[:,0], logState[:,2], label='model state')
+axfig.plot(logStabSimulatedState[:,0], logStabSimulatedState[:,i], label='stabilizer state')
+i=3
+axfig = fig.add_subplot(2,7,i)
+axfig.plot(logState[:,0], logState[:,3], label='model state')
+axfig.plot(logStabSimulatedState[:,0], logStabSimulatedState[:,i], label='stabilizer state')
+
+i=4
+axfig = fig.add_subplot(2,7,i)
+axfig.plot(logState[:,0], logState[:,4], label='model state')
+axfig.plot(logStabSimulatedState[:,0], logStabSimulatedState[:,i], label='stabilizer state')
+i=5
+axfig = fig.add_subplot(2,7,i)
+axfig.plot(logState[:,0], logState[:,5], label='model state')
+axfig.plot(logStabSimulatedState[:,0], logStabSimulatedState[:,i], label='stabilizer state')
+
+i=6
+axfig = fig.add_subplot(2,7,i)
+axfig.plot(logState[:,0], logState[:,7], label='model state')
+axfig.plot(logStabSimulatedState[:,0], logStabSimulatedState[:,i], label='stabilizer state')
+i=7
+axfig = fig.add_subplot(2,7,i)
+axfig.plot(logState[:,0], logState[:,8], label='model state')
+axfig.plot(logStabSimulatedState[:,0], logStabSimulatedState[:,i], label='stabilizer state')
+
+i=8
+axfig = fig.add_subplot(2,7,i)
+axfig.plot(logState[:,0], logState[:,13], label='model state')
+axfig.plot(logStabSimulatedState[:,0], logStabSimulatedState[:,i], label='stabilizer state')
+i=9
+axfig = fig.add_subplot(2,7,i)
+axfig.plot(logState[:,0], logState[:,14], label='model state')
+axfig.plot(logStabSimulatedState[:,0], logStabSimulatedState[:,i], label='stabilizer state')
+i=10
+axfig = fig.add_subplot(2,7,i)
+axfig.plot(logState[:,0], logState[:,15], label='model state')
+axfig.plot(logStabSimulatedState[:,0], logStabSimulatedState[:,i], label='stabilizer state')
+
+i=11
+axfig = fig.add_subplot(2,7,i)
+axfig.plot(logState[:,0], logState[:,16], label='model state')
+axfig.plot(logStabSimulatedState[:,0], logStabSimulatedState[:,i], label='stabilizer state')
+i=12
+axfig = fig.add_subplot(2,7,i)
+axfig.plot(logState[:,0], logState[:,17], label='model state')
+axfig.plot(logStabSimulatedState[:,0], logStabSimulatedState[:,i], label='stabilizer state')
+
+i=13
+axfig = fig.add_subplot(2,7,i)
+axfig.plot(logState[:,0], logState[:,19], label='model state')
+axfig.plot(logStabSimulatedState[:,0], logStabSimulatedState[:,i], label='stabilizer state')
+i=14
+axfig = fig.add_subplot(2,7,i)
+axfig.plot(logState[:,0], logState[:,20], label='model state')
+axfig.plot(logStabSimulatedState[:,0], logStabSimulatedState[:,i], label='stabilizer state')
 
 handles, labels = axfig.get_legend_handles_labels()
 axfig.legend(handles, labels)
