@@ -13,10 +13,21 @@ model = NonLinearRotationalTableCartDevice("model")
 stab = HRP2LQRTwoDofCoupledStabilizer("stabilizer")
 
 I=((8.15831,-0.00380455,0.236677),(-0.00380453,6.94757,-0.0465754),(0.236677,-0.0465754,1.73429))
+
+a=1
+I1=((a*8.15831,a*-0.00380455,a*0.236677),(a*-0.00380453,a*6.94757,a*-0.0465754),(a*0.236677,a*-0.0465754,a*1.73429))
+
 kfe=40000
 kfv=600
 kte=600
 ktv=60
+
+b=1
+kfe1=b*40000
+kfv1=b*600
+kte1=b*600
+ktv1=b*60
+
 
 # Model
 
@@ -28,14 +39,14 @@ model.setKfv(matrixToTuple(np.diag((kfv,kfv,kfv))))
 model.setKte(matrixToTuple(np.diag((kte,kte,kte))))
 model.setKtv(matrixToTuple(np.diag((ktv,ktv,ktv))))
 
-model.setState((0.0, 0.0, 0.80771, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
+model.setState((0.0, 0.0, 0.80771, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
 
 # Stabilizer
 
-stab.setInertia(I)
+stab.setInertia(I1)
 
-stab.setKth(matrixToTuple(np.diag((kte,kte,kte))))
-stab.setKdth(matrixToTuple(np.diag((ktv,ktv,ktv))))
+stab.setKth(matrixToTuple(np.diag((kte1,kte1,kte1))))
+stab.setKdth(matrixToTuple(np.diag((ktv1,ktv1,ktv1))))
 
 stab.comRef.value=(0.00949, 0.0, 0.80771)
 stab.comRef.value=(0.0, 0.0, 0.80771)
@@ -70,7 +81,7 @@ perturbator.setSinLessMode(True)
 vect = perturbator.sin
 vect.value = stab.comRef.value
 plug (perturbator.sout,stab.perturbationAcc)
-perturbator.perturbation.value=(1,0,0)
+perturbator.perturbation.value=(5,0,0)
 perturbator.selec.value = '111'
 perturbator.setMode(0)
 perturbator.setPeriod(1000)
@@ -80,7 +91,8 @@ stab.start()
 
 stepTime = 5
 step2Time=10
-simuTime =15
+step3Time=15
+simuTime =20
 dt = 0.005
 
 logState = np.array([])
@@ -89,8 +101,14 @@ logControl = np.array([])
 logControl.resize(simuTime/dt,6)
 logFlexAcc = np.array([])
 logFlexAcc.resize(simuTime/dt,7)
-logZmp = np.array([])
-logZmp.resize(simuTime/dt,4)
+logZmp1 = np.array([])
+logZmp1.resize(simuTime/dt,4)
+logZmp2 = np.array([])
+logZmp2.resize(simuTime/dt,4)
+logZmp3 = np.array([])
+logZmp3.resize(simuTime/dt,4)
+logZmp4 = np.array([])
+logZmp4.resize(simuTime/dt,4)
 logForces1 = np.array([])
 logForces1.resize(simuTime/dt,7)
 logForces2 = np.array([])
@@ -119,8 +137,8 @@ for i in range(int(0/dt),int(stepTime/dt)):
    logFlexAcc[i,0]=i
    logFlexAcc[i,1:4]=model.flexAngAccVect.value
    logFlexAcc[i,4:7]=model.flexLinAcc.value
-   logZmp[i,0]=i
-   logZmp[i,1:]=zmp.zmp.value
+   logZmp1[i,0]=i
+   logZmp1[i,1:]=zmp.zmp.value
    logForces1[i,0]=i
    logForces1[i,1:]=model.contact1Forces.value
    logForces2[i,0]=i
@@ -128,10 +146,8 @@ for i in range(int(0/dt),int(stepTime/dt)):
    logStabSimulatedState[i,0]=i
    logStabSimulatedState[i,1:]=stab.stateSimulation.value
 
-stab.setStateCost(matrixToTuple(1*np.diag((2000,2000,2000,200000,200000,2000,2000,1,1,1,1,1,1,1))))
-stab.setInputCost(matrixToTuple(1*np.diag((2000,2000,2000,200000,200000))))
 stab.setStateCost(matrixToTuple(100*np.diag((1,1,1,1,1,1,1,1,1,1,1,1,1,1))))
-stab.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
+stab.setInputCost(matrixToTuple(1*np.diag((1,1,1,10,10))))
 
 for i in range(int(stepTime/dt),int(step2Time/dt)):
    stab.task.recompute(i)
@@ -145,8 +161,8 @@ for i in range(int(stepTime/dt),int(step2Time/dt)):
    logFlexAcc[i,0]=i
    logFlexAcc[i,1:4]=model.flexAngAccVect.value
    logFlexAcc[i,4:7]=model.flexLinAcc.value
-   logZmp[i,0]=i
-   logZmp[i,1:]=zmp.zmp.value
+   logZmp2[i,0]=i
+   logZmp2[i,1:]=zmp.zmp.value
    logForces1[i,0]=i
    logForces1[i,1:]=model.contact1Forces.value
    logForces2[i,0]=i
@@ -155,9 +171,10 @@ for i in range(int(stepTime/dt),int(step2Time/dt)):
    logStabSimulatedState[i,1:]=stab.stateSimulation.value
 
 stab.setStateCost(matrixToTuple(100*np.diag((1,1,1,1,1,1,1,1,1,1,1,1,1,1))))
-stab.setInputCost(matrixToTuple(1*np.diag((1,1,1,10,10))))
+stab.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
 
-for i in range(int(step2Time/dt),int(simuTime/dt)):
+
+for i in range(int(step2Time/dt),int(step3Time/dt)):
    stab.task.recompute(i)
    zmp.zmp.recompute(i)
    model.incr(dt)
@@ -169,8 +186,33 @@ for i in range(int(step2Time/dt),int(simuTime/dt)):
    logFlexAcc[i,0]=i
    logFlexAcc[i,1:4]=model.flexAngAccVect.value
    logFlexAcc[i,4:7]=model.flexLinAcc.value
-   logZmp[i,0]=i
-   logZmp[i,1:]=zmp.zmp.value
+   logZmp3[i,0]=i
+   logZmp3[i,1:]=zmp.zmp.value
+   logForces1[i,0]=i
+   logForces1[i,1:]=model.contact1Forces.value
+   logForces2[i,0]=i
+   logForces2[i,1:]=model.contact1Forces.value
+   logStabSimulatedState[i,0]=i
+   logStabSimulatedState[i,1:]=stab.stateSimulation.value
+
+stab.setStateCost(matrixToTuple(10*np.diag((1,1,1,1,1,1,1,1,1,1,1,1,1,1))))
+stab.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
+
+
+for i in range(int(step3Time/dt),int(simuTime/dt)):
+   stab.task.recompute(i)
+   zmp.zmp.recompute(i)
+   model.incr(dt)
+   print 'boucle 3:'+str(i)
+   logState[i,0] = i
+   logState[i,1:] = model.state.value
+   logControl[i,0] = i
+   logControl[i,1:] = model.control.value
+   logFlexAcc[i,0]=i
+   logFlexAcc[i,1:4]=model.flexAngAccVect.value
+   logFlexAcc[i,4:7]=model.flexLinAcc.value
+   logZmp4[i,0]=i
+   logZmp4[i,1:]=zmp.zmp.value
    logForces1[i,0]=i
    logForces1[i,1:]=model.contact1Forces.value
    logForces2[i,0]=i
@@ -258,10 +300,16 @@ axfig.legend(handles, labels)
 # ZMP
 fig = plt.figure(); 
 
-axfig = fig.add_subplot(111)
-axfig.plot(logZmp[:,0], logZmp[:,1], label='ZMP X')
-axfig.plot(logZmp[:,0], logZmp[:,2], label='ZMP Y')
-axfig.plot(logZmp[:,0], logZmp[:,3], label='ZMP Z')
+axfig = fig.add_subplot(141)
+axfig.plot(logZmp1[:,2], logZmp1[:,1], label='ZMP')
+axfig = fig.add_subplot(142)
+axfig.plot(logZmp2[:,2], logZmp2[:,1], label='ZMP')
+axfig = fig.add_subplot(143)
+axfig.plot(logZmp3[:,2], logZmp3[:,1], label='ZMP')
+axfig = fig.add_subplot(144)
+axfig.plot(logZmp4[:,2], logZmp4[:,1], label='ZMP')
+#axfig.plot(logZmp[:,0], logZmp[:,2], label='ZMP Y')
+#axfig.plot(logZmp[:,0], logZmp[:,3], label='ZMP Z')
 
 handles, labels = axfig.get_legend_handles_labels()
 axfig.legend(handles, labels)

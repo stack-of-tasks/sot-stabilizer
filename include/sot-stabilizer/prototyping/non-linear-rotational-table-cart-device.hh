@@ -271,7 +271,14 @@ namespace sotStabilizer {
           controlStateSOUT_.setConstant(inState);
           stateObservation::Vector state;
           state=convertVector<stateObservation::Vector>(inState);
+          xn_.resize(state.size());
+          xn_=state;
           comSOUT_.setConstant(convertVector<dynamicgraph::Vector>(state.block(0,0,3,1)));
+          Matrix3 waistOri=kine::rotationVectorToRotationMatrix(state.block(3,0,3,1));
+          Matrix4 waistHomo;
+          waistHomo.setZero();
+          waistHomo.block(0,0,3,3)=waistOri;
+          waistHomoSOUT_.setConstant(convertMatrix<dynamicgraph::Matrix>(waistHomo));
           flexOriVectSOUT_.setConstant(convertVector<dynamicgraph::Vector>(state.block(6,0,3,1)));
           comDotSOUT_.setConstant(convertVector<dynamicgraph::Vector>(state.block(12,0,3,1)));
           waistVelSOUT_.setConstant(convertVector<dynamicgraph::Vector>(state.block(15,0,3,1)));
@@ -349,6 +356,8 @@ namespace sotStabilizer {
 
       Vector fc_;
       Vector tc_;
+
+      stateObservation::Vector xn_;
 
       unsigned int contactsNumber_;
       std::vector <Vector3,Eigen::aligned_allocator<Vector3> > contactPositions_;

@@ -976,7 +976,7 @@ namespace sotStabilizer
 
     // Caracteristic polynomial
     ddomega_cl=Inertia*m*(2*kine::skewSymmetric(cl)*kine::skewSymmetric(v)-kine::skewSymmetric(v)*kine::skewSymmetric(cl)-g*kine::skewSymmetric(uz));
-    ddomega_omegach=g*m*I_*kine::skewSymmetric(kine::skewSymmetric(cl)*uz)-g*m*kine::skewSymmetric(I_*kine::skewSymmetric(cl)*uz); //Inertia*I*kine::skewSymmetric(v)-Inertia*kine::skewSymmetric(I*v);
+    ddomega_omegach=g*m*I_*kine::skewSymmetric(kine::skewSymmetric(cl)*uz)-g*m*kine::skewSymmetric(I_*kine::skewSymmetric(cl)*uz); //Inertia*I*kine::skewSymmetric(v)-Inertia*kine::skewSymmetric(I*v); //
     ddomega_omega=kine::skewSymmetric(g*m*Inertia*kine::skewSymmetric(cl)*uz)-Inertia*(Kth-g*m*kine::skewSymmetric(cl)*kine::skewSymmetric(uz)); //kine::skewSymmetric(v)-Inertia*(Kth-g*m*kine::skewSymmetric(cl)*kine::skewSymmetric(uz)); //
     ddomega_dcl.setZero(); //
     ddomega_domegach.setZero(); //
