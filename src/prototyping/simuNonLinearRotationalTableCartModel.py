@@ -118,8 +118,10 @@ logForces2 = np.array([])
 logForces2.resize(simuTime/dt,7)
 logStabSimulatedState = np.array([])
 logStabSimulatedState.resize(simuTime/dt,15)
-logEnergy = np.array([])
-logEnergy.resize(simuTime/dt,5)
+logEnergyStab = np.array([])
+logEnergyStab.resize(simuTime/dt,5)
+logEnergyModel = np.array([])
+logEnergyModel.resize(simuTime/dt,5)
 
 zmp = ZmpFromForces('zmp')
 plug (model.contact1Forces, zmp.force_0)
@@ -150,8 +152,10 @@ for i in range(int(0/dt),int(stepTime/dt)):
    logForces2[i,1:]=model.contact1Forces.value
    logStabSimulatedState[i,0]=i
    logStabSimulatedState[i,1:]=stab.stateSimulation.value
-   logEnergy[i,0]=i
-   logEnergy[i,1:]=stab.energy.value
+   logEnergyStab[i,0]=i
+   logEnergyStab[i,1:]=stab.energy.value
+   logEnergyModel[i,0]=i
+   logEnergyModel[i,1:]=model.energy.value
 
 stab.setStateCost(matrixToTuple(1*np.diag((100,100,100,100,100,1000,1000,100,100,100,100,100,1000,1000))))
 stab.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
@@ -176,8 +180,10 @@ for i in range(int(stepTime/dt),int(step2Time/dt)):
    logForces2[i,1:]=model.contact1Forces.value
    logStabSimulatedState[i,0]=i
    logStabSimulatedState[i,1:]=stab.stateSimulation.value
-   logEnergy[i,0]=i
-   logEnergy[i,1:]=stab.energy.value
+   logEnergyStab[i,0]=i
+   logEnergyStab[i,1:]=stab.energy.value
+   logEnergyModel[i,0]=i
+   logEnergyModel[i,1:]=model.energy.value
 
 stab.setStateCost(matrixToTuple(1*np.diag((100,100,100,100,100,10000,10000,1000,1000,1000,100,100,1000,1000))))
 stab.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
@@ -202,8 +208,10 @@ for i in range(int(step2Time/dt),int(step3Time/dt)):
    logForces2[i,1:]=model.contact1Forces.value
    logStabSimulatedState[i,0]=i
    logStabSimulatedState[i,1:]=stab.stateSimulation.value
-   logEnergy[i,0]=i
-   logEnergy[i,1:]=stab.energy.value
+   logEnergyStab[i,0]=i
+   logEnergyStab[i,1:]=stab.energy.value
+   logEnergyModel[i,0]=i
+   logEnergyModel[i,1:]=model.energy.value
 
 stab.setStateCost(matrixToTuple(1*np.diag((2000,2000,2000,2000,2000,1,1,1,1,1,1,1,1,1))))
 stab.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
@@ -228,8 +236,10 @@ for i in range(int(step3Time/dt),int(simuTime/dt)):
    logForces2[i,1:]=model.contact1Forces.value
    logStabSimulatedState[i,0]=i
    logStabSimulatedState[i,1:]=stab.stateSimulation.value
-   logEnergy[i,0]=i
-   logEnergy[i,1:]=stab.energy.value
+   logEnergyStab[i,0]=i
+   logEnergyStab[i,1:]=stab.energy.value
+   logEnergyModel[i,0]=i
+   logEnergyModel[i,1:]=model.energy.value
 
 # Plot state
 fig = plt.figure(); 
@@ -439,13 +449,17 @@ axfig.legend(handles, labels)
 fig = plt.figure(); 
 
 axfig = fig.add_subplot(141)
-axfig.plot(logEnergy[:,0], logEnergy[:,1], label='Energy tot')
+axfig.plot(logEnergyStab[:,0], logEnergyStab[:,1], label='Energy stab')
+axfig.plot(logEnergyModel[:,0], logEnergyModel[:,1], label='Energy model')
 axfig = fig.add_subplot(142)
-axfig.plot(logEnergy[:,0], logEnergy[:,2], label='Energy com')
+axfig.plot(logEnergyStab[:,0], logEnergyStab[:,2], label='Energy stab')
+axfig.plot(logEnergyModel[:,0], logEnergyModel[:,2], label='Energy model')
 axfig = fig.add_subplot(143)
-axfig.plot(logEnergy[:,0], logEnergy[:,3], label='Energy waist')
+axfig.plot(logEnergyStab[:,0], logEnergyStab[:,3], label='Energy stab')
+axfig.plot(logEnergyModel[:,0], logEnergyModel[:,3], label='Energy model')
 axfig = fig.add_subplot(144)
-axfig.plot(logEnergy[:,0], logEnergy[:,4], label='Energy flex')
+axfig.plot(logEnergyStab[:,0], logEnergyStab[:,4], label='Energy stab')
+axfig.plot(logEnergyModel[:,0], logEnergyModel[:,4], label='Energy model')
 
 handles, labels = axfig.get_legend_handles_labels()
 axfig.legend(handles, labels)

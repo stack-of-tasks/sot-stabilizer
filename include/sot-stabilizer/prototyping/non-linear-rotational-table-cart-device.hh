@@ -338,6 +338,10 @@ namespace sotStabilizer {
       dynamicgraph::SignalPtr <dynamicgraph::Vector, int> angularMomentumSOUT_;
       dynamicgraph::SignalPtr <dynamicgraph::Vector, int> dotAngularMomentumSOUT_;
 
+      // Post treaments
+      dynamicgraph::SignalPtr <dynamicgraph::Vector, int> stateWorldSOUT_;
+      dynamicgraph::SignalPtr <dynamicgraph::Vector, int> energySOUT_;
+
       /// \brief Mass of the cart
       double robotMass_;
       double robotMassInv_;
@@ -358,6 +362,8 @@ namespace sotStabilizer {
       Vector tc_;
 
       stateObservation::Vector xn_;
+
+      stateObservation::Vector AngMomentum_;
 
       unsigned int contactsNumber_;
       std::vector <Vector3,Eigen::aligned_allocator<Vector3> > contactPositions_;

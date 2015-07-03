@@ -47,7 +47,9 @@ NonLinearRotationalTableCartDevice::NonLinearRotationalTableCartDevice(const std
   dotInertiaSOUT_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(matrix)::dotInertia"),
   angularMomentumSOUT_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::angularMomentum"),
   dotAngularMomentumSOUT_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::dotAngularMomentum"),
-  robotMass_(58.0), robotMassInv_(1/58.0), I_ (3,3), cl_(3), contactsNumber_(2), xn_(24)
+  stateWorldSOUT_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::stateWorld"),
+  energySOUT_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::energy"),
+  robotMass_(58.0), robotMassInv_(1/58.0), I_ (3,3), cl_(3), contactsNumber_(2), xn_(24), AngMomentum_(3)
 {
 
   Kfe_.resize(3,3);
@@ -91,6 +93,7 @@ NonLinearRotationalTableCartDevice::NonLinearRotationalTableCartDevice(const std
   signalRegistration (dotInertiaSOUT_);
   signalRegistration (angularMomentumSOUT_);
   signalRegistration (dotAngularMomentumSOUT_);
+  signalRegistration (energySOUT_);
 
 
 //  comSOUT_.addDependency (controlSIN_);
@@ -173,6 +176,7 @@ NonLinearRotationalTableCartDevice::NonLinearRotationalTableCartDevice(const std
   flexAngVelVectSOUT_.setConstant(vect);
   flexAngVelVectSOUT_.setTime(0);
   angularMomentumSOUT_.setConstant(vect);
+  AngMomentum_.setZero();
   dotAngularMomentumSOUT_.setConstant(vect);
   vect.resize(6); vect.setZero();
   waistAngVelSOUT_.setConstant(vect);
@@ -206,6 +210,9 @@ NonLinearRotationalTableCartDevice::NonLinearRotationalTableCartDevice(const std
   forces.setZero();
   contact1ForcesSOUT_.setConstant(convertVector<dynamicgraph::Vector>(forces));
   contact2ForcesSOUT_.setConstant(convertVector<dynamicgraph::Vector>(forces));
+
+  vect.resize(4); vect.setZero();
+  energySOUT_.setConstant(vect);
 
   xn_.setZero();
 
@@ -532,7 +539,7 @@ stateObservation::Vector NonLinearRotationalTableCartDevice::computeDynamics(
   Inertia=waistOri*I_*waistOri.transpose()-robotMass_*kine::skewSymmetric2(positionCom);
   dotInertia=kine::skewSymmetric(waistAngVel)*waistOri*I_*waistOri.transpose()-waistOri*I_*waistOri.transpose()*kine::skewSymmetric(waistAngVel)
              -robotMass_*kine::skewSymmetric(velocityCom)*kine::skewSymmetric(positionCom)-robotMass_*kine::skewSymmetric(positionCom)*kine::skewSymmetric(velocityCom);
-  AngMomentum=waistOri*I_*waistOri.transpose()*waistAngVel+robotMass_*kine::skewSymmetric(positionCom)*velocityCom;
+  AngMomentum_=waistOri*I_*waistOri.transpose()*waistAngVel+robotMass_*kine::skewSymmetric(positionCom)*velocityCom;
   dotAngMomentum=waistOri*I_*waistOri.transpose()*waistAngAcc+kine::skewSymmetric(waistAngVel)*waistOri*I_*waistOri.transpose()*waistAngVel
                  +robotMass_*kine::skewSymmetric(positionCom)*velocityCom;
 
@@ -635,8 +642,34 @@ void NonLinearRotationalTableCartDevice::incr(double inTimeStep)
   flexAngVelVectSOUT_.setTime(t+1);
 
   /// Post treatments
+  // World state
+  stateObservation::Vector xnWorld;
+  xnWorld.resize(24);
+  xnWorld <<  flexOri*com+tflex,
+              kine::rotationMatrixToRotationVector(flexOri*waistOri),
+              flexOriVect,
+              tflex,
+              kine::skewSymmetric(flexAngVel)*flexOri*com+flexOri*dcom+dtflex,
+              flexAngVel+flexOri*waistAngVel,
+              flexAngVel,
+              dtflex;
+  stateWorldSOUT_.setConstant (convertVector<dynamicgraph::Vector>(xnWorld));
 
 
+  // Energy
+  double Etot, Eflex, Ecom, Ewaist;
+      std::cout << "model kth=" << Kte_(0,0) << " flexOriVect=" << flexOriVect.transpose() << std::endl;
+  Eflex=0.5*Kte_(0,0)*(flexOriVect).squaredNorm();
+  Ecom=0.5*robotMass_*(xnWorld.block(12,0,3,1)).squaredNorm();
+  Ewaist=0.5*AngMomentum_.dot(waistAngVel);
+  Etot=Eflex+Ecom+Ewaist;
+  stateObservation::Vector energy;
+  energy.resize(4);
+  energy <<   Etot,
+              Ecom,
+              Ewaist,
+              Eflex;
+  energySOUT_.setConstant(convertVector<dynamicgraph::Vector>(energy));
 }
 
 }

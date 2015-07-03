@@ -860,6 +860,7 @@ namespace sotStabilizer
 
     // Energy
     double Etot, Eflex, Ecom, Ewaist;
+    std::cout << "stab kth=" << Kth_(0,0) << " flexOriVect=" << flexOriVect.transpose() << std::endl;
     Eflex=0.5*Kth_(0,0)*flexOriVect.squaredNorm();
     Ecom=0.5*constm_*(xkworld.block(7,0,3,1)).squaredNorm();
     Ewaist=0.5*angularmomentum.dot(waistAngVel);
