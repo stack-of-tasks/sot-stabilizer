@@ -259,7 +259,7 @@ namespace sotStabilizer
     // Velocity of center of mass
     SignalPtr < dynamicgraph::Vector, int> comDotSIN_;
     // Refrence angular velocity of the waist
-    SignalPtr < dynamicgraph::Vector , int > waistVelSIN_;
+    SignalPtr < dynamicgraph::Vector , int > waistAngVelSIN_;
     // Velocity of the flexibility
     SignalPtr <dynamicgraph::Vector, int> flexAngVelVectSIN_;
 

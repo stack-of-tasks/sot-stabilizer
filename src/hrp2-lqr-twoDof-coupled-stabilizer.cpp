@@ -78,7 +78,7 @@ namespace sotStabilizer
     waistHomoSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::waistHomo"),
     flexOriVectSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::flexOriVect"),
     comDotSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comDot"),
-    waistVelSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistVel"),
+    waistAngVelSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistAngVel"),
     flexAngVelVectSIN_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::flexAngVelVect"),
     tflexSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::tflex"),
     dtflexSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::dtflex"),
@@ -141,7 +141,7 @@ namespace sotStabilizer
     signalRegistration (waistHomoSIN_);
     signalRegistration (flexOriVectSIN_);
     signalRegistration (comDotSIN_);
-    signalRegistration (waistVelSIN_);
+    signalRegistration (waistAngVelSIN_);
     signalRegistration (flexAngVelVectSIN_);
     signalRegistration (tflexSIN_);
     signalRegistration (dtflexSIN_);
@@ -188,7 +188,7 @@ namespace sotStabilizer
     taskSOUT.addDependency (waistHomoSIN_);
     taskSOUT.addDependency (flexOriVectSIN_);
     taskSOUT.addDependency (comDotSIN_);
-    taskSOUT.addDependency (waistVelSIN_);
+    taskSOUT.addDependency (waistAngVelSIN_);
     taskSOUT.addDependency (flexAngVelVectSIN_);
     taskSOUT.addDependency (comRefSIN_);
     taskSOUT.addDependency (waistOriRefSIN_);
@@ -491,8 +491,7 @@ namespace sotStabilizer
     dtflexSIN_.setConstant(vect);
     ddtflexSIN_.setConstant(vect);
     angularmomentumSIN.setConstant(vect);
-    vect.resize(6); vect.setZero();
-    waistVelSIN_.setConstant(vect);
+    waistAngVelSIN_.setConstant(vect);
 
     Kth_.resize(3,3);
     Kdth_.resize(3,3);
@@ -689,7 +688,7 @@ namespace sotStabilizer
     const Matrix4& waistHomo = convertMatrix<stateObservation::Matrix>(waistHomoSIN_ (time));
     const stateObservation::Vector & flexOriVect = convertVector<stateObservation::Vector>(flexOriVectSIN_.access(time));
     const stateObservation::Vector & comDot = convertVector<stateObservation::Vector>(comDotSIN_ (time));
-    const stateObservation::Vector & waistVel = convertVector<stateObservation::Vector>(waistVelSIN_ (time));
+    const stateObservation::Vector & waistAngVel = convertVector<stateObservation::Vector>(waistAngVelSIN_ (time));
     const stateObservation::Vector & flexAngVelVect = convertVector<stateObservation::Vector>(flexAngVelVectSIN_.access(time));
 
     // Translational part of the flexibility
@@ -722,7 +721,6 @@ namespace sotStabilizer
     Matrix3 waistOri=waistHomo.block(0,0,3,3);
     stateObservation::Vector3 waistOriVect;
     waistOriVect=kine::rotationMatrixToRotationVector(waistOri);
-    stateObservation::Vector3 waistAngVel = waistVel.tail(3);
 
     // flex orientation
     Matrix3 flexOri=kine::rotationVectorToRotationMatrix(flexOriVect);
@@ -833,6 +831,7 @@ namespace sotStabilizer
         break;
         case 2 : // Double support
         {
+             // fixedGains_=false;
               if(nbSupport!=nbSupport_ || computed_ == false || fixedGains_!=true) // || comRef!=comRef_)
               {
                   Kth_ <<    0.5*kth_*kth_,0,0,
@@ -869,8 +868,8 @@ namespace sotStabilizer
     energy.resize(4);
     energy <<   Etot,
                 Ecom,
-                Eflex,
-                Ewaist;
+                Ewaist,
+                Eflex;
     energySOUT_.setConstant(convertVector<dynamicgraph::Vector>(energy));
 
     task.resize (taskSize_);

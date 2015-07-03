@@ -35,7 +35,7 @@ NonLinearRotationalTableCartDevice::NonLinearRotationalTableCartDevice(const std
   waistHomoSOUT_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(matrix)::waistHomo"),
   flexOriVectSOUT_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::flexOriVect"),
   comDotSOUT_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::comDot"),
-  waistVelSOUT_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::waistVel"),
+  waistAngVelSOUT_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::waistAngVel"),
   flexAngVelVectSOUT_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::flexAngVelVect"),
   flexAngAccVectSOUT_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::flexAngAccVect"),
   flexLinAccSOUT_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::flexLinAcc"),
@@ -79,7 +79,7 @@ NonLinearRotationalTableCartDevice::NonLinearRotationalTableCartDevice(const std
   signalRegistration (waistHomoSOUT_);
   signalRegistration (flexOriVectSOUT_);
   signalRegistration (comDotSOUT_);
-  signalRegistration (waistVelSOUT_);
+  signalRegistration (waistAngVelSOUT_);
   signalRegistration (flexAngVelVectSOUT_);
   signalRegistration (flexAngAccVectSOUT_);
   signalRegistration (flexLinAccSOUT_);
@@ -175,8 +175,8 @@ NonLinearRotationalTableCartDevice::NonLinearRotationalTableCartDevice(const std
   angularMomentumSOUT_.setConstant(vect);
   dotAngularMomentumSOUT_.setConstant(vect);
   vect.resize(6); vect.setZero();
-  waistVelSOUT_.setConstant(vect);
-  waistVelSOUT_.setTime(0);
+  waistAngVelSOUT_.setConstant(vect);
+  waistAngVelSOUT_.setTime(0);
 
   dynamicgraph::Matrix mat;
   mat.resize(3,3); mat.setZero();
@@ -582,50 +582,61 @@ void NonLinearRotationalTableCartDevice::incr(double inTimeStep)
 {
   int t = stateSOUT_.getTime();
 
-  //stateObservation::Vector xn = xn_; //convertVector<stateObservation::Vector>(stateSOUT_ (t));
+  // Retrieve control
   stateObservation::Vector un = convertVector<stateObservation::Vector>(controlSIN_ (t));
 
   // Compute dynamics
   stateObservation::Vector nextState = computeDynamics(inTimeStep,xn_, un);
-  stateSOUT_.setConstant(convertVector<dynamicgraph::Vector>(nextState));
-  stateSOUT_.setTime (t+1);
+  xn_=nextState;
 
-  // Compute control state
-  stateObservation::Vector nextControlState;
-  nextControlState.resize(18);
-  nextControlState  <<  nextState.block(0,0,3,1),
-                        nextState.block(3,0,3,1),
-                        nextState.block(6,0,3,1),
-                        nextState.block(12,0,3,1),
-                        nextState.block(15,0,3,1),
-                        nextState.block(18,0,3,1);
-  controlStateSOUT_.setConstant(convertVector<dynamicgraph::Vector>(nextControlState));
-  controlStateSOUT_.setTime(t+1);
+  // Rename data
+  stateObservation::Vector3 com=xn_.block(0,0,3,1);
+  stateObservation::Vector3 waistOriVect=xn_.block(3,0,3,1);
+  Matrix3 waistOri=kine::rotationVectorToRotationMatrix(waistOriVect);
+  stateObservation::Vector3 flexOriVect=xn_.block(6,0,3,1);
+  stateObservation::Vector3 tflex=xn_.block(9,0,3,1);
+  Matrix3 flexOri=kine::rotationVectorToRotationMatrix(flexOriVect);
+  stateObservation::Vector3 dcom=xn_.block(12,0,3,1);
+  stateObservation::Vector3 waistAngVel=xn_.block(15,0,3,1);
+  stateObservation::Vector3 flexAngVel=xn_.block(18,0,3,1);
+  stateObservation::Vector3 dtflex=xn_.block(21,0,3,1);
 
-  // Model output
-  comSOUT_.setConstant(convertVector<dynamicgraph::Vector>(nextControlState.block(0,0,3,1)));
-  comSOUT_.setTime(t+1);
-  Matrix3 waistOri=kine::rotationVectorToRotationMatrix(nextControlState.block(3,0,3,1));
+  // Waist homo
   Matrix4 waistHomo;
   waistHomo.setZero();
   waistHomo.block(0,0,3,3)=waistOri;
+
+  // Control state
+  stateObservation::Vector nextControlState;
+  nextControlState.resize(18);
+  nextControlState  <<  com,
+                        waistOriVect,
+                        flexOriVect,
+                        dcom,
+                        waistAngVel,
+                        flexAngVel;
+
+  // Output signals
+  stateSOUT_.setConstant(convertVector<dynamicgraph::Vector>(nextState));
+  stateSOUT_.setTime (t+1);
+  controlStateSOUT_.setConstant(convertVector<dynamicgraph::Vector>(nextControlState));
+  controlStateSOUT_.setTime(t+1);
+  comSOUT_.setConstant(convertVector<dynamicgraph::Vector>(com));
+  comSOUT_.setTime(t+1);
   waistHomoSOUT_.setConstant(convertMatrix<dynamicgraph::Matrix>(waistHomo));
   waistHomoSOUT_.setTime(t+1);
-  flexOriVectSOUT_.setConstant(convertVector<dynamicgraph::Vector>(nextControlState.block(6,0,3,1)));
+  flexOriVectSOUT_.setConstant(convertVector<dynamicgraph::Vector>(flexOriVect));
   flexOriVectSOUT_.setTime(t+1);
-  comDotSOUT_.setConstant(convertVector<dynamicgraph::Vector>(nextControlState.block(9,0,3,1)));
+  comDotSOUT_.setConstant(convertVector<dynamicgraph::Vector>(dcom));
   comDotSOUT_.setTime(t+1);
-  stateObservation::Vector6 waistVel;
-  waistVel  <<  0,
-                0,
-                0,
-                nextControlState.block(12,0,3,1);
-  waistVelSOUT_.setConstant(convertVector<dynamicgraph::Vector>(waistVel));
-  waistVelSOUT_.setTime(t+1);
-  flexAngVelVectSOUT_.setConstant(convertVector<dynamicgraph::Vector>(nextControlState.block(15,0,3,1)));
+  waistAngVelSOUT_.setConstant(convertVector<dynamicgraph::Vector>(waistAngVel));
+  waistAngVelSOUT_.setTime(t+1);
+  flexAngVelVectSOUT_.setConstant(convertVector<dynamicgraph::Vector>(flexAngVel));
   flexAngVelVectSOUT_.setTime(t+1);
 
-    xn_=nextState;
+  /// Post treatments
+
+
 }
 
 }

@@ -281,7 +281,7 @@ namespace sotStabilizer {
           waistHomoSOUT_.setConstant(convertMatrix<dynamicgraph::Matrix>(waistHomo));
           flexOriVectSOUT_.setConstant(convertVector<dynamicgraph::Vector>(state.block(6,0,3,1)));
           comDotSOUT_.setConstant(convertVector<dynamicgraph::Vector>(state.block(12,0,3,1)));
-          waistVelSOUT_.setConstant(convertVector<dynamicgraph::Vector>(state.block(15,0,3,1)));
+          waistAngVelSOUT_.setConstant(convertVector<dynamicgraph::Vector>(state.block(15,0,3,1)));
           flexAngVelVectSOUT_.setConstant(convertVector<dynamicgraph::Vector>(state.block(18,0,3,1)));
       }
 
@@ -317,7 +317,7 @@ namespace sotStabilizer {
       // Velocity of center of mass
       dynamicgraph::SignalPtr < dynamicgraph::Vector, int> comDotSOUT_;
       // Refrence angular velocity of the waist
-      dynamicgraph::SignalPtr < dynamicgraph::Vector , int > waistVelSOUT_;
+      dynamicgraph::SignalPtr < dynamicgraph::Vector , int > waistAngVelSOUT_;
       // Velocity of the flexibility
       dynamicgraph::SignalPtr <dynamicgraph::Vector, int> flexAngVelVectSOUT_;
 

@@ -43,6 +43,8 @@ model.setState((0.0, 0.0, 0.80771, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
 
 # Stabilizer
 
+#stab.setFixedGains(False)
+
 stab.setInertia(I1)
 
 stab.setKth(matrixToTuple(np.diag((kte1,kte1,kte1))))
@@ -69,30 +71,31 @@ plug(model.com,stab.com)
 plug(model.waistHomo,stab.waistHomo)
 plug(model.flexOriVect,stab.flexOriVect)
 plug(model.comDot,stab.comDot)
-plug(model.waistVel,stab.waistVel)
+plug(model.waistAngVel,stab.waistAngVel)
 plug(model.flexAngVelVect,stab.flexAngVelVect)
 plug(model.contact1Pos,stab.leftFootPosition)
 plug(model.contact2Pos,stab.rightFootPosition)
 plug(model.contact1Forces,stab.force_lf)
 plug(model.contact2Forces,stab.force_rf)
+plug(model.angularMomentum,stab.angularmomentum)
 
 perturbator = VectorPerturbationsGenerator('perturbation')
 perturbator.setSinLessMode(True)
 vect = perturbator.sin
 vect.value = stab.comRef.value
 plug (perturbator.sout,stab.perturbationAcc)
-perturbator.perturbation.value=(5,0,0)
+perturbator.perturbation.value=(100,0,0)
 perturbator.selec.value = '111'
 perturbator.setMode(0)
-perturbator.setPeriod(1000)
+perturbator.setPeriod(1500)
 perturbator.activate(True)
 
 stab.start()
 
-stepTime = 5
-step2Time=10
-step3Time=15
-simuTime =20
+stepTime = 7.5
+step2Time=15
+step3Time=22.5
+simuTime =30
 dt = 0.005
 
 logState = np.array([])
@@ -115,6 +118,8 @@ logForces2 = np.array([])
 logForces2.resize(simuTime/dt,7)
 logStabSimulatedState = np.array([])
 logStabSimulatedState.resize(simuTime/dt,15)
+logEnergy = np.array([])
+logEnergy.resize(simuTime/dt,5)
 
 zmp = ZmpFromForces('zmp')
 plug (model.contact1Forces, zmp.force_0)
@@ -145,9 +150,11 @@ for i in range(int(0/dt),int(stepTime/dt)):
    logForces2[i,1:]=model.contact1Forces.value
    logStabSimulatedState[i,0]=i
    logStabSimulatedState[i,1:]=stab.stateSimulation.value
+   logEnergy[i,0]=i
+   logEnergy[i,1:]=stab.energy.value
 
-stab.setStateCost(matrixToTuple(100*np.diag((1,1,1,1,1,1,1,1,1,1,1,1,1,1))))
-stab.setInputCost(matrixToTuple(1*np.diag((1,1,1,10,10))))
+stab.setStateCost(matrixToTuple(1*np.diag((100,100,100,100,100,1000,1000,100,100,100,100,100,1000,1000))))
+stab.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
 
 for i in range(int(stepTime/dt),int(step2Time/dt)):
    stab.task.recompute(i)
@@ -169,10 +176,11 @@ for i in range(int(stepTime/dt),int(step2Time/dt)):
    logForces2[i,1:]=model.contact1Forces.value
    logStabSimulatedState[i,0]=i
    logStabSimulatedState[i,1:]=stab.stateSimulation.value
+   logEnergy[i,0]=i
+   logEnergy[i,1:]=stab.energy.value
 
-stab.setStateCost(matrixToTuple(100*np.diag((1,1,1,1,1,1,1,1,1,1,1,1,1,1))))
+stab.setStateCost(matrixToTuple(1*np.diag((100,100,100,100,100,10000,10000,1000,1000,1000,100,100,1000,1000))))
 stab.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
-
 
 for i in range(int(step2Time/dt),int(step3Time/dt)):
    stab.task.recompute(i)
@@ -194,10 +202,11 @@ for i in range(int(step2Time/dt),int(step3Time/dt)):
    logForces2[i,1:]=model.contact1Forces.value
    logStabSimulatedState[i,0]=i
    logStabSimulatedState[i,1:]=stab.stateSimulation.value
+   logEnergy[i,0]=i
+   logEnergy[i,1:]=stab.energy.value
 
-stab.setStateCost(matrixToTuple(10*np.diag((1,1,1,1,1,1,1,1,1,1,1,1,1,1))))
+stab.setStateCost(matrixToTuple(1*np.diag((2000,2000,2000,2000,2000,1,1,1,1,1,1,1,1,1))))
 stab.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
-
 
 for i in range(int(step3Time/dt),int(simuTime/dt)):
    stab.task.recompute(i)
@@ -219,6 +228,8 @@ for i in range(int(step3Time/dt),int(simuTime/dt)):
    logForces2[i,1:]=model.contact1Forces.value
    logStabSimulatedState[i,0]=i
    logStabSimulatedState[i,1:]=stab.stateSimulation.value
+   logEnergy[i,0]=i
+   logEnergy[i,1:]=stab.energy.value
 
 # Plot state
 fig = plt.figure(); 
@@ -226,17 +237,17 @@ fig = plt.figure();
 axfig = fig.add_subplot(241)
 axfig.plot(logState[:,0], logState[:,1], label='com X')
 axfig.plot(logState[:,0], logState[:,2], label='com Y')
-axfig.plot(logState[:,0], logState[:,3], label='com Z')
+#axfig.plot(logState[:,0], logState[:,3], label='com Z')
 
 axfig = fig.add_subplot(242)
-axfig.plot(logState[:,0], logState[:,4], label='OmegaCH X')
-axfig.plot(logState[:,0], logState[:,5], label='OmegaCH Y')
-axfig.plot(logState[:,0], logState[:,6], label='OmegaCH Z')
+axfig.plot(logState[:,0], 57.3*logState[:,4], label='OmegaCH X')
+axfig.plot(logState[:,0], 57.3*logState[:,5], label='OmegaCH Y')
+axfig.plot(logState[:,0], 57.3*logState[:,6], label='OmegaCH Z')
 
 axfig = fig.add_subplot(243)
-axfig.plot(logState[:,0], logState[:,7], label='Omega X')
-axfig.plot(logState[:,0], logState[:,8], label='Omega Y')
-axfig.plot(logState[:,0], logState[:,9], label='Omega Z')
+axfig.plot(logState[:,0], 57.3*logState[:,7], label='Omega X')
+axfig.plot(logState[:,0], 57.3*logState[:,8], label='Omega Y')
+axfig.plot(logState[:,0], 57.3*logState[:,9], label='Omega Z')
 
 axfig = fig.add_subplot(244)
 axfig.plot(logState[:,0], logState[:,10], label='t X')
@@ -300,16 +311,26 @@ axfig.legend(handles, labels)
 # ZMP
 fig = plt.figure(); 
 
-axfig = fig.add_subplot(141)
-axfig.plot(logZmp1[:,2], logZmp1[:,1], label='ZMP')
-axfig = fig.add_subplot(142)
+axfig = fig.add_subplot(131)
 axfig.plot(logZmp2[:,2], logZmp2[:,1], label='ZMP')
-axfig = fig.add_subplot(143)
+axfig = fig.add_subplot(132)
 axfig.plot(logZmp3[:,2], logZmp3[:,1], label='ZMP')
-axfig = fig.add_subplot(144)
+axfig = fig.add_subplot(133)
 axfig.plot(logZmp4[:,2], logZmp4[:,1], label='ZMP')
-#axfig.plot(logZmp[:,0], logZmp[:,2], label='ZMP Y')
-#axfig.plot(logZmp[:,0], logZmp[:,3], label='ZMP Z')
+
+# ZMP 2
+fig = plt.figure(); 
+
+axfig = fig.add_subplot(111)
+axfig.plot(logZmp2[:,0], logZmp2[:,1], label='ZMP X')
+axfig.plot(logZmp3[:,0], logZmp3[:,1], label='ZMP X')
+axfig.plot(logZmp4[:,0], logZmp4[:,1], label='ZMP X')
+axfig.plot(logZmp2[:,0], logZmp2[:,2], label='ZMP Y')
+axfig.plot(logZmp3[:,0], logZmp3[:,2], label='ZMP Y')
+axfig.plot(logZmp4[:,0], logZmp4[:,2], label='ZMP Y')
+axfig.plot(logZmp2[:,0], logZmp2[:,3], label='ZMP Z')
+axfig.plot(logZmp3[:,0], logZmp3[:,3], label='ZMP Z')
+axfig.plot(logZmp4[:,0], logZmp4[:,3], label='ZMP Z')
 
 handles, labels = axfig.get_legend_handles_labels()
 axfig.legend(handles, labels)
@@ -410,6 +431,21 @@ i=14
 axfig = fig.add_subplot(2,7,i)
 axfig.plot(logState[:,0], logState[:,20], label='model state')
 axfig.plot(logStabSimulatedState[:,0], logStabSimulatedState[:,i], label='stabilizer state')
+
+handles, labels = axfig.get_legend_handles_labels()
+axfig.legend(handles, labels)
+
+# Energy
+fig = plt.figure(); 
+
+axfig = fig.add_subplot(141)
+axfig.plot(logEnergy[:,0], logEnergy[:,1], label='Energy tot')
+axfig = fig.add_subplot(142)
+axfig.plot(logEnergy[:,0], logEnergy[:,2], label='Energy com')
+axfig = fig.add_subplot(143)
+axfig.plot(logEnergy[:,0], logEnergy[:,3], label='Energy waist')
+axfig = fig.add_subplot(144)
+axfig.plot(logEnergy[:,0], logEnergy[:,4], label='Energy flex')
 
 handles, labels = axfig.get_legend_handles_labels()
 axfig.legend(handles, labels)
