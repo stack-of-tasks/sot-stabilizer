@@ -17,19 +17,12 @@ I=((8.15831,-0.00380455,0.236677),(-0.00380453,6.94757,-0.0465754),(0.236677,-0.
 a=1
 I1=((a*8.15831,a*-0.00380455,a*0.236677),(a*-0.00380453,a*6.94757,a*-0.0465754),(a*0.236677,a*-0.0465754,a*1.73429))
 
+# Model
+
 kfe=40000
 kfv=600
 kte=600
 ktv=60
-
-b=1
-kfe1=b*40000
-kfv1=b*600
-kte1=b*600
-ktv1=b*60
-
-
-# Model
 
 model.setRobotMass(59.8)
 model.setMomentOfInertia(I)
@@ -45,10 +38,18 @@ model.setState((0.0, 0.0, 0.80771, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
 
 #stab.setFixedGains(False)
 
+b=1
+kfe1=b*40000
+kfv1=b*600
+kte1=b*600
+ktv1=b*60
+
 stab.setInertia(I1)
 
-stab.setKth(matrixToTuple(np.diag((kte1,kte1,kte1))))
-stab.setKdth(matrixToTuple(np.diag((ktv1,ktv1,ktv1))))
+stab.setkts(kte1)
+stab.setktd(ktv1)
+stab.setkfs(kfe1)
+stab.setkfd(kfv1)
 
 stab.comRef.value=(0.00949, 0.0, 0.80771)
 stab.comRef.value=(0.0, 0.0, 0.80771)

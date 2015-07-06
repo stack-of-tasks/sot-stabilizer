@@ -658,7 +658,7 @@ void NonLinearRotationalTableCartDevice::incr(double inTimeStep)
 
   // Energy
   double Etot, Eflex, Ecom, Ewaist;
-      std::cout << "model kth=" << Kte_(0,0) << " flexOriVect=" << flexOriVect.transpose() << std::endl;
+      std::cout << "model Kth=" << Kte_ << " flexOriVect=" << flexOriVect.transpose() << std::endl;
   Eflex=0.5*Kte_(0,0)*(flexOriVect).squaredNorm();
   Ecom=0.5*robotMass_*(xnWorld.block(12,0,3,1)).squaredNorm();
   Ewaist=0.5*AngMomentum_.dot(waistAngVel);

@@ -383,6 +383,42 @@ namespace sotStabilizer
 
     docstring  =
             "\n"
+            "    Sets the angular stifness of the flexibility \n"
+            "\n";
+
+    addCommand(std::string("setkts"),
+               new ::dynamicgraph::command::Setter <HRP2LQRTwoDofCoupledStabilizer,double>
+                (*this, & HRP2LQRTwoDofCoupledStabilizer::setkts ,docstring));
+
+    docstring  =
+            "\n"
+            "    Sets the angular damping of the flexibility \n"
+            "\n";
+
+    addCommand(std::string("setktd"),
+               new ::dynamicgraph::command::Setter <HRP2LQRTwoDofCoupledStabilizer,double>
+                (*this, & HRP2LQRTwoDofCoupledStabilizer::setktd ,docstring));
+
+    docstring  =
+            "\n"
+            "    Sets the linear stifness of the flexibility \n"
+            "\n";
+
+    addCommand(std::string("setkfs"),
+               new ::dynamicgraph::command::Setter <HRP2LQRTwoDofCoupledStabilizer,double>
+                (*this, & HRP2LQRTwoDofCoupledStabilizer::setkfs ,docstring));
+
+    docstring  =
+            "\n"
+            "    Sets the angular damping of the flexibility \n"
+            "\n";
+
+    addCommand(std::string("setkfd"),
+               new ::dynamicgraph::command::Setter <HRP2LQRTwoDofCoupledStabilizer,double>
+                (*this, & HRP2LQRTwoDofCoupledStabilizer::setkfd ,docstring));
+
+    docstring  =
+            "\n"
             "    Sets the inertia \n"
             "\n";
 
@@ -493,12 +529,6 @@ namespace sotStabilizer
     angularmomentumSIN.setConstant(vect);
     waistAngVelSIN_.setConstant(vect);
 
-    Kth_.resize(3,3);
-    Kdth_.resize(3,3);
-
-    kth_=60;
-    kdth_=6.5;
-
     stateObservation::Vector Qvec;
     stateObservation::Matrix Qglob;
     Qglob.resize(stateSize_,stateSize_);
@@ -542,12 +572,24 @@ namespace sotStabilizer
 
     nbSupport_=computeNbSupport(0);
 
-    Kth_ <<    0.5*kth_*kth_,0,0,
-              0,kth_,0,
-              0,0,0.5*kth_*kth_;
-    Kdth_ <<    0.5*kdth_ ,0,0,
-              0,kdth_,0,
-              0,0,0.5*kdth_*kdth_;
+    double h2;
+    std::cout << "coucou" << std::endl;
+    h2=(convertVector<stateObservation::Vector>(supportPos1_).block(0,0,2,1)-convertVector<stateObservation::Vector>(supportPos2_).block(0,0,2,1)).squaredNorm();
+    std::cout << "coucou" << std::endl;
+    Kth_.resize(3,3);
+    Kdth_.resize(3,3);
+
+    kts_=60;
+    ktd_=6.5;
+    kfs_=600;
+    kfd_=65;
+
+    Kth_ <<   0.5*h2*kfs_,0,0,
+              0,2*kts_,0,
+              0,0,0.5*h2*kfs_;
+    Kdth_ <<  0.5*h2*kfd_,0,0,
+              0,2*ktd_,0,
+              0,0,0.5*h2*kfd_;
 
     controller_.setHorizonLength(horizon);
     computeDynamicsMatrix(com,Kth_,Kdth_,0);
@@ -810,12 +852,12 @@ namespace sotStabilizer
         {
              if(nbSupport!=nbSupport_ || computed_==false || fixedGains_!=true) // || comRef!=comRef_)
              {
-                Kth_ <<   kth_,0,0,
-                          0,kth_,0,
-                          0,0,kth_;
-                Kdth_ <<  kdth_,0,0,
-                          0,kdth_,0,
-                          0,0,kdth_;
+                Kth_ <<   kts_,0,0,
+                          0,kts_,0,
+                          0,0,kts_;
+                Kdth_ <<  ktd_,0,0,
+                          0,ktd_,0,
+                          0,0,ktd_;
 
                 computeDynamicsMatrix(dxk.block(0,0,3,1),Kth_,Kdth_,time);
                 controller_.setDynamicsMatrices(A_,B_);
@@ -834,12 +876,14 @@ namespace sotStabilizer
              // fixedGains_=false;
               if(nbSupport!=nbSupport_ || computed_ == false || fixedGains_!=true) // || comRef!=comRef_)
               {
-                  Kth_ <<    0.5*kth_*kth_,0,0,
-                            0,kth_,0,
-                            0,0,0.5*kth_*kth_;
-                  Kdth_ <<  0.5*kdth_*kdth_ ,0,0,
-                            0,kdth_,0,
-                            0,0,0.5*kdth_*kdth_;
+                 // double h2=(convertVector<stateObservation::Vector>(supportPos1_).block(0,0,2,1)-convertVector<stateObservation::Vector>(supportPos2_).block(0,0,2,1)).squaredNorm();
+                 double h2=(supportPos1_(1)-supportPos2_(1))*(supportPos1_(1)-supportPos2_(1));
+                  Kth_ <<   0.5*h2*kfs_,0,0,
+                            0,2*kts_,0,
+                            0,0,0.5*h2*kfs_;
+                  Kdth_ <<  0.5*h2*kfd_,0,0,
+                            0,2*ktd_,0,
+                            0,0,0.5*h2*kfd_;
 
                   // TODO: when feet are not aligned along the y axis
 
@@ -860,7 +904,7 @@ namespace sotStabilizer
 
     // Energy
     double Etot, Eflex, Ecom, Ewaist;
-    std::cout << "stab kth=" << Kth_(0,0) << " flexOriVect=" << flexOriVect.transpose() << std::endl;
+    std::cout << "stab Kth=" << Kth_ << " flexOriVect=" << flexOriVect.transpose() << std::endl;
     Eflex=0.5*Kth_(0,0)*flexOriVect.squaredNorm();
     Ecom=0.5*constm_*(xkworld.block(7,0,3,1)).squaredNorm();
     Ewaist=0.5*angularmomentum.dot(waistAngVel);

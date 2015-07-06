@@ -222,6 +222,26 @@ namespace sotStabilizer
         Kdth_=convertMatrix<stateObservation::Matrix>(m);
     }
 
+    void setkts(const double & k)
+    {
+        kts_=k;
+    }
+
+    void setktd(const double & k)
+    {
+        ktd_=k;
+    }
+
+    void setkfs(const double & k)
+    {
+        kfs_=k;
+    }
+
+    void setkfd(const double & k)
+    {
+        kfd_=k;
+    }
+
     void setInertia(const dynamicgraph::Matrix & I)
     {
         I_=convertMatrix<stateObservation::Matrix>(I);
@@ -380,7 +400,7 @@ namespace sotStabilizer
 
     controller::DiscreteTimeLTILQR controller_;
 
-    double kth_, kdth_;
+    double kts_, ktd_, kfs_, kfd_;
     stateObservation::Matrix Kth_;
     stateObservation::Matrix Kdth_;
 
