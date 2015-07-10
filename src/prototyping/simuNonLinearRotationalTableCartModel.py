@@ -32,6 +32,11 @@ model.setKfv(matrixToTuple(np.diag((kfv,kfv,kfv))))
 model.setKte(matrixToTuple(np.diag((kte,kte,kte))))
 model.setKtv(matrixToTuple(np.diag((ktv,ktv,ktv))))
 
+#model.setkts(kte)
+#model.setktd(ktv)
+#model.setkfs(kfe)
+#model.setkfd(kfv)
+
 model.setState((0.0, 0.0, 0.80771, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
 
 # Stabilizer
@@ -85,7 +90,7 @@ perturbator.setSinLessMode(True)
 vect = perturbator.sin
 vect.value = stab.comRef.value
 plug (perturbator.sout,stab.perturbationAcc)
-perturbator.perturbation.value=(100,0,0)
+perturbator.perturbation.value=(0,10,0)
 perturbator.selec.value = '111'
 perturbator.setMode(0)
 perturbator.setPeriod(1500)
@@ -117,6 +122,8 @@ logForces1 = np.array([])
 logForces1.resize(simuTime/dt,7)
 logForces2 = np.array([])
 logForces2.resize(simuTime/dt,7)
+logSumMoments = np.array([])
+logSumMoments.resize(simuTime/dt,4)
 logStabSimulatedState = np.array([])
 logStabSimulatedState.resize(simuTime/dt,15)
 logEnergyStab = np.array([])
@@ -131,7 +138,6 @@ plug (model.contact1Pos, zmp.sensorPosition_0)
 plug (model.contact2Pos, zmp.sensorPosition_1)
 
 stab.setStateCost(matrixToTuple(1*np.diag((2000,2000,2000,2000,2000,1,1,1,1,1,1,1,1,1))))
-stab.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
 
 for i in range(int(0/dt),int(stepTime/dt)):
    stab.task.recompute(i)
@@ -152,13 +158,15 @@ for i in range(int(0/dt),int(stepTime/dt)):
    logForces2[i,0]=i
    logForces2[i,1:]=model.contact1Forces.value
    logStabSimulatedState[i,0]=i
-   logStabSimulatedState[i,1:]=stab.stateSimulation.value
+   logStabSimulatedState[i,1:]=stab.statePrediction.value
    logEnergyStab[i,0]=i
    logEnergyStab[i,1:]=stab.energy.value
    logEnergyModel[i,0]=i
    logEnergyModel[i,1:]=model.energy.value
+   logSumMoments[i,0]=i
+   logSumMoments[i,1:]=model.sumMoments.value
 
-stab.setStateCost(matrixToTuple(1*np.diag((100,100,100,100,100,1000,1000,100,100,100,100,100,1000,1000))))
+stab.setStateCost(matrixToTuple(1*np.diag((100,100,100,100,100,100,100,100,100,100,100,100,100,100))))
 stab.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
 
 for i in range(int(stepTime/dt),int(step2Time/dt)):
@@ -180,11 +188,13 @@ for i in range(int(stepTime/dt),int(step2Time/dt)):
    logForces2[i,0]=i
    logForces2[i,1:]=model.contact1Forces.value
    logStabSimulatedState[i,0]=i
-   logStabSimulatedState[i,1:]=stab.stateSimulation.value
+   logStabSimulatedState[i,1:]=stab.statePrediction.value
    logEnergyStab[i,0]=i
    logEnergyStab[i,1:]=stab.energy.value
    logEnergyModel[i,0]=i
    logEnergyModel[i,1:]=model.energy.value
+   logSumMoments[i,0]=i
+   logSumMoments[i,1:]=model.sumMoments.value
 
 stab.setStateCost(matrixToTuple(1*np.diag((100,100,100,100,100,10000,10000,1000,1000,1000,100,100,1000,1000))))
 stab.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
@@ -208,11 +218,13 @@ for i in range(int(step2Time/dt),int(step3Time/dt)):
    logForces2[i,0]=i
    logForces2[i,1:]=model.contact1Forces.value
    logStabSimulatedState[i,0]=i
-   logStabSimulatedState[i,1:]=stab.stateSimulation.value
+   logStabSimulatedState[i,1:]=stab.statePrediction.value
    logEnergyStab[i,0]=i
    logEnergyStab[i,1:]=stab.energy.value
    logEnergyModel[i,0]=i
    logEnergyModel[i,1:]=model.energy.value
+   logSumMoments[i,0]=i
+   logSumMoments[i,1:]=model.sumMoments.value
 
 stab.setStateCost(matrixToTuple(1*np.diag((2000,2000,2000,2000,2000,1,1,1,1,1,1,1,1,1))))
 stab.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
@@ -236,11 +248,18 @@ for i in range(int(step3Time/dt),int(simuTime/dt)):
    logForces2[i,0]=i
    logForces2[i,1:]=model.contact1Forces.value
    logStabSimulatedState[i,0]=i
-   logStabSimulatedState[i,1:]=stab.stateSimulation.value
+   logStabSimulatedState[i,1:]=stab.statePrediction.value
    logEnergyStab[i,0]=i
    logEnergyStab[i,1:]=stab.energy.value
    logEnergyModel[i,0]=i
    logEnergyModel[i,1:]=model.energy.value
+   logSumMoments[i,0]=i
+   logSumMoments[i,1:]=model.sumMoments.value
+
+
+# Saving in files
+np.savetxt('logState.txt', logState)
+np.savetxt('logSumMoments.txt', logSumMoments)
 
 # Plot state
 fig = plt.figure(); 
@@ -464,6 +483,12 @@ axfig.plot(logEnergyModel[:,0], logEnergyModel[:,4], label='Energy model')
 
 handles, labels = axfig.get_legend_handles_labels()
 axfig.legend(handles, labels)
+
+# sum of moments
+axfig = fig.add_subplot(111)
+axfig.plot(logSumMoments[:,0], logSumMoments[:,1], label='moments X')
+axfig.plot(logSumMoments[:,0], logSumMoments[:,2], label='moments Y')
+axfig.plot(logSumMoments[:,0], logSumMoments[:,3], label='moments Z')
 
 plt.show()
 

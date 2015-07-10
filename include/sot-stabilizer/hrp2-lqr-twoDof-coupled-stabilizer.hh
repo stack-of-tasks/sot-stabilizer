@@ -341,6 +341,7 @@ namespace sotStabilizer
     SignalTimeDependent <Vector, int> stateErrorSOUT_;
     // predicted state
     SignalTimeDependent <Vector, int> stateSimulationSOUT_;
+    SignalTimeDependent <Vector, int> statePredictionSOUT_;
     // extended state output
     SignalTimeDependent <Vector, int> stateExtendedSOUT_;
     // state model error
@@ -416,6 +417,8 @@ namespace sotStabilizer
 
     Vector zmp_;
     bool zmpMode_;
+
+    stateObservation::Vector xSimu_;
 
   }; // class Stabilizer
 } // namespace sotStabiilizer

@@ -106,6 +106,7 @@ namespace sotStabilizer
     stateErrorSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::stateError"),
     stateRefSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::stateRef"),
     stateSimulationSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::stateSimulation"),
+    statePredictionSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::statePrediction"),
     stateExtendedSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector):stateExtended"),
     stateModelErrorSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector):stateModelError"),
     errorSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::error"),
@@ -133,7 +134,7 @@ namespace sotStabilizer
     B_(stateObservation::Matrix::Zero(stateSize_,controlSize_)),
     Q_(stateObservation::Matrix::Zero(stateSize_,stateSize_)),
     R_(stateObservation::Matrix::Zero(controlSize_,controlSize_)),
-    I_(3,3), constantInertia_(false)
+    I_(3,3), constantInertia_(false), xSimu_(stateSize_)
   {
 
     // Register signals into the entity.
@@ -165,6 +166,7 @@ namespace sotStabilizer
     signalRegistration (stateWorldSOUT_);
     signalRegistration (stateRefSOUT_);
     signalRegistration (stateSimulationSOUT_);
+    signalRegistration (statePredictionSOUT_);
     signalRegistration (stateErrorSOUT_);
     signalRegistration (stateExtendedSOUT_);
     signalRegistration (stateModelErrorSOUT_);
@@ -458,7 +460,7 @@ namespace sotStabilizer
 
     stateObservation::Vector com;
     com.resize(3);
-    com <<  0.00949,
+    com <<  0.0,
             0,
             0.80771;
     comSIN_.setConstant(convertVector<dynamicgraph::Vector>(com));
@@ -573,9 +575,8 @@ namespace sotStabilizer
     nbSupport_=computeNbSupport(0);
 
     double h2;
-    std::cout << "coucou" << std::endl;
     h2=(convertVector<stateObservation::Vector>(supportPos1_).block(0,0,2,1)-convertVector<stateObservation::Vector>(supportPos2_).block(0,0,2,1)).squaredNorm();
-    std::cout << "coucou" << std::endl;
+
     Kth_.resize(3,3);
     Kdth_.resize(3,3);
 
@@ -626,6 +627,8 @@ namespace sotStabilizer
     I_ <<   8.15831,-0.00380455,0.236677,
             -0.00380453,6.94757,-0.0465754,
             0.236677,-0.0465754,1.73429;
+
+    xSimu_.setZero();
   }
 
   Vector& HRP2LQRTwoDofCoupledStabilizer::getControl(Vector& control, const int& time)
@@ -753,6 +756,8 @@ namespace sotStabilizer
     // For energy
     const stateObservation::Vector & angularmomentum = convertVector<stateObservation::Vector>(angularmomentumSIN.access(time));
 
+    std::cout << "coucou" << std::endl;
+
     // Determination of the number of support
     unsigned int nbSupport=computeNbSupport(time);
 
@@ -767,6 +772,8 @@ namespace sotStabilizer
     // flex orientation
     Matrix3 flexOri=kine::rotationVectorToRotationMatrix(flexOriVect);
 
+        std::cout << "coucou" << std::endl;
+
     /// State in the local frame
     // State reconstruction
     stateObservation::Vector xk;
@@ -778,6 +785,8 @@ namespace sotStabilizer
             (waistAngVel).block(0,0,2,1),
             (flexAngVelVect).block(0,0,2,1);
     stateSOUT_.setConstant (convertVector<dynamicgraph::Vector>(xk));
+
+        std::cout << "coucou" << std::endl;
 
     /// State in the world frame
 
@@ -815,6 +824,8 @@ namespace sotStabilizer
                 (flexAngVelVect).block(0,0,2,1);
     stateWorldSOUT_.setConstant (convertVector<dynamicgraph::Vector>(xkworld));
 
+        std::cout << "coucou" << std::endl;
+
     // Reference reconstruction
     stateObservation::Vector xkRef;
     xkRef.resize(stateSize_);
@@ -840,6 +851,8 @@ namespace sotStabilizer
     stateObservation::Vector u;
     u.resize(controlSize_);
     u.setZero();
+
+    std::cout << "coucou" << std::endl;
 
     switch (nbSupport)
     {
@@ -869,6 +882,7 @@ namespace sotStabilizer
              u=controller_.getControl(time);
              u.block(0,0,3,1)+=perturbationAcc;
              preTask_+=dt_*u;
+             xSimu_=xk;
         }
         break;
         case 2 : // Double support
@@ -876,22 +890,40 @@ namespace sotStabilizer
              // fixedGains_=false;
               if(nbSupport!=nbSupport_ || computed_ == false || fixedGains_!=true) // || comRef!=comRef_)
               {
-                 // double h2=(convertVector<stateObservation::Vector>(supportPos1_).block(0,0,2,1)-convertVector<stateObservation::Vector>(supportPos2_).block(0,0,2,1)).squaredNorm();
-                 double h2=(supportPos1_(1)-supportPos2_(1))*(supportPos1_(1)-supportPos2_(1));
-                  Kth_ <<   0.5*h2*kfs_,0,0,
-                            0,2*kts_,0,
-                            0,0,0.5*h2*kfs_;
-                  Kdth_ <<  0.5*h2*kfd_,0,0,
-                            0,2*ktd_,0,
-                            0,0,0.5*h2*kfd_;
+
+                      std::cout << "coucou" << std::endl;
+                  stateObservation::Vector3 tc; tc.setZero();
+                  tc= convertVector<stateObservation::Vector>(supportPos1_).block(0,0,3,1)-convertVector<stateObservation::Vector>(supportPos2_).block(0,0,3,1);
+
+                  stateObservation::Matrix3 Kts; Kts.setZero();
+                  stateObservation::Matrix3 Kfs; Kfs.setZero();
+                  stateObservation::Matrix3 Ktd; Ktd.setZero();
+                  stateObservation::Matrix3 Kfd; Kfd.setZero();
+
+                  Kts<<    kts_,0,0,
+                            0,kts_,0,
+                            0,0,kts_;
+                  Kfs <<    kfs_,0,0,
+                            0,kfs_,0,
+                            0,0,kfs_;
+                  Kth_=2*Kts-0.5*Kfs*kine::skewSymmetric2(tc);
+
+                  Ktd<<      ktd_,0,0,
+                             0,ktd_,0,
+                             0,0,ktd_;
+                  Kfd <<    kfd_,0,0,
+                            0,kfd_,0,
+                            0,0,kfd_;
+                  Kdth_=2*Ktd-0.5*Kfd*kine::skewSymmetric2(tc);
 
                   // TODO: when feet are not aligned along the y axis
-
+    std::cout << "coucou" << std::endl;
                   computeDynamicsMatrix(dxk.block(0,0,3,1),Kth_,Kdth_,time);
                   controller_.setDynamicsMatrices(A_,B_);
                   nbSupport_=nbSupport;
                   computed_=true;
                   comRef_=comRef;
+                  xSimu_=xk;
               }
               controller_.setState(dxk,time);
               u=controller_.getControl(time);
@@ -903,19 +935,18 @@ namespace sotStabilizer
     };
 
     // Energy
-    double Etot, Eflex, Ecom, Ewaist;
-    std::cout << "stab Kth=" << Kth_ << " flexOriVect=" << flexOriVect.transpose() << std::endl;
-    Eflex=0.5*Kth_(0,0)*flexOriVect.squaredNorm();
-    Ecom=0.5*constm_*(xkworld.block(7,0,3,1)).squaredNorm();
-    Ewaist=0.5*angularmomentum.dot(waistAngVel);
-    Etot=Eflex+Ecom+Ewaist;
-    stateObservation::Vector energy;
-    energy.resize(4);
-    energy <<   Etot,
-                Ecom,
-                Ewaist,
-                Eflex;
-    energySOUT_.setConstant(convertVector<dynamicgraph::Vector>(energy));
+//    double Etot, Eflex, Ecom, Ewaist;
+//    Eflex=0.5*Kth_(0,0)*flexOriVect.squaredNorm();
+//    Ecom=0.5*constm_*(xkworld.block(7,0,3,1)).squaredNorm();
+//    Ewaist=0.5*angularmomentum.dot(waistAngVel);
+//    Etot=Eflex+Ecom+Ewaist;
+//    stateObservation::Vector energy;
+//    energy.resize(4);
+//    energy <<   Etot,
+//                Ecom,
+//                Ewaist,
+//                Eflex;
+//    energySOUT_.setConstant(convertVector<dynamicgraph::Vector>(energy));
 
     task.resize (taskSize_);
     int i;
@@ -947,11 +978,25 @@ namespace sotStabilizer
    // std::cout << "B: " << B_ << std::endl;
 
     // Validation of the model
+    xpredicted_=A_*dxk+B_*u+xk;
+    stateSimulationSOUT_.setConstant(convertVector<dynamicgraph::Vector>(xpredicted_));
+
+    //stateObservation::Vector xSimu=xSimu_;
+    stateObservation::Vector a, b, c;
+    a.resize(stateSize_); a.setZero();
+    a=xSimu_-xkRef;
+    b.resize(stateSize_); b.setZero();
+    b=A_*a+B_*u+xSimu_;
+    xSimu_=b;
+    statePredictionSOUT_.setConstant(convertVector<dynamicgraph::Vector>(xSimu_));
+
+//        std::cout << "a=" << a.transpose() << " b=" << b.transpose() << std::endl;
+//    xSimu_.noalias()=xSimu_-xkRef;
+//    xSimu_.noalias()=A_*xSimu_+;
+
     stateObservation::Vector modelError;
     modelError.resize(stateSize_);
     modelError.setZero();
-    xpredicted_=A_*dxk+B_*u+xk;
-    stateSimulationSOUT_.setConstant(convertVector<dynamicgraph::Vector>(xpredicted_));
     modelError=xpredicted_-dxk;
     stateModelErrorSOUT_.setConstant(convertVector<dynamicgraph::Vector>(modelError));
 

@@ -78,7 +78,7 @@ perturbatorTask = VectorPerturbationsGenerator('perturbatedTask')
 perturbatorTask.setSinLessMode(True)
 vect = perturbatorTask.sin
 vect.value = appli.comRef.value
-plug (perturbatorTask.sout,stabilizer.perturbation)
+plug (perturbatorTask.sout,stabilizer.perturbationVel)
 appli.robot.addTrace( perturbatorTask.name, 'sout')
 perturbatorTask.perturbation.value=(0,1,0)
 perturbatorTask.selec.value = '111'
@@ -111,58 +111,40 @@ appli.robot.addTrace( appli.zmpRef.name, 'zmp')
 appli.gains['trunk'].setConstant(2)
 est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-6,)*6)))
 
-# One feet
-Qdiag=1*np.diag((20000,20000,20000,100,100,1000,1000,1,1,1,1,1,1,1))
-Rdiag=1*np.diag((1,1,1,1,1))
-
-Q=Qdiag
-R=Rdiag
-
-# Two feet
-Qdiag=1*np.diag((20000,20000,20000,1,10,20000,20000,1,1,1,1,1,1,1))
-Rdiag=1*np.diag((1,1,1,1,1))
-
-Q11=np.zeros((3,3))
-Q12=np.zeros((3,2)) # Cl Omegach
-Q13=np.mat('[0,0;0,0;0,0]') #np.zeros((3,2)) ### Cl Omega
-Q14=np.zeros((3,3)) # Cl dCl
-Q15=np.zeros((3,2)) # Cl dOmegach
-Q16=np.mat('[0,0;0,0;0,0]') #np.zeros((3,2)) ## Cl dOmega
-
-Q22=np.zeros((2,2))
-Q23=np.mat('[0,0;0,0]') #np.zeros((2,2)) ### Omegach Omega
-Q24=np.zeros((2,3)) # Omegach dCl
-Q25=np.zeros((2,2)) # Omegach dOmegach
-Q26=np.mat('[0,0;0,0') #np.zeros((2,2)) ## Omegach dOmega
-
-Q33=np.zeros((2,2))
-Q34=np.mat('[0,0,0;0,0,0]') #np.mat('[0,1,0;1,0,0]') #np.zeros((2,3)) ### Omega dCl
-Q35=np.zeros((2,2)) ### Omega dOmegach
-Q36=np.mat('[0,0;0,0]') #np.mat('[1,0;0,1]') #np.zeros((2,2)) ### Omega dOmega
-
-Q44=np.zeros((3,3))
-
-Q45=np.zeros((3,2)) # dCl dOmegach
-Q46=np.mat('[0,0;0,0;0,0]') #np.mat('[0,1;1,0;0,0]') #np.zeros((3,2)) ## dCl dOmega
-
-Q55=np.zeros((2,2))
-Q56=np.mat('[0,0;0,0]') #np.mat('[1,0;0,1]') #np.zeros((2,2)) ## dOmegach dOmega
-
-Q66=np.zeros((2,2))
-
-Qcoupl=np.bmat(([[Q11,Q12,Q13,Q14,Q15,Q16],[np.transpose(Q12),Q22,Q23,Q24,Q25,Q26],[np.transpose(Q13),np.transpose(Q23),Q33,Q34,Q35,Q36],[np.transpose(Q14),np.transpose(Q24),np.transpose(Q34),Q44,Q45,Q46],[np.transpose(Q15),np.transpose(Q25),np.transpose(Q35),np.transpose(Q45),Q55,Q56],[np.transpose(Q16),np.transpose(Q26),np.transpose(Q36),np.transpose(Q46),np.transpose(Q56),Q66]]))
-
-Q=Qdiag+Qcoupl
-R=Rdiag
-
-
-stabilizer.setStateCost(matrixToTuple(Q))
-stabilizer.setInputCost(matrixToTuple(R))
-
 stabilizer.setFixedGains(True)
 stabilizer.setHorizon(200)
 
-appli.nextStep()
+appli.nextStep(1)
+
+stab.setStateCost(matrixToTuple(1*np.diag((100,100,100,100,100,1000,1000,100,100,100,100,100,1000,1000))))
+stab.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
+
+stabilizer.setStateCost(matrixToTuple(1*np.diag((20000,20000,20000,20000,20000,1,1,1,1,1,1,1,1,1))))
+stabilizer.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
+
+stabilizer.start()
+
+est.calibration.start(500)
+est.flexThetaU.value
+
+stabilizer.setStateCost(matrixToTuple(1*np.diag((5000,5000,5000,1,1,5000,5000,1,1,1,1,1,1,1))))
+stabilizer.setInputCost(matrixToTuple(1*np.diag((1,5000,1,1,1))))
+
+# Perturbation Generator on task
+perturbatorTask = VectorPerturbationsGenerator('perturbatedTask')
+perturbatorTask.setSinLessMode(True)
+vect = perturbatorTask.sin
+vect.value = appli.comRef.value
+plug (perturbatorTask.sout,stabilizer.perturbation)
+appli.robot.addTrace( perturbatorTask.name, 'sout')
+perturbatorTask.perturbation.value=(0,1,0)
+perturbatorTask.selec.value = '111'
+perturbatorTask.setMode(0)
+perturbatorTask.setPeriod(0)
+perturbatorTask.activate(False)
+
+
+
 
 # Perturbation Generator on comRef
 perturbator = VectorPerturbationsGenerator('comref')
@@ -173,19 +155,6 @@ appli.robot.addTrace( perturbator.name, 'sout')
 perturbator.perturbation.value=(0,1,0)
 perturbator.selec.value = '111'
 perturbator.setMode(0)
-perturbator.setPeriod(0)
-perturbator.activate(False)
-
-# Perturbation Generator on task
-perturbator = VectorPerturbationsGenerator('perturbatedTask')
-perturbator.setSinLessMode(True)
-comRef1 = perturbator1.sin
-comRef1.value = appli.comRef.value
-plug (perturbator.sout,stabilizer.perturbation)
-appli.robot.addTrace( perturbator.name, 'sout')
-perturbator.perturbation.value=(0,1,0)
-perturbator.selec.value = '111'
-perturbator.setMode(4)
 perturbator.setPeriod(0)
 perturbator.activate(False)
 
@@ -256,9 +225,13 @@ R=1*np.diag((1,1,1,1,1))
 stabilizer.setInputCost(matrixToTuple(R))
 
 
-Q=1*np.diag((2000,2000,2000,1,1,2000,2000,1,1,1,1,1,1,1))
+Q=1*np.diag((20000,20000,20000,1,10,20000,20000,1,1,1,1,1,1,1))
 stabilizer.setStateCost(matrixToTuple(Q))
 
 R=1*np.diag((1,20000,1,1,1))
 stabilizer.setInputCost(matrixToTuple(R))
 
+stabilizer.setStateCost(matrixToTuple(1*np.diag((10000,10000,10000,10000,10000,1,1,1,1,1,1,1,1,1))))
+stabilizer.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
+
+stabilizer.setStateCost(matrixToTuple(1*np.diag((100,1000,1000,1000,100,1,1000,1,1,1,1,1,1,100))))

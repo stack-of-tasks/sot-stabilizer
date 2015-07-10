@@ -45,7 +45,7 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
 
 	plug ( robot.dynamic.Jwaist, self.Jwaist) 
 	plug ( robot.dynamic.inertia, self.inertia)
-	plug(self.DWaist.sout,self.waistVel)
+	plug(self.DWaist.sout,self.waistAngVel)
 
 	plug ( robot.dynamic.Jchest, self.Jchest)
 

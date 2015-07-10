@@ -261,6 +261,26 @@ namespace sotStabilizer {
         return convertMatrix<dynamicgraph::Matrix>(Ktv_);
       }
 
+      void setkts(const double & k)
+      {
+          kts_=k;
+      }
+
+      void setktd(const double & k)
+      {
+          ktd_=k;
+      }
+
+      void setkfs(const double & k)
+      {
+          kfs_=k;
+      }
+
+      void setkfd(const double & k)
+      {
+          kfd_=k;
+      }
+
       void setContactsNumber(unsigned int nb)
       {
           contactsNumber_= nb;
@@ -331,6 +351,7 @@ namespace sotStabilizer {
       dynamicgraph::SignalPtr <dynamicgraph::Vector, int> contact1ForcesSOUT_;
       dynamicgraph::SignalPtr <dynamicgraph::sot::MatrixHomogeneous, int> contact2PosSOUT_;
       dynamicgraph::SignalPtr <dynamicgraph::Vector, int> contact2ForcesSOUT_;
+      dynamicgraph::SignalPtr <dynamicgraph::Vector, int> sumMomentsSOUT_;
 
       // Inertial values
       dynamicgraph::SignalPtr <dynamicgraph::Matrix, int> inertiaSOUT_;
@@ -358,12 +379,20 @@ namespace sotStabilizer {
       /// Moment of inertia around y axis
       stateObservation::Matrix I_;
 
+      double kts_;
+      double ktd_;
+      double kfs_;
+      double kfd_;
+
       Vector fc_;
       Vector tc_;
 
       stateObservation::Vector xn_;
 
       stateObservation::Vector AngMomentum_;
+      
+      stateObservation::Matrix4 supportPos1_;
+      stateObservation::Matrix4 supportPos2_;
 
       unsigned int contactsNumber_;
       std::vector <Vector3,Eigen::aligned_allocator<Vector3> > contactPositions_;

@@ -43,6 +43,7 @@ NonLinearRotationalTableCartDevice::NonLinearRotationalTableCartDevice(const std
   contact1ForcesSOUT_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::contact1Forces"),
   contact2PosSOUT_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(MatrixHomogeneous)::contact2Pos"),
   contact2ForcesSOUT_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::contact2Forces"),
+  sumMomentsSOUT_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::sumMoments"),
   inertiaSOUT_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(matrix)::inertia"),
   dotInertiaSOUT_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(matrix)::dotInertia"),
   angularMomentumSOUT_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::angularMomentum"),
@@ -89,6 +90,7 @@ NonLinearRotationalTableCartDevice::NonLinearRotationalTableCartDevice(const std
   signalRegistration (contact1ForcesSOUT_);
   signalRegistration (contact2PosSOUT_);
   signalRegistration (contact2ForcesSOUT_);
+  signalRegistration (sumMomentsSOUT_);
   signalRegistration (inertiaSOUT_);
   signalRegistration (dotInertiaSOUT_);
   signalRegistration (angularMomentumSOUT_);
@@ -198,6 +200,7 @@ NonLinearRotationalTableCartDevice::NonLinearRotationalTableCartDevice(const std
                     -6.2574838892307319e-11, 2.5764338764907862e-09, 1.0000000000000002, 0.0,
                      0.0, 0.0, 0.0, 1.0;
   setContactPosition(0, positionHomo);
+    supportPos1_=positionHomo;
   contact1PosSOUT_.setConstant(convertMatrix<dynamicgraph::sot::MatrixHomogeneous>(positionHomo));
   positionHomo  <<  0.99999999999999956, 2.5964823352109814e-08, 6.2554585725676566e-11, 0.0,
                     -2.5964823352024697e-08, 0.99999999999999978, -2.5759706733995109e-09, 0.095,
@@ -206,10 +209,15 @@ NonLinearRotationalTableCartDevice::NonLinearRotationalTableCartDevice(const std
   setContactPosition(1, positionHomo);
   contact2PosSOUT_.setConstant(convertMatrix<dynamicgraph::sot::MatrixHomogeneous>(positionHomo));
 
-  stateObservation::Vector6 forces;
-  forces.setZero();
+  supportPos2_=positionHomo;
+
+  stateObservation::Vector forces;
+  forces.resize(6); forces.setZero();
   contact1ForcesSOUT_.setConstant(convertVector<dynamicgraph::Vector>(forces));
   contact2ForcesSOUT_.setConstant(convertVector<dynamicgraph::Vector>(forces));
+
+  forces.resize(3); forces.setZero();
+  sumMomentsSOUT_.setConstant(convertVector<dynamicgraph::Vector>(forces));
 
   vect.resize(4); vect.setZero();
   energySOUT_.setConstant(vect);
@@ -348,6 +356,39 @@ NonLinearRotationalTableCartDevice::NonLinearRotationalTableCartDevice(const std
     addCommand(std::string("setState"),
                new ::dynamicgraph::command::Setter<NonLinearRotationalTableCartDevice, dynamicgraph::Vector>
                (*this, &NonLinearRotationalTableCartDevice::setState, docstring));
+
+    // set springs and damping
+    docstring =
+      "\n"
+      "    Set kts\n"
+      "\n";
+    addCommand(std::string("setkts"),
+               new ::dynamicgraph::command::Setter<NonLinearRotationalTableCartDevice, double>
+               (*this, &NonLinearRotationalTableCartDevice::setkts, docstring));
+
+    docstring =
+      "\n"
+      "    Set ktd\n"
+      "\n";
+    addCommand(std::string("setktd"),
+               new ::dynamicgraph::command::Setter<NonLinearRotationalTableCartDevice, double>
+               (*this, &NonLinearRotationalTableCartDevice::setktd, docstring));
+
+    docstring =
+      "\n"
+      "    Set kfs\n"
+      "\n";
+    addCommand(std::string("setkfs"),
+               new ::dynamicgraph::command::Setter<NonLinearRotationalTableCartDevice, double>
+               (*this, &NonLinearRotationalTableCartDevice::setkfs, docstring));
+
+    docstring =
+      "\n"
+      "    Set kfd\n"
+      "\n";
+    addCommand(std::string("setkfd"),
+               new ::dynamicgraph::command::Setter<NonLinearRotationalTableCartDevice, double>
+               (*this, &NonLinearRotationalTableCartDevice::setkfd, docstring));
 
 }
 
@@ -493,6 +534,8 @@ void NonLinearRotationalTableCartDevice::computeElastContactForcesAndMoments
     force2=forcesOut.block(0,1,6,1);
     contact1ForcesSOUT_.setConstant(convertVector<dynamicgraph::Vector>(force1));
     contact2ForcesSOUT_.setConstant(convertVector<dynamicgraph::Vector>(force2));
+
+    sumMomentsSOUT_.setConstant(convertVector<dynamicgraph::Vector>(moments));
 
 }
 
@@ -658,7 +701,6 @@ void NonLinearRotationalTableCartDevice::incr(double inTimeStep)
 
   // Energy
   double Etot, Eflex, Ecom, Ewaist;
-      std::cout << "model Kth=" << Kte_ << " flexOriVect=" << flexOriVect.transpose() << std::endl;
   Eflex=0.5*Kte_(0,0)*(flexOriVect).squaredNorm();
   Ecom=0.5*robotMass_*(xnWorld.block(12,0,3,1)).squaredNorm();
   Ewaist=0.5*AngMomentum_.dot(waistAngVel);
