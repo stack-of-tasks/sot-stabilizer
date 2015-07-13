@@ -90,7 +90,7 @@ perturbator.setSinLessMode(True)
 vect = perturbator.sin
 vect.value = stab.comRef.value
 plug (perturbator.sout,stab.perturbationAcc)
-perturbator.perturbation.value=(0,10,0)
+perturbator.perturbation.value=(0,0,0)
 perturbator.selec.value = '111'
 perturbator.setMode(0)
 perturbator.setPeriod(1500)

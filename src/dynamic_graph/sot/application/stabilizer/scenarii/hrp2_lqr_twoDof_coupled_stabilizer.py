@@ -36,22 +36,6 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
 	self.waistMatrixToUTheta = MatrixToUTheta('waistMatrixToUTheta')
 	plug(self.waistHomoToMatrix.sout,self.waistMatrixToUTheta.sin)
 
-	# Control state
-	plug(robot.dynamic.waist,self.waistHomo)
-
-	plug (robot.dynamic.com, self.com)
-        plug (robot.dynamic.Jcom, self.Jcom)
-	plug(self.DCom.sout,self.comDot)
-
-	plug ( robot.dynamic.Jwaist, self.Jwaist) 
-	plug ( robot.dynamic.inertia, self.inertia)
-	plug(self.DWaist.sout,self.waistAngVel)
-
-	plug ( robot.dynamic.Jchest, self.Jchest)
-
-	# Angular momentum
-        plug(robot.dynamic.angularmomentum,self.angularmomentum)
-
 	# For determining nbSupport
         plug (robot.device.forceLLEG,self.force_lf)
         plug (robot.device.forceRLEG,self.force_rf)
@@ -90,6 +74,24 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
 	plug(self.estimator.flexPosition, self.tflex)
 	plug(self.estimator.flexVelocity, self.dtflex)
 	plug(self.estimator.flexAcceleration, self.ddtflex)
+
+	# Control state
+	plug(robot.dynamic.waist,self.waistHomo)
+
+	#plug (robot.dynamic.com, self.com)
+	plug(robot.dynamic.com, self.estimator.calibration.comIn)
+	plug(self.estimator.calibration.comOut, self.com)
+        plug (robot.dynamic.Jcom, self.Jcom)
+	plug(self.DCom.sout,self.comDot)
+
+	plug ( robot.dynamic.Jwaist, self.Jwaist) 
+	plug ( robot.dynamic.inertia, self.inertia)
+	plug(self.DWaist.sout,self.waistAngVel)
+
+	plug ( robot.dynamic.Jchest, self.Jchest)
+
+	# Angular momentum
+        plug(robot.dynamic.angularmomentum,self.angularmomentum)
 
 
 

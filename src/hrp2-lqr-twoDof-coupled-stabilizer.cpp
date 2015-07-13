@@ -733,7 +733,7 @@ namespace sotStabilizer
     const Matrix4& waistHomo = convertMatrix<stateObservation::Matrix>(waistHomoSIN_ (time));
     const stateObservation::Vector & flexOriVect = convertVector<stateObservation::Vector>(flexOriVectSIN_.access(time));
     const stateObservation::Vector & comDot = convertVector<stateObservation::Vector>(comDotSIN_ (time));
-    const stateObservation::Vector & waistAngVel = convertVector<stateObservation::Vector>(waistAngVelSIN_ (time));
+    const stateObservation::Vector & waistAngVel = (convertVector<stateObservation::Vector>(waistAngVelSIN_ (time))).block(3,0,3,1);
     const stateObservation::Vector & flexAngVelVect = convertVector<stateObservation::Vector>(flexAngVelVectSIN_.access(time));
 
     // Translational part of the flexibility
@@ -756,8 +756,6 @@ namespace sotStabilizer
     // For energy
     const stateObservation::Vector & angularmomentum = convertVector<stateObservation::Vector>(angularmomentumSIN.access(time));
 
-    std::cout << "coucou" << std::endl;
-
     // Determination of the number of support
     unsigned int nbSupport=computeNbSupport(time);
 
@@ -772,8 +770,6 @@ namespace sotStabilizer
     // flex orientation
     Matrix3 flexOri=kine::rotationVectorToRotationMatrix(flexOriVect);
 
-        std::cout << "coucou" << std::endl;
-
     /// State in the local frame
     // State reconstruction
     stateObservation::Vector xk;
@@ -786,24 +782,10 @@ namespace sotStabilizer
             (flexAngVelVect).block(0,0,2,1);
     stateSOUT_.setConstant (convertVector<dynamicgraph::Vector>(xk));
 
-        std::cout << "coucou" << std::endl;
-
     /// State in the world frame
-
-//    // State reconstruction
-//    stateObservation::Vector xk;
-//    xk.resize(stateSize_);
-//    xk <<   flexOri*com,
-//            (flexOriVect+waistOri).block(0,0,2,1),
-//            (flexOriVect).block(0,0,2,1),
-//            kine::skewSymmetric(flexOriVect)*flexOri*com+flexOri*comDot,
-//            (flexAngVelVect+flexOri*waistAngVel).block(0,0,2,1),
-//            (flexAngVelVect).block(0,0,2,1);
-//    stateSOUT_.setConstant (convertVector<dynamicgraph::Vector>(xk));
-
     // Extended state reconstruction
     stateObservation::Vector extxk;
-    extxk.resize(stateSize_+4);
+    extxk.resize(18);
     extxk <<    com,
                 waistOriVect,
                 flexOriVect,
@@ -823,8 +805,6 @@ namespace sotStabilizer
                 (flexAngVelVect+flexOri*waistAngVel).block(0,0,2,1),
                 (flexAngVelVect).block(0,0,2,1);
     stateWorldSOUT_.setConstant (convertVector<dynamicgraph::Vector>(xkworld));
-
-        std::cout << "coucou" << std::endl;
 
     // Reference reconstruction
     stateObservation::Vector xkRef;
@@ -852,8 +832,6 @@ namespace sotStabilizer
     u.resize(controlSize_);
     u.setZero();
 
-    std::cout << "coucou" << std::endl;
-
     switch (nbSupport)
     {
         case 0: // No support
@@ -872,7 +850,7 @@ namespace sotStabilizer
                           0,ktd_,0,
                           0,0,ktd_;
 
-                computeDynamicsMatrix(dxk.block(0,0,3,1),Kth_,Kdth_,time);
+                computeDynamicsMatrix(xk.block(0,0,3,1),Kth_,Kdth_,time);
                 controller_.setDynamicsMatrices(A_,B_);
                 nbSupport_=nbSupport;
                 computed_=true;
@@ -891,7 +869,6 @@ namespace sotStabilizer
               if(nbSupport!=nbSupport_ || computed_ == false || fixedGains_!=true) // || comRef!=comRef_)
               {
 
-                      std::cout << "coucou" << std::endl;
                   stateObservation::Vector3 tc; tc.setZero();
                   tc= convertVector<stateObservation::Vector>(supportPos1_).block(0,0,3,1)-convertVector<stateObservation::Vector>(supportPos2_).block(0,0,3,1);
 
@@ -899,7 +876,6 @@ namespace sotStabilizer
                   stateObservation::Matrix3 Kfs; Kfs.setZero();
                   stateObservation::Matrix3 Ktd; Ktd.setZero();
                   stateObservation::Matrix3 Kfd; Kfd.setZero();
-
                   Kts<<    kts_,0,0,
                             0,kts_,0,
                             0,0,kts_;
@@ -907,7 +883,6 @@ namespace sotStabilizer
                             0,kfs_,0,
                             0,0,kfs_;
                   Kth_=2*Kts-0.5*Kfs*kine::skewSymmetric2(tc);
-
                   Ktd<<      ktd_,0,0,
                              0,ktd_,0,
                              0,0,ktd_;
@@ -917,8 +892,8 @@ namespace sotStabilizer
                   Kdth_=2*Ktd-0.5*Kfd*kine::skewSymmetric2(tc);
 
                   // TODO: when feet are not aligned along the y axis
-    std::cout << "coucou" << std::endl;
-                  computeDynamicsMatrix(dxk.block(0,0,3,1),Kth_,Kdth_,time);
+
+                  computeDynamicsMatrix(xk.block(0,0,3,1),Kth_,Kdth_,time);
                   controller_.setDynamicsMatrices(A_,B_);
                   nbSupport_=nbSupport;
                   computed_=true;
@@ -974,8 +949,6 @@ namespace sotStabilizer
     gainSOUT.setConstant (convertMatrix<dynamicgraph::Matrix>(controller_.getLastGain()));
     AmatrixSOUT.setConstant(convertMatrix<dynamicgraph::Matrix>(A_));
     BmatrixSOUT.setConstant(convertMatrix<dynamicgraph::Matrix>(B_));
-   // std::cout << "A: " << A_ << std::endl;
-   // std::cout << "B: " << B_ << std::endl;
 
     // Validation of the model
     xpredicted_=A_*dxk+B_*u+xk;
@@ -989,10 +962,6 @@ namespace sotStabilizer
     b=A_*a+B_*u+xSimu_;
     xSimu_=b;
     statePredictionSOUT_.setConstant(convertVector<dynamicgraph::Vector>(xSimu_));
-
-//        std::cout << "a=" << a.transpose() << " b=" << b.transpose() << std::endl;
-//    xSimu_.noalias()=xSimu_-xkRef;
-//    xSimu_.noalias()=A_*xSimu_+;
 
     stateObservation::Vector modelError;
     modelError.resize(stateSize_);
@@ -1065,8 +1034,8 @@ namespace sotStabilizer
 
     // Caracteristic polynomial
     ddomega_cl=Inertia*m*(2*kine::skewSymmetric(cl)*kine::skewSymmetric(v)-kine::skewSymmetric(v)*kine::skewSymmetric(cl)-g*kine::skewSymmetric(uz));
-    ddomega_omegach=g*m*I_*kine::skewSymmetric(kine::skewSymmetric(cl)*uz)-g*m*kine::skewSymmetric(I_*kine::skewSymmetric(cl)*uz); //Inertia*I*kine::skewSymmetric(v)-Inertia*kine::skewSymmetric(I*v); //
-    ddomega_omega=kine::skewSymmetric(g*m*Inertia*kine::skewSymmetric(cl)*uz)-Inertia*(Kth-g*m*kine::skewSymmetric(cl)*kine::skewSymmetric(uz)); //kine::skewSymmetric(v)-Inertia*(Kth-g*m*kine::skewSymmetric(cl)*kine::skewSymmetric(uz)); //
+    ddomega_omegach=Inertia*I*kine::skewSymmetric(v)-Inertia*kine::skewSymmetric(I*v); //g*m*I_*kine::skewSymmetric(kine::skewSymmetric(cl)*uz)-g*m*kine::skewSymmetric(I_*kine::skewSymmetric(cl)*uz); //
+    ddomega_omega=kine::skewSymmetric(v)-Inertia*(Kth-g*m*kine::skewSymmetric(cl)*kine::skewSymmetric(uz)); //kine::skewSymmetric(g*m*Inertia*kine::skewSymmetric(cl)*uz)-Inertia*(Kth-g*m*kine::skewSymmetric(cl)*kine::skewSymmetric(uz)); //
     ddomega_dcl.setZero(); //
     ddomega_domegach.setZero(); //
     ddomega_domega=-Inertia*Kdth; //

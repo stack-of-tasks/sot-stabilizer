@@ -26,6 +26,21 @@ est = appli.taskCoMStabilized.estimator
 stabilizer = appli.taskCoMStabilized
 seq = appli.seq
 
+kfe=40000
+kfv=600
+kte=600
+ktv=60
+
+kfe=600;
+kfv=65;
+kte=60;
+ktv=6.5;
+
+stabilizer.setkts(kte)
+stabilizer.setktd(ktv)
+stabilizer.setkfs(kfe)
+stabilizer.setkfd(kfv)
+
 plug(robot.device.velocity,robot.dynamic.velocity)
 
 #appli.comRef.value=(0.0105, 0.0002, 0.80771000000000004) # two feet Mx=My=0
@@ -86,18 +101,6 @@ perturbatorTask.setMode(4)
 perturbatorTask.setPeriod(0)
 perturbatorTask.activate(False)
 
-# Perturbation Generator on comRef
-perturbator = VectorPerturbationsGenerator('comref')
-comRef = perturbator.sin
-comRef.value = appli.comRef.value
-plug (perturbator.sout,appli.comRef)
-appli.robot.addTrace( perturbator.name, 'sout')
-perturbator.perturbation.value=(0,1,0)
-perturbator.selec.value = '111'
-perturbator.setMode(0)
-perturbator.setPeriod(0)
-perturbator.activate(False)
-
 appli.startTracer()
 
 zmp = ZmpFromForces('zmp')
@@ -114,7 +117,41 @@ est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-6,)*6)))
 stabilizer.setFixedGains(True)
 stabilizer.setHorizon(200)
 
+est.calibration.start(500)
+est.flexThetaU.value
+
 appli.nextStep(1)
+appli.comRef.value=(0.0, 0.0, 0.80771000000000004) # two feet Mx=My=0
+stabilizer.setStateCost(matrixToTuple(1*np.diag((20000,20000,20000,20000,20000,1,1,1,1,1,1,1,1,1))))
+stabilizer.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
+
+stabilizer.start()
+
+perturbator = VectorPerturbationsGenerator('comref')
+comRef = perturbator.sin
+comRef.value = appli.comRef.value
+plug (perturbator.sout,appli.comRef)
+appli.robot.addTrace( perturbator.name, 'sout')
+perturbator.perturbation.value=(0,1,0)
+perturbator.selec.value = '111'
+perturbator.setMode(0)
+perturbator.setPeriod(0)
+perturbator.activate(False)
+
+
+
+
+# Perturbation Generator on comRef
+perturbator = VectorPerturbationsGenerator('comref')
+comRef = perturbator.sin
+comRef.value = appli.comRef.value
+plug (perturbator.sout,appli.comRef)
+appli.robot.addTrace( perturbator.name, 'sout')
+perturbator.perturbation.value=(0,1,0)
+perturbator.selec.value = '111'
+perturbator.setMode(0)
+perturbator.setPeriod(0)
+perturbator.activate(False)
 
 stab.setStateCost(matrixToTuple(1*np.diag((100,100,100,100,100,1000,1000,100,100,100,100,100,1000,1000))))
 stab.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
@@ -130,21 +167,16 @@ est.flexThetaU.value
 stabilizer.setStateCost(matrixToTuple(1*np.diag((5000,5000,5000,1,1,5000,5000,1,1,1,1,1,1,1))))
 stabilizer.setInputCost(matrixToTuple(1*np.diag((1,5000,1,1,1))))
 
-# Perturbation Generator on task
-perturbatorTask = VectorPerturbationsGenerator('perturbatedTask')
-perturbatorTask.setSinLessMode(True)
-vect = perturbatorTask.sin
-vect.value = appli.comRef.value
-plug (perturbatorTask.sout,stabilizer.perturbation)
-appli.robot.addTrace( perturbatorTask.name, 'sout')
-perturbatorTask.perturbation.value=(0,1,0)
-perturbatorTask.selec.value = '111'
-perturbatorTask.setMode(0)
-perturbatorTask.setPeriod(0)
-perturbatorTask.activate(False)
-
-
-
+perturbator = VectorPerturbationsGenerator('perturbation')
+perturbator.setSinLessMode(True)
+vect = perturbator.sin
+vect.value = stabilizer.comRef.value
+plug (perturbator.sout,stabilizer.perturbationVel)
+perturbator.perturbation.value=(10,0,0)
+perturbator.selec.value = '111'
+perturbator.setMode(0)
+perturbator.setPeriod(0)
+perturbator.activate(False)
 
 # Perturbation Generator on comRef
 perturbator = VectorPerturbationsGenerator('comref')
@@ -235,3 +267,16 @@ stabilizer.setStateCost(matrixToTuple(1*np.diag((10000,10000,10000,10000,10000,1
 stabilizer.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
 
 stabilizer.setStateCost(matrixToTuple(1*np.diag((100,1000,1000,1000,100,1,1000,1,1,1,1,1,1,100))))
+perturbator = VectorPerturbationsGenerator('perturbation')
+perturbator.setSinLessMode(True)
+vect = perturbator.sin
+vect.value = stab.comRef.value
+plug (perturbator.sout,stab.perturbationAcc)
+perturbator.perturbation.value=(0,10,0)
+perturbator.selec.value = '111'
+perturbator.setMode(0)
+perturbator.setPeriod(1500)
+perturbator.activate(True)
+
+stabilizer.setStateCost(matrixToTuple(1*np.diag((100,100,100,100,100,10000,10000,1000,1000,1000,100,100,1000,1000))))
+stabilizer.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
