@@ -189,6 +189,7 @@ NonLinearRotationalTableCartDevice::NonLinearRotationalTableCartDevice(const std
   inertiaSOUT_.setConstant(mat);
   dotInertiaSOUT_.setConstant(mat);
 
+  vect.resize(3); vect.setZero();
   flexAngAccVectSOUT_.setConstant(vect);
   flexAngAccVectSOUT_.setTime(0);
   flexLinAccSOUT_.setConstant(vect);
@@ -389,7 +390,6 @@ NonLinearRotationalTableCartDevice::NonLinearRotationalTableCartDevice(const std
     addCommand(std::string("setkfd"),
                new ::dynamicgraph::command::Setter<NonLinearRotationalTableCartDevice, double>
                (*this, &NonLinearRotationalTableCartDevice::setkfd, docstring));
-
 }
 
 NonLinearRotationalTableCartDevice::~NonLinearRotationalTableCartDevice()
@@ -679,7 +679,12 @@ void NonLinearRotationalTableCartDevice::incr(double inTimeStep)
   flexOriVectSOUT_.setTime(t+1);
   comDotSOUT_.setConstant(convertVector<dynamicgraph::Vector>(dcom));
   comDotSOUT_.setTime(t+1);
-  waistAngVelSOUT_.setConstant(convertVector<dynamicgraph::Vector>(waistAngVel));
+  stateObservation::Vector6 waistAngVelOut; waistAngVelOut.setZero();
+  waistAngVelOut    <<  0,
+                        0,
+                        0,
+                        waistAngVel;
+  waistAngVelSOUT_.setConstant(convertVector<dynamicgraph::Vector>(waistAngVelOut));
   waistAngVelSOUT_.setTime(t+1);
   flexAngVelVectSOUT_.setConstant(convertVector<dynamicgraph::Vector>(flexAngVel));
   flexAngVelVectSOUT_.setTime(t+1);

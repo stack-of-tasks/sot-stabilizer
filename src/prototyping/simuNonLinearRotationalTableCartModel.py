@@ -21,8 +21,8 @@ I1=((a*8.15831,a*-0.00380455,a*0.236677),(a*-0.00380453,a*6.94757,a*-0.0465754),
 
 kfe=40000
 kfv=600
-kte=600
-ktv=60
+kte=400
+ktv=10
 
 model.setRobotMass(59.8)
 model.setMomentOfInertia(I)
@@ -46,8 +46,8 @@ model.setState((0.0, 0.0, 0.80771, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
 b=1
 kfe1=b*40000
 kfv1=b*600
-kte1=b*600
-ktv1=b*60
+kte1=b*400
+ktv1=b*10
 
 stab.setInertia(I1)
 
@@ -56,7 +56,6 @@ stab.setktd(ktv1)
 stab.setkfs(kfe1)
 stab.setkfd(kfv1)
 
-stab.comRef.value=(0.00949, 0.0, 0.80771)
 stab.comRef.value=(0.0, 0.0, 0.80771)
 stab.waistOriRef.value=(0,)*3
 stab.flexOriRef.value=(0,)*3
@@ -69,7 +68,7 @@ plug(gain.gain, stab.controlGain)
 plug(stab.error, gain.error) 
 
 stab.setFixedGains(True)
-stab.setHorizon(200)
+stab.setHorizon(100)
 stab.constantInertia(True)
 
 plug(stab.control,model.control)
@@ -90,7 +89,7 @@ perturbator.setSinLessMode(True)
 vect = perturbator.sin
 vect.value = stab.comRef.value
 plug (perturbator.sout,stab.perturbationAcc)
-perturbator.perturbation.value=(0,0,0)
+perturbator.perturbation.value=(10,0,0)
 perturbator.selec.value = '111'
 perturbator.setMode(0)
 perturbator.setPeriod(1500)
@@ -126,6 +125,8 @@ logSumMoments = np.array([])
 logSumMoments.resize(simuTime/dt,4)
 logStabSimulatedState = np.array([])
 logStabSimulatedState.resize(simuTime/dt,15)
+logStabPredictedState = np.array([])
+logStabPredictedState.resize(simuTime/dt,15)
 logEnergyStab = np.array([])
 logEnergyStab.resize(simuTime/dt,5)
 logEnergyModel = np.array([])
@@ -140,9 +141,9 @@ plug (model.contact2Pos, zmp.sensorPosition_1)
 stab.setStateCost(matrixToTuple(1*np.diag((2000,2000,2000,2000,2000,1,1,1,1,1,1,1,1,1))))
 
 for i in range(int(0/dt),int(stepTime/dt)):
+   model.incr(dt)
    stab.task.recompute(i)
    zmp.zmp.recompute(i)
-   model.incr(dt)
    print 'boucle 1:'+str(i)
    logState[i,0] = i
    logState[i,1:] = model.state.value
@@ -157,8 +158,10 @@ for i in range(int(0/dt),int(stepTime/dt)):
    logForces1[i,1:]=model.contact1Forces.value
    logForces2[i,0]=i
    logForces2[i,1:]=model.contact1Forces.value
+   logStabPredictedState[i,0]=i
+   logStabPredictedState[i,1:]=stab.statePrediction.value
    logStabSimulatedState[i,0]=i
-   logStabSimulatedState[i,1:]=stab.statePrediction.value
+   logStabSimulatedState[i,1:]=stab.stateSimulation.value
    logEnergyStab[i,0]=i
    logEnergyStab[i,1:]=stab.energy.value
    logEnergyModel[i,0]=i
@@ -166,13 +169,13 @@ for i in range(int(0/dt),int(stepTime/dt)):
    logSumMoments[i,0]=i
    logSumMoments[i,1:]=model.sumMoments.value
 
-stab.setStateCost(matrixToTuple(1*np.diag((100,100,100,100,100,100,100,100,100,100,100,100,100,100))))
+stab.setStateCost(matrixToTuple(1*np.diag((1000,1000,1000,1000,1000,1000,1000,1,1,1,1,1,1,1))))
 stab.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
 
 for i in range(int(stepTime/dt),int(step2Time/dt)):
+   model.incr(dt) 
    stab.task.recompute(i)
    zmp.zmp.recompute(i)
-   model.incr(dt)
    print 'boucle 2:'+str(i)
    logState[i,0] = i
    logState[i,1:] = model.state.value
@@ -187,8 +190,10 @@ for i in range(int(stepTime/dt),int(step2Time/dt)):
    logForces1[i,1:]=model.contact1Forces.value
    logForces2[i,0]=i
    logForces2[i,1:]=model.contact1Forces.value
+   logStabPredictedState[i,0]=i
+   logStabPredictedState[i,1:]=stab.statePrediction.value
    logStabSimulatedState[i,0]=i
-   logStabSimulatedState[i,1:]=stab.statePrediction.value
+   logStabSimulatedState[i,1:]=stab.stateSimulation.value
    logEnergyStab[i,0]=i
    logEnergyStab[i,1:]=stab.energy.value
    logEnergyModel[i,0]=i
@@ -196,13 +201,17 @@ for i in range(int(stepTime/dt),int(step2Time/dt)):
    logSumMoments[i,0]=i
    logSumMoments[i,1:]=model.sumMoments.value
 
-stab.setStateCost(matrixToTuple(1*np.diag((100,100,100,100,100,10000,10000,1000,1000,1000,100,100,1000,1000))))
-stab.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
+#stab.setStateCost(matrixToTuple(0.1*np.diag((100,100,100,100,100,10000,10000,1000,1000,1000,100,100,1000,1000))))
+#stab.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
+#stab.setStateCost(matrixToTuple(50*np.diag((1,1,1,1,1,1,1,1,1,1,1,1,1,1))))
+
+stab.setStateCost(matrixToTuple(1*np.diag((1000,1000,1000,1000,1000,1000,1000,1,1,1,1,1,1,1))))
+stab.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,100))))
 
 for i in range(int(step2Time/dt),int(step3Time/dt)):
+   model.incr(dt)
    stab.task.recompute(i)
    zmp.zmp.recompute(i)
-   model.incr(dt)
    print 'boucle 2:'+str(i)
    logState[i,0] = i
    logState[i,1:] = model.state.value
@@ -217,8 +226,10 @@ for i in range(int(step2Time/dt),int(step3Time/dt)):
    logForces1[i,1:]=model.contact1Forces.value
    logForces2[i,0]=i
    logForces2[i,1:]=model.contact1Forces.value
+   logStabPredictedState[i,0]=i
+   logStabPredictedState[i,1:]=stab.statePrediction.value
    logStabSimulatedState[i,0]=i
-   logStabSimulatedState[i,1:]=stab.statePrediction.value
+   logStabSimulatedState[i,1:]=stab.stateSimulation.value
    logEnergyStab[i,0]=i
    logEnergyStab[i,1:]=stab.energy.value
    logEnergyModel[i,0]=i
@@ -226,13 +237,17 @@ for i in range(int(step2Time/dt),int(step3Time/dt)):
    logSumMoments[i,0]=i
    logSumMoments[i,1:]=model.sumMoments.value
 
-stab.setStateCost(matrixToTuple(1*np.diag((2000,2000,2000,2000,2000,1,1,1,1,1,1,1,1,1))))
-stab.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
+#stab.setStateCost(matrixToTuple(1*np.diag((2000,2000,2000,2000,2000,1,1,1,1,1,1,1,1,1))))
+#stab.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
+#stab.setStateCost(matrixToTuple(50*np.diag((1,1,1,1,1,1,1,1,1,1,1,1,1,1))))
+#stab.setStateCost(matrixToTuple(1*np.diag((100,100,100,100,100,10000,10000,1000,1000,1000,100,100,1000,1000))))
+
+stab.setStateCost(matrixToTuple(1*np.diag((1000,1,10000,1,1000,1,1000,10,1,1000,1,10,1,10))))
 
 for i in range(int(step3Time/dt),int(simuTime/dt)):
+   model.incr(dt)
    stab.task.recompute(i)
    zmp.zmp.recompute(i)
-   model.incr(dt)
    print 'boucle 3:'+str(i)
    logState[i,0] = i
    logState[i,1:] = model.state.value
@@ -247,8 +262,10 @@ for i in range(int(step3Time/dt),int(simuTime/dt)):
    logForces1[i,1:]=model.contact1Forces.value
    logForces2[i,0]=i
    logForces2[i,1:]=model.contact1Forces.value
+   logStabPredictedState[i,0]=i
+   logStabPredictedState[i,1:]=stab.statePrediction.value
    logStabSimulatedState[i,0]=i
-   logStabSimulatedState[i,1:]=stab.statePrediction.value
+   logStabSimulatedState[i,1:]=stab.stateSimulation.value
    logEnergyStab[i,0]=i
    logEnergyStab[i,1:]=stab.energy.value
    logEnergyModel[i,0]=i
@@ -400,67 +417,83 @@ axfig.legend(handles, labels)
 # models comparaison
 fig = plt.figure();
 
+fin=2000
+
 i=1
 axfig = fig.add_subplot(2,7,i)
-axfig.plot(logState[:,0], logState[:,1], label='model state')
-axfig.plot(logStabSimulatedState[:,0], logStabSimulatedState[:,i], label='stabilizer state')
+axfig.plot(logState[:fin,0], logState[:fin,1], label='model state')
+axfig.plot(logStabSimulatedState[:fin,0], logStabSimulatedState[:fin,i], label='stabilizer simulated state')
+axfig.plot(logStabPredictedState[:fin,0], logStabPredictedState[:fin,i], label='stabilizer predicted state')
 i=2
 axfig = fig.add_subplot(2,7,i)
-axfig.plot(logState[:,0], logState[:,2], label='model state')
-axfig.plot(logStabSimulatedState[:,0], logStabSimulatedState[:,i], label='stabilizer state')
+axfig.plot(logState[:fin,0], logState[:fin,2], label='model state')
+axfig.plot(logStabSimulatedState[:fin,0], logStabSimulatedState[:fin,i], label='stabilizer simulated state')
+axfig.plot(logStabPredictedState[:fin,0], logStabPredictedState[:fin,i], label='stabilizer predicted state')
 i=3
 axfig = fig.add_subplot(2,7,i)
-axfig.plot(logState[:,0], logState[:,3], label='model state')
-axfig.plot(logStabSimulatedState[:,0], logStabSimulatedState[:,i], label='stabilizer state')
+axfig.plot(logState[:fin,0], logState[:fin,3], label='model state')
+axfig.plot(logStabSimulatedState[:fin,0], logStabSimulatedState[:fin,i], label='stabilizer simulated state')
+axfig.plot(logStabPredictedState[:fin,0], logStabPredictedState[:fin,i], label='stabilizer predicted state')
 
 i=4
 axfig = fig.add_subplot(2,7,i)
-axfig.plot(logState[:,0], logState[:,4], label='model state')
-axfig.plot(logStabSimulatedState[:,0], logStabSimulatedState[:,i], label='stabilizer state')
+axfig.plot(logState[:fin,0], logState[:fin,4], label='model state')
+axfig.plot(logStabSimulatedState[:fin,0], logStabSimulatedState[:fin,i], label='stabilizer simulated state')
+axfig.plot(logStabPredictedState[:fin,0], logStabPredictedState[:fin,i], label='stabilizer predicted state')
 i=5
 axfig = fig.add_subplot(2,7,i)
-axfig.plot(logState[:,0], logState[:,5], label='model state')
-axfig.plot(logStabSimulatedState[:,0], logStabSimulatedState[:,i], label='stabilizer state')
+axfig.plot(logState[:fin,0], logState[:fin,5], label='model state')
+axfig.plot(logStabSimulatedState[:fin,0], logStabSimulatedState[:fin,i], label='stabilizer simulated state')
+axfig.plot(logStabPredictedState[:fin,0], logStabPredictedState[:fin,i], label='stabilizer predicted state')
 
 i=6
 axfig = fig.add_subplot(2,7,i)
-axfig.plot(logState[:,0], logState[:,7], label='model state')
-axfig.plot(logStabSimulatedState[:,0], logStabSimulatedState[:,i], label='stabilizer state')
+axfig.plot(logState[:fin,0], logState[:fin,7], label='model state')
+axfig.plot(logStabSimulatedState[:fin,0], logStabSimulatedState[:fin,i], label='stabilizer simulated state')
+axfig.plot(logStabPredictedState[:fin,0], logStabPredictedState[:fin,i], label='stabilizer predicted state')
 i=7
 axfig = fig.add_subplot(2,7,i)
-axfig.plot(logState[:,0], logState[:,8], label='model state')
-axfig.plot(logStabSimulatedState[:,0], logStabSimulatedState[:,i], label='stabilizer state')
+axfig.plot(logState[:fin,0], logState[:fin,8], label='model state')
+axfig.plot(logStabSimulatedState[:fin,0], logStabSimulatedState[:fin,i], label='stabilizer simulated state')
+axfig.plot(logStabPredictedState[:fin,0], logStabPredictedState[:fin,i], label='stabilizer predicted state')
 
 i=8
 axfig = fig.add_subplot(2,7,i)
-axfig.plot(logState[:,0], logState[:,13], label='model state')
-axfig.plot(logStabSimulatedState[:,0], logStabSimulatedState[:,i], label='stabilizer state')
+axfig.plot(logState[:fin,0], logState[:fin,13], label='model state')
+axfig.plot(logStabSimulatedState[:fin,0], logStabSimulatedState[:fin,i], label='stabilizer simulated state')
+axfig.plot(logStabPredictedState[:fin,0], logStabPredictedState[:fin,i], label='stabilizer predicted state')
 i=9
 axfig = fig.add_subplot(2,7,i)
-axfig.plot(logState[:,0], logState[:,14], label='model state')
-axfig.plot(logStabSimulatedState[:,0], logStabSimulatedState[:,i], label='stabilizer state')
+axfig.plot(logState[:fin,0], logState[:fin,14], label='model state')
+axfig.plot(logStabSimulatedState[:fin,0], logStabSimulatedState[:fin,i], label='stabilizer simulated state')
+axfig.plot(logStabPredictedState[:fin,0], logStabPredictedState[:fin,i], label='stabilizer predicted state')
 i=10
 axfig = fig.add_subplot(2,7,i)
-axfig.plot(logState[:,0], logState[:,15], label='model state')
-axfig.plot(logStabSimulatedState[:,0], logStabSimulatedState[:,i], label='stabilizer state')
+axfig.plot(logState[:fin,0], logState[:fin,15], label='model state')
+axfig.plot(logStabSimulatedState[:fin,0], logStabSimulatedState[:fin,i], label='stabilizer simulated state')
+axfig.plot(logStabPredictedState[:fin,0], logStabPredictedState[:fin,i], label='stabilizer predicted state')
 
 i=11
 axfig = fig.add_subplot(2,7,i)
-axfig.plot(logState[:,0], logState[:,16], label='model state')
-axfig.plot(logStabSimulatedState[:,0], logStabSimulatedState[:,i], label='stabilizer state')
+axfig.plot(logState[:fin,0], logState[:fin,16], label='model state')
+axfig.plot(logStabSimulatedState[:fin,0], logStabSimulatedState[:fin,i], label='stabilizer simulated state')
+axfig.plot(logStabPredictedState[:fin,0], logStabPredictedState[:fin,i], label='stabilizer predicted state')
 i=12
 axfig = fig.add_subplot(2,7,i)
-axfig.plot(logState[:,0], logState[:,17], label='model state')
-axfig.plot(logStabSimulatedState[:,0], logStabSimulatedState[:,i], label='stabilizer state')
+axfig.plot(logState[:fin,0], logState[:fin,17], label='model state')
+axfig.plot(logStabSimulatedState[:fin,0], logStabSimulatedState[:fin,i], label='stabilizer simulated state')
+axfig.plot(logStabPredictedState[:fin,0], logStabPredictedState[:fin,i], label='stabilizer predicted state')
 
 i=13
 axfig = fig.add_subplot(2,7,i)
-axfig.plot(logState[:,0], logState[:,19], label='model state')
-axfig.plot(logStabSimulatedState[:,0], logStabSimulatedState[:,i], label='stabilizer state')
+axfig.plot(logState[:fin,0], logState[:fin,19], label='model state')
+axfig.plot(logStabSimulatedState[:fin,0], logStabSimulatedState[:fin,i], label='stabilizer simulated state')
+axfig.plot(logStabPredictedState[:fin,0], logStabPredictedState[:fin,i], label='stabilizer predicted state')
 i=14
 axfig = fig.add_subplot(2,7,i)
-axfig.plot(logState[:,0], logState[:,20], label='model state')
-axfig.plot(logStabSimulatedState[:,0], logStabSimulatedState[:,i], label='stabilizer state')
+axfig.plot(logState[:fin,0], logState[:fin,20], label='model state')
+axfig.plot(logStabSimulatedState[:fin,0], logStabSimulatedState[:fin,i], label='stabilizer simulated state')
+axfig.plot(logStabPredictedState[:fin,0], logStabPredictedState[:fin,i], label='stabilizer predicted state')
 
 handles, labels = axfig.get_legend_handles_labels()
 axfig.legend(handles, labels)
