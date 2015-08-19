@@ -11,7 +11,8 @@ from dynamic_graph.sot.core.matrix_util import matrixToTuple
 from dynamic_graph.sot.dynamics.zmp_from_forces import ZmpFromForces
 
 forceSeqplay = True
-traj = '/home/alexis/devel/ros/install/resources/seqplay/stand-on-left-foot'
+#traj = '/home/alexis/devel/ros/install/resources/seqplay/stand-on-left-foot'
+traj = '/home/alexis/devel/ros/install/resources/seqplay/stand-on-right-foot'
 
 appli =  SeqPlayLqrTwoDofCoupledStabilizerHRP2(robot, traj, False, False, False,forceSeqplay)
 appli.withTraces()
