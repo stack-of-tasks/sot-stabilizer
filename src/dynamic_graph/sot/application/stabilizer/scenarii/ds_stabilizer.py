@@ -193,8 +193,13 @@ class DSStabilizer(Application):
     def nextStep(self,step=None):
         if step!=None: self.seqstep = step
         if self.seqstep==0:
+            print ('Stabilizer ready')
             self.plugStabilizer()
         elif self.seqstep==1:
+            print ('Stabilizer on')
+            self.tasks['com-stabilized'].start()
+        elif self.seqstep==2:
+            print ('Halfsitting')
             self.goHalfSitting()
         self.seqstep += 1
         

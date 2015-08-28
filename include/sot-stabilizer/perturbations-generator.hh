@@ -16,6 +16,7 @@
 #include <sot-state-observation/tools/definitions.hh>
 
 #include <state-observation/tools/miscellaneous-algorithms.hpp>
+#include <state-observation/noise/gaussian-white-noise.hpp>
 
 #include <sot/core/flags.hh>
 
@@ -119,6 +120,8 @@ namespace sotStabilizer
             unsigned iterationNumber_;
 
             unsigned currentTime_;
+
+            stateObservation::GaussianWhiteNoise gwn_;
         };
 
 } // namespace sotStateObservation

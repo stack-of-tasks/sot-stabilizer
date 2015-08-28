@@ -44,8 +44,9 @@ namespace sotStabilizer
         docstring =
                 "\n"
                 "    Set the perturbation Mode"
-                "      - 0 (default): dirac perturbation"
-                "      - 1 : step perturbation"
+                "      - 0 (default): dirac perturbation "
+                "      - 1 : step perturbation "
+                "      - 2 : Gaussian white noise"
                 "\n";
 
         addCommand(std::string("setMode"),
@@ -155,6 +156,34 @@ namespace sotStabilizer
 
                     ++timeSinceLast_;
                 }
+                else if (perturbationMode_==2) //white noise
+                {
+
+
+                    const dynamicgraph::Vector & perturbation = perturbationSIN(inTime);
+                    const dynamicgraph::sot::Flags & selec = selecSIN(inTime);
+
+                    gwn_.setDimension(perturbation.size());
+                    gwn_.setStandardDeviation(sotStateObservation::convertVector<stateObservation::Vector>(perturbation).asDiagonal());
+
+                    for (unsigned i=0; i<perturbation.size(); ++i)
+                    {
+                        if (selec(i))
+                        {
+                            output = sotStateObservation::convertVector<dynamicgraph::Vector>
+                                (gwn_.addNoise(sotStateObservation::convertVector<stateObservation::Vector>(sin)));
+                        }
+                        else
+                        {
+                            output = sin;
+                        }
+                    }
+
+
+                    ++timeSinceLast_;
+                }
+
+
             }
             else
             {
