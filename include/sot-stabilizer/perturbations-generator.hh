@@ -131,11 +131,8 @@ namespace sotStabilizer
 
             unsigned currentTime_;
 
-<<<<<<< HEAD
             stateObservation::GaussianWhiteNoise gwn_;
-=======
             bool sinLess_;
->>>>>>> adding bang bang perturbation in perturbatorGenerator
         };
 
 } // namespace sotStateObservation

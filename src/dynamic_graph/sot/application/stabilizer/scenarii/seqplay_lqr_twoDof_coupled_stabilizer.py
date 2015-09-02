@@ -302,7 +302,7 @@ class SeqPlayLqrTwoDofCoupledStabilizer(Application):
         '''Start to stabilize'''
         self.sot.clear()
         
-	self.tasks['com-stabilized'].comRef.value = (0.0, 0.0, self.tasks['com-stabilized'].comRef.value[2]) #self.tasks['com-stabilized'].com.value 
+	#self.tasks['com-stabilized'].comRef.value = (0.0, 0.0, self.tasks['com-stabilized'].comRef.value[2]) #self.tasks['com-stabilized'].com.value 
         self.comRef = self.tasks['com-stabilized'].comRef
         self.push(self.tasks['ankles'])
         self.push(self.tasks['com-stabilized'])

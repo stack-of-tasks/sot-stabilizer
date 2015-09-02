@@ -4,7 +4,7 @@ import numpy as np
 from dynamic_graph import plug
 import dynamic_graph.signal_base as dgsb
 from dynamic_graph.sot.core import Stack_of_vector, OpPointModifier, MatrixHomoToPose, Multiply_matrixHomo_vector
-from dynamic_graph.sot.application.state_observation.initializations.hrp2_model_base_flex_estimator import HRP2ModelBaseFlexEstimator 
+from dynamic_graph.sot.application.state_observation.initializations.hrp2_model_base_flex_estimator_imu_force import HRP2ModelBaseFlexEstimatorIMUForce
 from dynamic_graph.sot.application.stabilizer.scenarii.seqplay_lqr_twoDof_coupled_stabilizer_hrp2 import SeqPlayLqrTwoDofCoupledStabilizerHRP2
 from dynamic_graph.sot.application.stabilizer import VectorPerturbationsGenerator
 from dynamic_graph.sot.core.matrix_util import matrixToTuple
@@ -117,9 +117,11 @@ perturbatorTask.activate(False)
 
 appli.gains['trunk'].setConstant(2)
 est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-6,)*6)))
+est.setForceVariance(10)
 
 stabilizer.setFixedGains(True)
 stabilizer.setHorizon(100)
+est.setWithForceSensors(False)
 
 # Trouver Mx=My=0
 

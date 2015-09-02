@@ -15,7 +15,7 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
     
     def __init__(self,robot,taskname = 'com-stabilized'):      
 
-	from dynamic_graph.sot.application.state_observation.initializations.hrp2_model_base_flex_estimator import HRP2ModelBaseFlexEstimator  
+	from dynamic_graph.sot.application.state_observation.initializations.hrp2_model_base_flex_estimator_imu_force import HRP2ModelBaseFlexEstimatorIMUForce  
         HRP2LQRTwoDofCoupledStabilizer.__init__(self,taskname)
         robot.dynamic.com.recompute(0)
         robot.dynamic.Jcom.recompute(0)
@@ -43,7 +43,7 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
         plug (robot.frames['leftFootForceSensor'].position,self.leftFootPosition)
 
 	# Estimator of the flexibility state
-        self.estimator = HRP2ModelBaseFlexEstimator(robot, taskname+"Estimator")
+        self.estimator = HRP2ModelBaseFlexEstimatorIMUForce (robot, taskname+"Estimator")
 	self.estimator.setContactModel(1)
         plug (self.nbSupport,self.estimator.contactNbr) # In
 	
@@ -80,7 +80,7 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
 
 	#plug (robot.dynamic.com, self.com)
 	plug(robot.dynamic.com, self.estimator.calibration.comIn)
-	plug(self.estimator.calibration.comOut, self.com)
+	plug(robot.dynamic.com, self.com)
         plug (robot.dynamic.Jcom, self.Jcom)
 	plug(self.DCom.sout,self.comDot)
 

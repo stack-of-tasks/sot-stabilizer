@@ -772,7 +772,6 @@ namespace sotStabilizer
     // flex orientation
     Matrix3 flexOri=kine::rotationVectorToRotationMatrix(flexOriVect);
 
-    /// State in the local frame
     // State reconstruction
     stateObservation::Vector xk;
     xk.resize(stateSize_);
@@ -783,30 +782,6 @@ namespace sotStabilizer
             (waistAngVel).block(0,0,2,1),
             (flexAngVelVect).block(0,0,2,1);
     stateSOUT_.setConstant (convertVector<dynamicgraph::Vector>(xk));
-
-    /// State in the world frame
-    // Extended state reconstruction
-    stateObservation::Vector extxk;
-    extxk.resize(18);
-    extxk <<    com,
-                waistOriVect,
-                flexOriVect,
-                comDot,
-                waistAngVel,
-                flexAngVelVect;
-    stateExtendedSOUT_.setConstant (convertVector<dynamicgraph::Vector>(extxk));
-    stateExtendedSOUT_.setTime (time);
-
-    // State in the world frame
-    stateObservation::Vector xkworld;
-    xkworld.resize(stateSize_);
-    xkworld <<  flexOri*com+tflex,
-                (kine::rotationMatrixToRotationVector(flexOri*waistOri)).block(0,0,2,1),
-                (flexOriVect).block(0,0,2,1),
-                kine::skewSymmetric(flexAngVelVect)*flexOri*com+flexOri*comDot+dtflex,
-                (flexAngVelVect+flexOri*waistAngVel).block(0,0,2,1),
-                (flexAngVelVect).block(0,0,2,1);
-    stateWorldSOUT_.setConstant (convertVector<dynamicgraph::Vector>(xkworld));
 
     // Reference reconstruction
     stateObservation::Vector xkRef;
@@ -819,10 +794,17 @@ namespace sotStabilizer
                flexAngVelRef.block(0,0,2,1);
     stateRefSOUT_.setConstant (convertVector<dynamicgraph::Vector>(xkRef));
 
-    stateObservation::Vector controlDref;
-    controlDref.resize(controlSize_);
-    controlDref <<  comDotRef,
-                    waistAngVelRef.block(0,0,2,1);
+    // Equilibrium state reconstruction
+    stateObservation::Vector xeq;
+    xeq.resize(stateSize_);
+    xeq <<     0,
+               0,
+               comRef(2),
+               waistOriRef.block(0,0,2,1),
+               flexOriRef.block(0,0,2,1),
+               comDotRef,
+               waistAngVelRef.block(0,0,2,1),
+               flexAngVelRef.block(0,0,2,1);
 
     // State error
     stateObservation::Vector dxk;
@@ -830,10 +812,11 @@ namespace sotStabilizer
     dxk=xk-xkRef;
     stateErrorSOUT_.setConstant (convertVector<dynamicgraph::Vector>(dxk));
 
+    /// Computing control
+
     stateObservation::Vector u;
     u.resize(controlSize_);
     u.setZero();
-
     switch (nbSupport)
     {
         case 0: // No support
@@ -845,6 +828,7 @@ namespace sotStabilizer
         {
              if(nbSupport!=nbSupport_ || computed_==false || fixedGains_!=true) // || comRef!=comRef_)
              {
+                // Spring and damping
                 Kth_ <<   kts_,0,0,
                           0,kts_,0,
                           0,0,kts_;
@@ -852,12 +836,14 @@ namespace sotStabilizer
                           0,ktd_,0,
                           0,0,ktd_;
 
-                computeDynamicsMatrix(xk.block(0,0,3,1),Kth_,Kdth_,time);
+                // Computing model
+                computeDynamicsMatrix(xeq.block(0,0,3,1),Kth_,Kdth_,time);
                 controller_.setDynamicsMatrices(A_,B_);
                 nbSupport_=nbSupport;
                 computed_=true;
                 comRef_=comRef;
              }
+             // Computing control
              controller_.setState(dxk,time);
              u=controller_.getControl(time);
              u.block(0,0,3,1)+=perturbationAcc;
@@ -895,20 +881,7 @@ namespace sotStabilizer
 
                   // TODO: when feet are not aligned along the y axis
 
-                  computeDynamicsMatrix(xk.block(0,0,3,1),Kth_,Kdth_,time);
-                  stateObservation::Vector c; c.resize(stateSize_);
-                  c <<  xk.block(0,0,3,1),
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0;
+                  computeDynamicsMatrix(xeq.block(0,0,3,1),Kth_,Kdth_,time);
                   controller_.setDynamicsMatrices(A_,B_);
                   nbSupport_=nbSupport;
                   computed_=true;
@@ -924,6 +897,31 @@ namespace sotStabilizer
         default: throw std::invalid_argument("Only 0, 1 and 2 number of supports cases are developped");
     };
 
+    /// Post treatments
+
+    // Extended state reconstruction
+    stateObservation::Vector extxk;
+    extxk.resize(18);
+    extxk <<    com,
+                waistOriVect,
+                flexOriVect,
+                comDot,
+                waistAngVel,
+                flexAngVelVect;
+    stateExtendedSOUT_.setConstant (convertVector<dynamicgraph::Vector>(extxk));
+    stateExtendedSOUT_.setTime (time);
+
+    // State in the world frame
+    stateObservation::Vector xkworld;
+    xkworld.resize(stateSize_);
+    xkworld <<  flexOri*com+tflex,
+                (kine::rotationMatrixToRotationVector(flexOri*waistOri)).block(0,0,2,1),
+                (flexOriVect).block(0,0,2,1),
+                kine::skewSymmetric(flexAngVelVect)*flexOri*com+flexOri*comDot+dtflex,
+                (flexAngVelVect+flexOri*waistAngVel).block(0,0,2,1),
+                (flexAngVelVect).block(0,0,2,1);
+    stateWorldSOUT_.setConstant (convertVector<dynamicgraph::Vector>(xkworld));
+
     // Energy
     double Etot, Eflex, Ecom, Ewaist;
     Eflex=0.5*Kth_(0,0)*flexOriVect.squaredNorm();
@@ -937,21 +935,6 @@ namespace sotStabilizer
                 Ewaist,
                 Eflex;
     energySOUT_.setConstant(convertVector<dynamicgraph::Vector>(energy));
-
-    task.resize (taskSize_);
-    int i;
-    for (i=0;i<3;i++)
-    {
-        task [i].setSingleBound (preTask_(i)+perturbationVel(i));
-    }
-    for (i=3;i<controlSize_;i++)
-    {
-        task [i].setSingleBound (preTask_(i));
-    }
-    for (i=controlSize_;i<taskSize_;i++)
-    {
-        task [i].setSingleBound (preTask_(i-taskSize_+controlSize_));
-    }
 
     stateObservation::Vector error;
     error.resize(controlSize_);
@@ -984,6 +967,22 @@ namespace sotStabilizer
     modelError.setZero();
     modelError=xpredicted_-dxk;
     stateModelErrorSOUT_.setConstant(convertVector<dynamicgraph::Vector>(modelError));
+
+    /// Computing task
+    task.resize (taskSize_);
+    int i;
+    for (i=0;i<3;i++)
+    {
+        task [i].setSingleBound (preTask_(i)+perturbationVel(i));
+    }
+    for (i=3;i<controlSize_;i++)
+    {
+        task [i].setSingleBound (preTask_(i));
+    }
+    for (i=controlSize_;i<taskSize_;i++)
+    {
+        task [i].setSingleBound (preTask_(i-taskSize_+controlSize_));
+    }
 
     return task;
   }
