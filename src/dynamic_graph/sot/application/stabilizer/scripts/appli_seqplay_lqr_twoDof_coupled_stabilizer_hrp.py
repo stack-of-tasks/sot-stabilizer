@@ -93,12 +93,12 @@ plug (robot.frames['rightFootForceSensor'].position, zmp.sensorPosition_1)
 appli.robot.addTrace( zmp.name, 'zmp')
 appli.robot.addTrace( appli.zmpRef.name, 'zmp')
 
-#zmpEst = ZmpFromForces('zmpEstimated')
-#plug (est.forcesSupport1 , zmpEst.force_0)
-#plug (est.forcesSupport2, zmpEst.force_1)
-#plug (stabilizer.supportPos1 , zmpEst.sensorPosition_0)
-#plug (stabilizer.supportPos2, zmpEst.sensorPosition_1)
-#appli.robot.addTrace( zmpEst.name, 'zmp')
+zmpEst = ZmpFromForces('zmpEstimated')
+plug (est.forcesSupport1 , zmpEst.force_0)
+plug (est.forcesSupport2, zmpEst.force_1)
+plug (robot.frames['leftFootForceSensor'].position , zmpEst.sensorPosition_0)
+plug (robot.frames['rightFootForceSensor'].position, zmpEst.sensorPosition_1)
+appli.robot.addTrace( zmpEst.name, 'zmp')
 
 appli.startTracer()
 
@@ -109,14 +109,14 @@ vect = perturbatorTask.sin
 vect.value = appli.comRef.value
 plug (perturbatorTask.sout,stabilizer.perturbationVel)
 appli.robot.addTrace( perturbatorTask.name, 'sout')
-perturbatorTask.perturbation.value=(10,0,0)
+perturbatorTask.perturbation.value=(2,0,0)
 perturbatorTask.selec.value = '111'
-perturbatorTask.setMode(4)
+perturbatorTask.setMode(0)
 perturbatorTask.setPeriod(0)
 perturbatorTask.activate(False)
 
 appli.gains['trunk'].setConstant(2)
-est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-6,)*6)))
+est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-3,)*3+(1e-6,)*3)))
 est.setForceVariance(10)
 
 stabilizer.setFixedGains(True)

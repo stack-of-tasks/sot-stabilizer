@@ -186,6 +186,10 @@ namespace sotStabilizer
       return sotStateObservation::convertMatrix<Matrix>(R_);
     }
 
+    void setGains(const Matrix & M)
+    {
+        controller_.setGains(sotStateObservation::convertMatrix<stateObservation::Matrix>(M));
+    }
 
     Matrix getLastGain() const
     {

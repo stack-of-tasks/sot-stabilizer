@@ -430,6 +430,15 @@ namespace sotStabilizer
 
     docstring  =
             "\n"
+            "    Sets gains \n"
+            "\n";
+
+    addCommand(std::string("setGains"),
+               new ::dynamicgraph::command::Setter <HRP2LQRTwoDofCoupledStabilizer,dynamicgraph::Matrix>
+                (*this, & HRP2LQRTwoDofCoupledStabilizer::setGains ,docstring));
+
+    docstring  =
+            "\n"
             "    constnant inertia \n"
             "\n";
 
