@@ -43,6 +43,8 @@ namespace controller
 
                 sotStabilizer::tools::discreteTimeNonAlgRiccatiEqn(A_,B_,Q_,R_,Qn_,Pn_,horizon_);
                 changedValue_=false;
+                stateObservation::Matrix P(Pn_.front());
+                lastGain_ = (R_+B_.transpose()*P*B_).inverse()*B_.transpose()*P*A_;
 #ifndef NDEBUG
                 std::cout<<"A :"<< std::endl;
                 std::cout<< A_ <<std::endl;
@@ -59,13 +61,6 @@ namespace controller
 //                std::cout<<"Gain :"<< -lastGain_ <<std::endl;
             }
 
-
-
-            stateObservation::Matrix P(Pn_.front());
-
-
-
-            lastGain_ = (R_+B_.transpose()*P*B_).inverse()*B_.transpose()*P*A_;
 
             checkState_(x_);
             u_ = -lastGain_* x_;
