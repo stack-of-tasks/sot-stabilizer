@@ -1053,11 +1053,10 @@ namespace sotStabilizer
     Inertia -= m * kine::skewSymmetric2(cl);
     Inertia = Inertia.inverse();
 
-    stateObservation::Vector3 v;
-    v=-g*m*Inertia*kine::skewSymmetric(cl)*uz;
-
     // Caracteristic polynomial
-    ddomega_cl=Inertia*m*(2*kine::skewSymmetric(cl)*kine::skewSymmetric(v)-kine::skewSymmetric(v)*kine::skewSymmetric(cl)-g*kine::skewSymmetric(uz));
+    stateObservation::Vector3 v;
+    v=g*m*Inertia*kine::skewSymmetric(cl)*uz;
+    ddomega_cl=Inertia*m*(2*kine::skewSymmetric(cl)*kine::skewSymmetric(v)-kine::skewSymmetric(v)*kine::skewSymmetric(cl)+g*kine::skewSymmetric(uz));
     ddomega_omegach=g*m*I_*kine::skewSymmetric(kine::skewSymmetric(cl)*uz)-g*m*kine::skewSymmetric(I_*kine::skewSymmetric(cl)*uz); //Inertia*I*kine::skewSymmetric(v)-Inertia*kine::skewSymmetric(I*v); //
     ddomega_omega=kine::skewSymmetric(g*m*Inertia*kine::skewSymmetric(cl)*uz)-Inertia*(Kth-g*m*kine::skewSymmetric(cl)*kine::skewSymmetric(uz)); //kine::skewSymmetric(v)-Inertia*(Kth-g*m*kine::skewSymmetric(cl)*kine::skewSymmetric(uz)); //
     ddomega_dcl.setZero(); //
@@ -1098,6 +1097,7 @@ namespace sotStabilizer
 //    ddomega_ddomegach=-identity; //
 
     // A_ and B_ computation
+    A_.setZero();
     A_.block(0,7,3,3)=identity;
     A_.block(3,10,2,2)=identity.block(0,0,2,2);
     A_.block(5,12,2,2)=identity.block(0,0,2,2);
@@ -1113,6 +1113,7 @@ namespace sotStabilizer
 
     A_.noalias() = dt_ * A_ + Identity;
 
+    B_.setZero();
     B_.block(7,0,3,3)=identity;
     B_.block(10,3,2,2)=identity.block(0,0,2,2);
     B_.block(12,0,2,3)=ddomega_ddcl.block(0,0,2,3);
