@@ -215,11 +215,11 @@ class SeqPlayLqrTwoDofCoupledStabilizer(Application):
         '''Lift both hanfs.'''
         change6dPositionReference(self.taskRH,self.features['right-wrist'],\
                                     self.gains['right-wrist'],\
-                                    (0.3,-0.25,1.1,0,-pi/2,0),'111111')
+                                    (0.3,-0.25+self.comRef.value[1],1.1,0,-pi/2,0),'111111')
         self.push(self.taskRH)
         change6dPositionReference(self.taskLH,self.features['left-wrist'],\
                                     self.gains['left-wrist'],\
-                                    (0.3,0.25,1.1,0,-pi/2,0),'111111')
+                                    (0.3,0.25+self.comRef.value[1],1.1,0,-pi/2,0),'111111')
         self.push(self.taskLH)
         None
 
@@ -242,11 +242,11 @@ class SeqPlayLqrTwoDofCoupledStabilizer(Application):
             self.stabilize()
             print ('Stabilizer on')
         elif self.seqstep==2:
-            self.liftHands()
-            print ('Hands lifted')
-        elif self.seqstep==3:
             self.runSeqplay()
             print ('Seqplay run')
+        elif self.seqstep==3:
+            self.liftHands()
+            print ('Hands lifted')
         elif self.seqstep==4:
             self.goHalfSitting()
             print ('Half-Sitting the robot can be lifted')

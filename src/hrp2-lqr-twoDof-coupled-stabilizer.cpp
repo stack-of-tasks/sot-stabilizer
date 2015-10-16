@@ -50,7 +50,7 @@ namespace sotStabilizer
   using dynamicgraph::sot::MatrixRotation;
   using dynamicgraph::sot::VectorUTheta;
 
-  double HRP2LQRTwoDofCoupledStabilizer::constm_ = 59.8;
+  double HRP2LQRTwoDofCoupledStabilizer::constm_ = 57;
   double HRP2LQRTwoDofCoupledStabilizer::constcomHeight_ = 0.807;
   double HRP2LQRTwoDofCoupledStabilizer::conststepLength_ = 0.19;
 
@@ -615,7 +615,7 @@ namespace sotStabilizer
     preTask_.resize(controlSize_);
     preTask_.setZero();
 
-    hrp2Mass_ = 58;
+    hrp2Mass_ = constm_;
 
     dynamicgraph::Matrix::Matrix gains;
     gains.resize(controlSize_,stateSize_);
@@ -1127,7 +1127,7 @@ namespace sotStabilizer
     Vector waistPos(3);
     waistHomo.extract(waistPos);
 
-    double m=inertiaSotWaistFrame(0,0); //<=== give 56.8;
+    double m=hrp2Mass_;
     stateObservation::Vector3 wl=convertVector<stateObservation::Vector>(waistPos);
 
 
