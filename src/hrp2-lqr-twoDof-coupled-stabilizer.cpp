@@ -50,7 +50,7 @@ namespace sotStabilizer
   using dynamicgraph::sot::MatrixRotation;
   using dynamicgraph::sot::VectorUTheta;
 
-  double HRP2LQRTwoDofCoupledStabilizer::constm_ = 57;
+  double HRP2LQRTwoDofCoupledStabilizer::constm_ = 56.8;
   double HRP2LQRTwoDofCoupledStabilizer::constcomHeight_ = 0.807;
   double HRP2LQRTwoDofCoupledStabilizer::conststepLength_ = 0.19;
 
