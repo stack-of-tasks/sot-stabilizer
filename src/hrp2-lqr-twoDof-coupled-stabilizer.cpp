@@ -980,17 +980,13 @@ namespace sotStabilizer
     /// Computing task
     task.resize (taskSize_);
     int i;
-    for (i=0;i<3;i++)
+    for (i=0;i<controlSize_;i++)
     {
         task [i].setSingleBound (preTask_(i)+perturbationVel(i));
     }
-    for (i=3;i<controlSize_;i++)
-    {
-        task [i].setSingleBound (preTask_(i));
-    }
     for (i=controlSize_;i<taskSize_;i++)
     {
-        task [i].setSingleBound (preTask_(i-taskSize_+controlSize_));
+        task [i].setSingleBound (preTask_(i-taskSize_+controlSize_)+perturbationVel(i-taskSize_+controlSize_));
     }
 
     return task;

@@ -66,6 +66,8 @@ appli.robot.addTrace( stabilizer.name,'nbSupport' )
 appli.robot.addTrace( stabilizer.name,'error' )
 appli.robot.addTrace( robot.device.name, 'forceLLEG')
 appli.robot.addTrace( robot.device.name, 'forceRLEG')
+appli.robot.addTrace( robot.device.name, 'forceLARM')
+appli.robot.addTrace( robot.device.name, 'forceRARM')
 appli.robot.addTrace( robot.device.name, 'accelerometer')
 appli.robot.addTrace( robot.device.name, 'gyrometer')
 appli.robot.addTrace ( stabilizer.name,'state')
@@ -106,10 +108,10 @@ appli.startTracer()
 perturbatorTask = VectorPerturbationsGenerator('perturbatedTask')
 perturbatorTask.setSinLessMode(True)
 vect = perturbatorTask.sin
-vect.value = appli.comRef.value
+vect.value = (0,0,0,0,0)
 plug (perturbatorTask.sout,stabilizer.perturbationVel)
 appli.robot.addTrace( perturbatorTask.name, 'sout')
-perturbatorTask.perturbation.value=(2,0,0)
+perturbatorTask.perturbation.value=(2,0,0,0,0)
 perturbatorTask.selec.value = '111'
 perturbatorTask.setMode(0)
 perturbatorTask.setPeriod(0)
@@ -122,6 +124,30 @@ est.setForceVariance(10)
 stabilizer.setFixedGains(True)
 stabilizer.setHorizon(100)
 est.setWithForceSensors(False)
+
+# Perturbation Generator on comRef
+perturbator = VectorPerturbationsGenerator('comref')
+comRef = perturbator.sin
+comRef.value = appli.comRef.value
+plug (perturbator.sout,appli.comRef)
+appli.robot.addTrace( perturbator.name, 'sout')
+perturbator.perturbation.value=(0,1,0)
+perturbator.selec.value = '111'
+perturbator.setMode(0)
+perturbator.setPeriod(0)
+perturbator.activate(False)
+
+# Perturbation Generator on oriWaist
+perturbator1 = VectorPerturbationsGenerator('oriWaist')
+oriWaist = perturbator1.sin
+oriWaist.value = appli.robot.dynamic.waist.value
+plug (perturbator1.sout, appli.robot.dynamic.waist)
+appli.robot.addTrace( perturbator1.name, 'sout')
+perturbator1.perturbation.value=(0,1,0)
+perturbator1.selec.value = '111'
+perturbator1.setMode(0)
+perturbator1.setPeriod(0)
+perturbator1.activate(False)
 
 # Trouver Mx=My=0
 
@@ -160,21 +186,6 @@ perturbatorTask.activate(False)
 
 
 
-
-
-
-
-# Perturbation Generator on comRef
-perturbator = VectorPerturbationsGenerator('comref')
-comRef = perturbator.sin
-comRef.value = appli.comRef.value
-plug (perturbator.sout,appli.comRef)
-appli.robot.addTrace( perturbator.name, 'sout')
-perturbator.perturbation.value=(0,1,0)
-perturbator.selec.value = '111'
-perturbator.setMode(0)
-perturbator.setPeriod(0)
-perturbator.activate(False)
 
 stab.setStateCost(matrixToTuple(1*np.diag((100,100,100,100,100,1000,1000,100,100,100,100,100,1000,1000))))
 
