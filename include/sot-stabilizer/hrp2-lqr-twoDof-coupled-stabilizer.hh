@@ -258,6 +258,7 @@ namespace sotStabilizer
 
 
     Vector& getControl(Vector& control, const int& time);
+    unsigned int& getNbSupport(unsigned int& nbSupport, const int& time);
     inline void computeDynamicsMatrix(const stateObservation::Vector3 cl, const stateObservation::Matrix Kth, const stateObservation::Matrix Kdth, const int& time);
 
   private:

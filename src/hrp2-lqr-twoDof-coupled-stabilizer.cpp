@@ -235,6 +235,8 @@ namespace sotStabilizer
     jacobianSOUT.setFunction (boost::bind(&HRP2LQRTwoDofCoupledStabilizer::computeJacobian,this,_1,_2));
 
     controlSOUT_.setFunction (boost::bind(&HRP2LQRTwoDofCoupledStabilizer::getControl,this,_1,_2));
+    nbSupportSOUT_.setFunction(boost::bind(&HRP2LQRTwoDofCoupledStabilizer::getNbSupport,this,_1,_2));
+
 
     std::string docstring;
     docstring =
@@ -697,7 +699,14 @@ namespace sotStabilizer
       return control;
   }
 
-  unsigned int HRP2LQRTwoDofCoupledStabilizer::computeNbSupport(const int& time)//const MatrixHomogeneous& leftFootPosition, const MatrixHomogeneous& rightFootPosition, const Vector& forceLf, const Vector& forceRf, const int& time)
+  unsigned int& HRP2LQRTwoDofCoupledStabilizer::getNbSupport(unsigned int& nbSupport, const int& time)
+  {
+      nbSupport=computeNbSupport(time);
+      nbSupport=nbSupportSOUT_.access (time);
+      return nbSupport;
+  }
+
+  unsigned int HRP2LQRTwoDofCoupledStabilizer::computeNbSupport(const int& time)  //const MatrixHomogeneous& leftFootPosition, const MatrixHomogeneous& rightFootPosition, const Vector& forceLf, const Vector& forceRf, const int& time)
   {
 
       /// Forces signals
@@ -782,13 +791,13 @@ namespace sotStabilizer
         nbSupport++;
       }
 
-      nbSupportSOUT_.setConstant (nbSupport);
-      nbSupportSOUT_.setTime (time);
-
       if (!on_)
       {
         nbSupport=0;
       }
+
+      nbSupportSOUT_.setConstant (nbSupport);
+      nbSupportSOUT_.setTime (time);
 
       return nbSupport;
   }
