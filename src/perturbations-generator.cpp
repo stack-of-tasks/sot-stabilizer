@@ -180,7 +180,15 @@ namespace sotStabilizer
                 else if (perturbationMode_==2) //white noise
                 {
                     const dynamicgraph::Vector & perturbation = perturbationSIN(inTime);
-                    const dynamicgraph::sot::Flags & selec = selecSIN(inTime);
+                    const dynamicgraph::sot::Flags & selec = selecSIN(inTime);    
+                    
+                    if(sinLess_==false){
+                        output = sin;
+                    }
+                    else if(sinLess_==true){
+                        output.resize(sin.size());
+                        output.setZero();
+                    }
 
                     gwn_.setDimension(perturbation.size());
                     gwn_.setStandardDeviation(sotStateObservation::convertVector<stateObservation::Vector>(perturbation).asDiagonal());
@@ -190,7 +198,7 @@ namespace sotStabilizer
                         if (selec(i))
                         {
                             output = sotStateObservation::convertVector<dynamicgraph::Vector>
-                                (gwn_.addNoise(sotStateObservation::convertVector<stateObservation::Vector>(sin)));
+                                (gwn_.addNoise(sotStateObservation::convertVector<stateObservation::Vector>(output)));
                         }
                         else
                         {
@@ -213,6 +221,7 @@ namespace sotStabilizer
                 }
             }
 
+           // std::cout << "perturbOn" << on_ << std::endl;
             return currentOutput_=output;
         }
     }

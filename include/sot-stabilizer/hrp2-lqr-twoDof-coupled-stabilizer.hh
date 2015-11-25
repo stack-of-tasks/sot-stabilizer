@@ -362,6 +362,10 @@ namespace sotStabilizer
     // Contact Position
     SignalTimeDependent <Vector, int> supportPos1SOUT_;
     SignalTimeDependent <Vector, int> supportPos2SOUT_;
+    SignalTimeDependent <MatrixHomogeneous, int> homoSupportPos1SOUT_;
+    SignalTimeDependent <MatrixHomogeneous, int> homoSupportPos2SOUT_;
+    SignalTimeDependent <Vector, int> forceSupport1SOUT_;
+    SignalTimeDependent <Vector, int> forceSupport2SOUT_;
 
     // A and B matrices computed by the computeDynamics method
     dynamicgraph::SignalPtr < ::dynamicgraph::Matrix, int> AmatrixSOUT;
@@ -371,6 +375,9 @@ namespace sotStabilizer
 
     // Energy
     SignalTimeDependent <Vector, int> energySOUT_;
+
+    // Computation time
+    SignalPtr < dynamicgraph::Vector, int > computationTimeSOUT;
 
         /// Unused signals
     // angular acceleration of the waist

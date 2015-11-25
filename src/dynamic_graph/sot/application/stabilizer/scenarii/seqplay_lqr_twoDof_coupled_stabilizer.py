@@ -18,6 +18,8 @@ from dynamic_graph.sot.dynamics.zmp_from_forces import ZmpFromForces
 
 from dynamic_graph.sot.core import Stack_of_vector
 
+from dynamic_graph.sot.hrp2.dynamic_hrp2_14 import DynamicHrp2_14
+
 
 toList = lambda sot: map(lambda x: x[2:],sot.display().split('\n')[3:-2])
 
@@ -255,6 +257,25 @@ class SeqPlayLqrTwoDofCoupledStabilizer(Application):
     def __add__(self,i):
         self.nextStep()
 
+    # Robot real dynamics ######################################
+
+    def createDynamicReal(self):
+        self.robot.dynamicWoFF = self.robot.loadModelFromJrlDynamics(
+                              self.robot.name + '_dynamicReal', 
+                              self.robot.modelDir, 
+                              self.robot.modelName,
+                              self.robot.specificitiesPath,
+                              self.robot.jointRankPath,
+                              DynamicHrp2_14)     
+        self.robot.dynamicReal = self.robot.loadModelFromJrlDynamics(
+                              self.robot.name + '_dynamicReal', 
+                              self.robot.modelDir, 
+                              self.robot.modelName,
+                              self.robot.specificitiesPath,
+                              self.robot.jointRankPath,
+                              DynamicHrp2_14)
+
+
     # Stabilization ######################################
 
     def initTaskStabilize(self):
@@ -365,6 +386,8 @@ class SeqPlayLqrTwoDofCoupledStabilizer(Application):
         #print matrix(self.cMlhref.value)
 
         ######
+
+    # Seqplay ######################################
 
     def prepareSeqplay(self):
         self.seq.leftAnkle.recompute(2)  

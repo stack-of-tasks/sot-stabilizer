@@ -12,7 +12,15 @@ from dynamic_graph.sot.dynamics.zmp_from_forces import ZmpFromForces
 
 forceSeqplay = True
 #traj = '/home/alexis/devel/ros/install/resources/seqplay/stand-on-left-foot'
-traj = '/home/alexis/devel/ros/install/resources/seqplay/stand-on-right-foot'
+#traj = '/home/alexis/devel/ros/install/resources/seqplay/stand-on-right-foot'
+traj = '/home/alexis/devel/ros/install/resources/seqplay/walkfwd-resampled'
+
+#traj = '/home/alexis/devel/ros/install/resources/seqplay/walkfwd-resampled-30'
+#traj = '/home/alexis/devel/ros/install/resources/seqplay/walkfwd-shifted'
+#traj = '/home/alexis/devel/ros/install/resources/seqplay/stand-on-left-foot-shifted' 
+#traj = '/home/alexis/devel/ros/install/resources/seqplay/onspot16s'; forceSeqplay = False
+#traj = '/home/alexis/devel/ros/install/resources/seqplay/onspot'; forceSeqplay = False
+#traj = '/home/alexis/devel/ros/install/resources/seqplay/walkstraight10cmperstep'; forceSeqplay = False
 
 appli =  SeqPlayLqrTwoDofCoupledStabilizerHRP2(robot, traj, False, False, False,forceSeqplay)
 appli.withTraces()
@@ -32,7 +40,7 @@ ktv=60
 # Robot
 #kfe=40000
 #kfv=600
-#kte=400
+#kte=350
 #ktv=10
 
 stabilizer.setkts(kte)
@@ -47,7 +55,62 @@ appli.comRef.value=(0.01068, 0.00014, 0.80771000000000004) # two feet Mx=My=0
 #appli.comRef.value=(0.00182, 0.09582, 0.80769999999999997) # one foot Mx=My=0
 
 # Robot
+appli.comRef.value=(0.0263, 0.0040000000000000001, 0.80771000000000004) # zmp au niveau du pied
+est.inputVector.setFootBias1((0.0168,0,0)) # zmpEst=zmp sans feedback
+est.inputVector.setFootBias2((0.0168,0,0))
+est.inputVector.setFootBias1((0.0175,0,0,0,0,0)) # zmpEst=zmp avec feedback
+est.inputVector.setFootBias2((0.0175,0,0,0,0,0))
+est.inputVector.setFootBias1((0,0,0,0,0,0)) # sans biai
+est.inputVector.setFootBias2((0,0,0,0,0,0))
 
+zmp = ZmpFromForces('zmpReal')
+plug (robot.device.forceLLEG , zmp.force_0)
+plug (robot.device.forceRLEG, zmp.force_1)
+plug (robot.frames['leftFootForceSensor'].position , zmp.sensorPosition_0)
+plug (robot.frames['rightFootForceSensor'].position, zmp.sensorPosition_1)
+
+zmpEst = ZmpFromForces('zmpEstimated')
+plug (est.forcesSupport1 , zmpEst.force_0)
+plug (est.forcesSupport2, zmpEst.force_1)
+plug (stabilizer.homoSupportPos1 , zmpEst.sensorPosition_0)
+plug (stabilizer.homoSupportPos2 , zmpEst.sensorPosition_1)
+
+appli.gains['trunk'].setConstant(2)
+est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-3,)*3+(1e-6,)*3)))
+est.setForceVariance(1e-4)
+
+stabilizer.setFixedGains(True)
+stabilizer.setHorizon(400)
+est.setWithForceSensors(True)
+
+stabilizer.setStateCost(matrixToTuple(1*np.diag((100,100,1000,100,100,100,100,1,1,100,1,1,1,1))))
+
+# Perturbation Generator on control
+perturbatorControl = VectorPerturbationsGenerator('perturbatedControl')
+perturbatorControl.setSinLessMode(True)
+vect1 = perturbatorControl.sin
+vect1.value = (0,0,0,0,0)
+plug (perturbatorControl.sout,stabilizer.perturbationAcc)
+appli.robot.addTrace( perturbatorControl.name, 'sout')
+perturbatorControl.perturbation.value=(1,1,0,1,1)
+perturbatorControl.selec.value = '11111'
+perturbatorControl.setMode(2)
+perturbatorControl.activate(False)
+
+# Perturbation Generator on task
+perturbatorTask = VectorPerturbationsGenerator('perturbatedTask')
+perturbatorTask.setSinLessMode(True)
+vect = perturbatorTask.sin
+vect.value = (0,0,0,0,0)
+plug (perturbatorTask.sout,stabilizer.perturbationVel)
+appli.robot.addTrace( perturbatorTask.name, 'sout')
+perturbatorTask.perturbation.value=(1,0,0,0,0)
+perturbatorTask.selec.value = '11111'
+perturbatorTask.setMode(0)
+perturbatorTask.setPeriod(0)
+perturbatorTask.activate(False)
+
+#appli.nextStep()
 
 appli.robot.addTrace( est.name,'flexibility' )
 appli.robot.addTrace( est.name,'flexThetaU' )
@@ -86,119 +149,51 @@ appli.robot.addTrace (stabilizer.name,'Bmatrix')
 appli.robot.addTrace (stabilizer.name,'supportPos1')
 appli.robot.addTrace (stabilizer.name,'supportPos2')
 appli.robot.addTrace (stabilizer.name,'energy')
-
-zmp = ZmpFromForces('zmpReal')
-plug (robot.device.forceLLEG , zmp.force_0)
-plug (robot.device.forceRLEG, zmp.force_1)
-plug (robot.frames['leftFootForceSensor'].position , zmp.sensorPosition_0)
-plug (robot.frames['rightFootForceSensor'].position, zmp.sensorPosition_1)
 appli.robot.addTrace( zmp.name, 'zmp')
 appli.robot.addTrace( appli.zmpRef.name, 'zmp')
-
-zmpEst = ZmpFromForces('zmpEstimated')
-plug (est.forcesSupport1 , zmpEst.force_0)
-plug (est.forcesSupport2, zmpEst.force_1)
-plug (robot.frames['leftFootForceSensor'].position , zmpEst.sensorPosition_0)
-plug (robot.frames['rightFootForceSensor'].position, zmpEst.sensorPosition_1)
 appli.robot.addTrace( zmpEst.name, 'zmp')
+appli.robot.addTrace (stabilizer.name,'computationTime')
 
 appli.startTracer()
 
-# Perturbation Generator on task
-perturbatorTask = VectorPerturbationsGenerator('perturbatedTask')
-perturbatorTask.setSinLessMode(True)
-vect = perturbatorTask.sin
-vect.value = (0,0,0,0,0)
-plug (perturbatorTask.sout,stabilizer.perturbationVel)
-appli.robot.addTrace( perturbatorTask.name, 'sout')
-perturbatorTask.perturbation.value=(2,0,0,0,0)
-perturbatorTask.selec.value = '111'
-perturbatorTask.setMode(0)
-perturbatorTask.setPeriod(0)
-perturbatorTask.activate(False)
+stabilizer.setStateCost(matrixToTuple(1*np.diag((200000,2000,100,400,6000,20,1000,10,10,1000,1,10,4,1))))
 
-appli.gains['trunk'].setConstant(2)
-est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-3,)*3+(1e-6,)*3)))
-est.setForceVariance(10)
+# Sur deux pieds
 
-stabilizer.setFixedGains(True)
-stabilizer.setHorizon(100)
-est.setWithForceSensors(False)
+# without force sensor
+stabilizer.setStateCost(matrixToTuple(1*np.diag((32000,1,10000,1,200,1,24000,10,1,1000,1,10,1,120)))) 
 
-# Perturbation Generator on comRef
-perturbator = VectorPerturbationsGenerator('comref')
-comRef = perturbator.sin
-comRef.value = appli.comRef.value
-plug (perturbator.sout,appli.comRef)
-appli.robot.addTrace( perturbator.name, 'sout')
-perturbator.perturbation.value=(0,1,0)
-perturbator.selec.value = '111'
-perturbator.setMode(0)
-perturbator.setPeriod(0)
-perturbator.activate(False)
-
-# Perturbation Generator on oriWaist
-perturbator1 = VectorPerturbationsGenerator('oriWaist')
-oriWaist = perturbator1.sin
-oriWaist.value = appli.robot.dynamic.waist.value
-plug (perturbator1.sout, appli.robot.dynamic.waist)
-appli.robot.addTrace( perturbator1.name, 'sout')
-perturbator1.perturbation.value=(0,1,0)
-perturbator1.selec.value = '111'
-perturbator1.setMode(0)
-perturbator1.setPeriod(0)
-perturbator1.activate(False)
-
-# Trouver Mx=My=0
-
-est.calibration.start(500)
-est.flexThetaU.value
-
-#appli.comRef.value=(0.0, 0.0, 0.80771000000000004)
-appli.nextStep(1)
-stabilizer.setStateCost(matrixToTuple(1*np.diag((20000,20000,20000,20000,20000,1,1,1,1,1,1,1,1,1))))
-stabilizer.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
-
-stabilizer.start()
+# with force sensor
+stabilizer.setStateCost(matrixToTuple(1*np.diag((100000,2000,10000,400,6000,2000,48000,10,10,1000,1,10,400,120))))
+stabilizer.setStateCost(matrixToTuple(1*np.diag((200000,2000,10000,400,6000,2000,100000,10,10,1000,1,10,400,120)))) # plus reactif com en x
+stabilizer.setStateCost(matrixToTuple(1*np.diag((200000,200,10000,200,6000,200,100000,10,1,1000,0.1,1,400,120))))
 
 
-stabilizer.setStateCost(matrixToTuple(1*np.diag((1000,1,10000,1,1000,1,1000,10,1,1000,1,10,1,10))))
+# Sur un pied
 
-stabilizer.setStateCost(matrixToTuple(1*np.diag((100,100,100,100,100,1000,1000,100,100,100,100,100,1000,1000))))
-stabilizer.setInputCost(matrixToTuple(1*np.diag((1,1,1,1,1))))
+# with force sensor
+stabilizer.setStateCost(matrixToTuple(1*np.diag((200000,200000,10000,6000,6000,100,100,10,10,1000,10,10,1,1))))
+stabilizer.setStateCost(matrixToTuple(1*np.diag((200000,200000,10000,6000,6000,200000,200000,10,10,1000,10,10,240,240)))) # plus reactif
+stabilizer.setStateCost(matrixToTuple(1*np.diag((2000,2000,10000,6000,6000,100,100,1,1,1000,10,10,1,1))))
 
-stabilizer.setStateCost(matrixToTuple(1*np.diag((20000,20000,20000,1,10,20000,20000,1,1,1,1,1,1,1))))
-stabilizer.setInputCost(matrixToTuple(1*np.diag((1,20000,1,1,1))))
-
-# Perturbation Generator on task
-perturbatorTask = VectorPerturbationsGenerator('perturbatedTask')
-perturbatorTask.setSinLessMode(True)
-vect = perturbatorTask.sin
-vect.value = appli.comRef.value
-plug (perturbatorTask.sout,stabilizer.perturbationVel)
-appli.robot.addTrace( perturbatorTask.name, 'sout')
-perturbatorTask.perturbation.value=(1,0,0)
-perturbatorTask.selec.value = '111'
-perturbatorTask.setMode(4)
-perturbatorTask.setPeriod(0)
-perturbatorTask.activate(False)
+stabilizer.setStateCost(matrixToTuple(1*np.diag((2000,2000,1000,60000,60000,100,100,0.1,0.1,10,100,100,1,1))))
+stabilizer.setStateCost(matrixToTuple(1*np.diag((2000,20,1000,6000000000,6000000000,32000,2000,0.1,0.1,10,10000000,10000000,40,20))))
+stabilizer.setStateCost(matrixToTuple(1*np.diag((2000,200,1000,6000000000,6000000000,14000,14000,0.1,0.1,10,10000000,10000000,160,3200))))
 
 
 
 
 
-stab.setStateCost(matrixToTuple(1*np.diag((100,100,100,100,100,1000,1000,100,100,100,100,100,1000,1000))))
 
-stabilizer.setStateCost(matrixToTuple(1*np.diag((5000,5000,5000,1,1,5000,5000,1,1,1,1,1,1,1))))
-stabilizer.setInputCost(matrixToTuple(1*np.diag((1,5000,1,1,1))))
+stabilizer.setStateCost(matrixToTuple(1*np.diag((1000,1000,10000,1000,1000,1000,1000,10,10,1000,10,10,10,10))))
+stabilizer.setStateCost(matrixToTuple(1*np.diag((300,300,3000,300,300,300,300,3,3,300,3,3,3,3))))
+stabilizer.setStateCost(matrixToTuple(1*np.diag((100,100,1000,100,100,100,100,1,1,100,1,1,1,1))))
+stabilizer.setStateCost(matrixToTuple(1*np.diag((32000,32000,10000,200,200,24000,24000,10,10,1000,10,10,120,120))))
 
-stabilizer.setStateCost(matrixToTuple(1*np.diag((20000,20000,20000,100,100,1000,1000,1,1,1,1,1,1,1))))
+stabilizer.setStateCost(matrixToTuple(1*np.diag((32000,32000,10000,20000,20000,24000,24000,10,10,1000,1000,1000,120,120))))
 
-stabilizer.setStateCost(matrixToTuple(1*np.diag((10000,10000,10000,100,100,10000,10000,1,1,1,1,1,1,1))))
 
-stabilizer.setStateCost(matrixToTuple(1*np.diag((100,1000,1000,1000,100,1,1000,1,1,1,1,1,1,100))))
 
-stabilizer.setStateCost(matrixToTuple(1*np.diag((100,100,100,100,100,10000,10000,1000,1000,1000,100,100,1000,1000))))
 
 
 

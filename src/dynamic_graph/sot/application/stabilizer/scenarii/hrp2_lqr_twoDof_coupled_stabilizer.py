@@ -47,7 +47,7 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
 	self.estimator.setContactModel(1)
         plug (self.nbSupport,self.estimator.contactNbr) # In
 	
-		# Contacts definition
+	# Contacts definition
 	self.estimator.contacts = Stack_of_vector ('contacts')
         plug(self.supportPos1,self.estimator.contacts.sin1)
         plug(self.supportPos2,self.estimator.contacts.sin2)
@@ -56,6 +56,9 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
 	plug(self.nbSupport,self.estimator.calibration.contactsNbr)
 	plug(self.estimator.contacts.sout,self.estimator.calibration.contactsPositionIn)
 	plug(self.estimator.calibration.contactsPositionOut,self.estimator.inputVector.contactsPosition)
+
+        plug(self.forceSupport1,self.estimator.sensorStackforce.sin1)
+        plug(self.forceSupport2,self.estimator.sensorStackforce.sin2)
 
 
 		# Simulation: Stifness and damping

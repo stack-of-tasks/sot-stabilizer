@@ -28,7 +28,7 @@
 
 #include <sot-stabilizer/hrp2-lqr-twoDof-coupled-stabilizer.hh>
 #include <stdexcept>
-//#include <iostream>
+#include "boost/date_time/posix_time/posix_time.hpp"
 
 namespace sotStabilizer
 {
@@ -115,6 +115,10 @@ namespace sotStabilizer
     nbSupportSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(unsigned)::nbSupport"),
     supportPos1SOUT_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::supportPos1"),
     supportPos2SOUT_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::supportPos2"),
+    homoSupportPos1SOUT_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(HomoMatrix)::homoSupportPos1"),
+    homoSupportPos2SOUT_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(HomoMatrix)::homoSupportPos2"),
+    forceSupport1SOUT_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::forceSupport1"),
+    forceSupport2SOUT_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::forceSupport2"),
     AmatrixSOUT(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(matrix)::Amatrix"),
     BmatrixSOUT(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(matrix)::Bmatrix"),
     inertiaSOUT(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(matrix)::inertiaOut"), 
@@ -124,6 +128,7 @@ namespace sotStabilizer
     stateFlexDDotSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::stateFlexDDot"),
     zmpRefSOUT_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::zmpRefOUT"),
     energySOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::energy"),
+    computationTimeSOUT (NULL,"HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::computationTime"),
     dt_ (.005), on_ (false),
     forceThreshold_ (.036 * constm_*stateObservation::cst::gravityConstant),
     supportPos1_(3), supportPos2_(3),
@@ -173,7 +178,8 @@ namespace sotStabilizer
     signalRegistration (errorSOUT_);
     signalRegistration (controlSOUT_);
     signalRegistration (gainSOUT);
-    signalRegistration (nbSupportSOUT_ << supportPos1SOUT_ << supportPos2SOUT_);
+    signalRegistration (nbSupportSOUT_ << supportPos1SOUT_ << supportPos2SOUT_ << homoSupportPos1SOUT_ << homoSupportPos2SOUT_);
+    signalRegistration (forceSupport1SOUT_ << forceSupport2SOUT_);
     signalRegistration (AmatrixSOUT);
     signalRegistration (BmatrixSOUT);
     signalRegistration (inertiaSOUT);
@@ -183,6 +189,7 @@ namespace sotStabilizer
     signalRegistration (stateFlexDDotSIN_);
     signalRegistration (zmpRefSOUT_);
     signalRegistration (energySOUT_);
+    signalRegistration (computationTimeSOUT);
 
     // Set dependencies
         // taskSOUT dependencies
@@ -507,6 +514,22 @@ namespace sotStabilizer
                     0,0,0,1;
     rightFootPositionSIN_.setConstant(convertMatrix<dynamicgraph::Matrix>(rightFootPos));
 
+    stateObservation::Matrix homoSupportPos2;
+    homoSupportPos2.resize(4,4);
+    homoSupportPos2 <<  1,1.94301e-07,2.363e-10,0.00949046,
+                    -1.94301e-07,1,-2.70566e-12,0.095,
+                    -2.363e-10,2.70562e-12,1,3.03755e-06,
+                    0,0,0,1;
+    homoSupportPos2SOUT_.setConstant(convertMatrix<dynamicgraph::Matrix>(homoSupportPos2));
+
+    stateObservation::Matrix homoSupportPos1;
+    homoSupportPos1.resize(4,4);
+    homoSupportPos1 <<  1,-9.18094e-18,-1.52169e-16,0.009496046,
+                        9.184e-18,1,-1.10345e-16,-0.095,
+                        1.68756e-16,1.10345e-16,1,2.55006e-07,
+                        0,0,0,1;
+    homoSupportPos1SOUT_.setConstant(convertMatrix<dynamicgraph::Matrix>(homoSupportPos1));
+
     stateObservation::Vector forceRightFoot;
     forceRightFoot.resize(6);
     forceRightFoot <<   45.1262,
@@ -526,6 +549,26 @@ namespace sotStabilizer
                         -14.5158,
                         -1.72017;
     forceLeftFootSIN_.setConstant(convertVector<dynamicgraph::Vector>(forceLeftFoot));
+
+    stateObservation::Vector forceSupport2;
+    forceSupport2.resize(6);
+    forceSupport2 <<   45.1262,
+                        -21.367,
+                        361.344,
+                        1.12135,
+                        -14.5562,
+                        1.89125;
+    forceSupport2SOUT_.setConstant(convertVector<dynamicgraph::Vector>(forceSupport2));
+
+    stateObservation::Vector forceSupport1;
+    forceSupport1.resize(6);
+    forceSupport1 <<    44.6005,
+                        21.7871,
+                        352.85,
+                        -1.00715,
+                        -14.5158,
+                        -1.72017;
+    forceSupport1SOUT_.setConstant(convertVector<dynamicgraph::Vector>(forceSupport1));
 
     Vector vect;
     stateObservation::Vector vec;
@@ -630,7 +673,7 @@ namespace sotStabilizer
     vect.resize(4);
     energySOUT_.setConstant(vect);
 
-    vect.resize(3);
+    vect.resize(5);
     vect.setZero();
     perturbationVelSIN_.setConstant(vect);
     perturbationAccSIN_.setConstant(vect);
@@ -640,6 +683,11 @@ namespace sotStabilizer
             0.236677,-0.0465754,1.73429;
 
     xSimu_.setZero();
+
+    vect.resize(2);
+    vect.setZero();
+    computationTimeSOUT.setConstant(vect);
+
   }
 
   Vector& HRP2LQRTwoDofCoupledStabilizer::getControl(Vector& control, const int& time)
@@ -697,27 +745,39 @@ namespace sotStabilizer
 
       //compute the number of supports
       unsigned int nbSupport = 0;
-      if (frz >= forceThreshold_)
+      if (flz >= forceThreshold_)
       {
-        supportPos1SOUT_.setConstant (rfconf);
+        supportPos1SOUT_.setConstant (lfconf);
         supportPos1SOUT_.setTime (time);
-        supportPos1_=rfconf;
+        supportPos1_=lfconf;
+        homoSupportPos1SOUT_.setConstant (leftFootPosition);
+        homoSupportPos1SOUT_.setTime (time);
+        forceSupport1SOUT_.setConstant (forceLeftFootSIN_);
+        forceSupport1SOUT_.setTime (time);
         nbSupport++;
       }
 
-      if (flz >= forceThreshold_)
+      if (frz >= forceThreshold_)
       {
         if (nbSupport==0)
         {
-          supportPos1SOUT_.setConstant (lfconf);
+          supportPos1SOUT_.setConstant (rfconf);
           supportPos1SOUT_.setTime (time);
-          supportPos1_=lfconf;
+          supportPos1_=rfconf;
+          homoSupportPos1SOUT_.setConstant (rightFootPosition);
+          homoSupportPos1SOUT_.setTime (time);
+          forceSupport1SOUT_.setConstant (forceRightFootSIN_);
+          forceSupport1SOUT_.setTime (time);
         }
         else
         {
-          supportPos2SOUT_.setConstant (lfconf);
-          supportPos2SOUT_.setTime (time);
-          supportPos2_=lfconf;
+          supportPos2SOUT_.setConstant (rfconf);
+          //supportPos2SOUT_.setTime (time);
+          supportPos2_=rfconf;
+          homoSupportPos2SOUT_.setConstant (rightFootPosition);
+          //homoSupportPos2SOUT_.setTime (time);
+          forceSupport2SOUT_.setConstant (forceRightFootSIN_);
+          //forceSupport2SOUT_.setTime (time);
         }
         nbSupport++;
       }
@@ -823,6 +883,8 @@ namespace sotStabilizer
 
     /// Computing control
 
+    boost::posix_time::ptime tic = boost::posix_time::microsec_clock::local_time();
+    boost::posix_time::ptime toc1  = boost::posix_time::microsec_clock::local_time();
     stateObservation::Vector u;
     u.resize(controlSize_);
     u.setZero();
@@ -855,7 +917,7 @@ namespace sotStabilizer
              // Computing control
              controller_.setState(dxk,time);
              u=controller_.getControl(time);
-             u.block(0,0,3,1)+=perturbationAcc;
+             u+=perturbationAcc;
              preTask_+=dt_*u;
              xSimu_=xk;
         }
@@ -896,17 +958,31 @@ namespace sotStabilizer
                   computed_=true;
                   comRef_=comRef;
                   xSimu_=xk;
+                  toc1  = boost::posix_time::microsec_clock::local_time();
               }
+
               controller_.setState(dxk,time);
               u=controller_.getControl(time);
-              u.block(0,0,3,1)+=perturbationAcc;
+              u+=perturbationAcc;
               preTask_+=dt_*u;
         }
         break;
         default: throw std::invalid_argument("Only 0, 1 and 2 number of supports cases are developped");
     };
+    boost::posix_time::ptime toc  = boost::posix_time::microsec_clock::local_time();
 
     /// Post treatments
+
+
+   boost::posix_time::time_duration diff = toc - tic;
+   diff.total_microseconds();
+   boost::posix_time::time_duration diff1 = toc1 - tic;
+   diff1.total_microseconds();
+   //std::cout << "Computation time:" << diff.total_microseconds() << std::endl << diff1.total_microseconds() << std::endl;
+   stateObservation::Vector computationTime; computationTime.resize(2);
+   computationTime << diff.total_microseconds(),
+                      diff1.total_microseconds();
+   computationTimeSOUT.setConstant(convertVector<dynamicgraph::Vector>(computationTime));
 
     // Extended state reconstruction
     stateObservation::Vector extxk;
