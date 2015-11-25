@@ -10,6 +10,10 @@ from dynamic_graph.sot.application.stabilizer import VectorPerturbationsGenerato
 from dynamic_graph.sot.core.matrix_util import matrixToTuple
 from dynamic_graph.sot.dynamics.zmp_from_forces import ZmpFromForces
 
+
+def s() :
+   stabilizer.stop()
+
 forceSeqplay = True
 #traj = '/home/alexis/devel/ros/install/resources/seqplay/stand-on-left-foot'
 #traj = '/home/alexis/devel/ros/install/resources/seqplay/stand-on-right-foot'

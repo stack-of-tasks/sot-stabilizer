@@ -791,11 +791,6 @@ namespace sotStabilizer
         nbSupport++;
       }
 
-      if (!on_)
-      {
-        nbSupport=0;
-      }
-
       nbSupportSOUT_.setConstant (nbSupport);
       nbSupportSOUT_.setTime (time);
 
@@ -838,6 +833,7 @@ namespace sotStabilizer
 
     // Determination of the number of support
     unsigned int nbSupport=computeNbSupport(time);
+    if (!on_) nbSupport=0;
 
     // Control gain
     const double& gain = controlGainSIN_.access (time);
