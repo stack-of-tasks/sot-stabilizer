@@ -34,18 +34,20 @@ stabilizer = appli.taskCoMStabilized
 seq = appli.seq
 
 # Changer raideurs
+b="simu" # "simu"
 
-# Simulation
-kfe=40000
-kfv=600
-kte=600
-ktv=60
-
-# Robot
-#kfe=40000
-#kfv=600
-#kte=350
-#ktv=10
+if b=="robot" :
+  # Simulation
+  kfe=40000
+  kfv=600
+  kte=600
+  ktv=60
+elif b=="simu" :
+  # Robot
+  kfe=40000
+  kfv=600
+  kte=350
+  ktv=10
 
 stabilizer.setkts(kte)
 stabilizer.setktd(ktv)

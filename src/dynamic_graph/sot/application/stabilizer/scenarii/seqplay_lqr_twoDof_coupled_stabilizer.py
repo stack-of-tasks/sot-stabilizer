@@ -19,6 +19,7 @@ from dynamic_graph.sot.dynamics.zmp_from_forces import ZmpFromForces
 from dynamic_graph.sot.core import Stack_of_vector
 
 from dynamic_graph.sot.hrp2.dynamic_hrp2_14 import DynamicHrp2_14
+from dynamic_graph.sot.core.derivator import Derivator_of_Vector
 
 
 toList = lambda sot: map(lambda x: x[2:],sot.display().split('\n')[3:-2])
@@ -260,13 +261,13 @@ class SeqPlayLqrTwoDofCoupledStabilizer(Application):
     # Robot real dynamics ######################################
 
     def createDynamicReal(self):
-        self.robot.dynamicWoFF = self.robot.loadModelFromJrlDynamics(
-                              self.robot.name + '_dynamicReal', 
-                              self.robot.modelDir, 
-                              self.robot.modelName,
-                              self.robot.specificitiesPath,
-                              self.robot.jointRankPath,
-                              DynamicHrp2_14)     
+        # Robot timestep
+        self.timeStep = 0.005
+	# Enable velocity computation.
+	self.enableVelocityDerivator = False
+	#Enable acceleration computation.
+	self.enableAccelerationDerivator = False
+
         self.robot.dynamicReal = self.robot.loadModelFromJrlDynamics(
                               self.robot.name + '_dynamicReal', 
                               self.robot.modelDir, 
@@ -274,6 +275,34 @@ class SeqPlayLqrTwoDofCoupledStabilizer(Application):
                               self.robot.specificitiesPath,
                               self.robot.jointRankPath,
                               DynamicHrp2_14)
+
+        self.dimension = self.robot.dynamicReal.getDimension()
+        if self.dimension != len(self.robot.halfSitting):
+            raise RuntimeError("Dimension of half-sitting: {0} differs from dimension of robot: {1}".format (len(self.halfSitting), self.dimension))
+
+        # Freeflyer reference frame should be the same as global
+        # frame so that operational point positions correspond to
+        # position in freeflyer frame.
+        plug(self.robot.device.robotState, self.robot.dynamicReal.position)
+
+ 	if self.enableVelocityDerivator:
+            self.velocityDerivator = Derivator_of_Vector('velocityDerivator')
+            self.velocityDerivator.dt.value = self.timeStep
+            plug(self.robot.device.robotState, self.velocityDerivator.sin)
+            plug(self.velocityDerivator.sout, self.robot.dynamicReal.velocity)
+        else:
+            self.robot.dynamicReal.velocity.value = self.dimension*(0.,)
+
+        if self.enableAccelerationDerivator:
+            self.accelerationDerivator = \
+                Derivator_of_Vector('accelerationDerivator')
+            self.accelerationDerivator.dt.value = self.timeStep
+            plug(self.velocityDerivator.sout,
+                 self.accelerationDerivator.sin)
+            plug(self.accelerationDerivator.sout, self.robot.dynamic.acceleration)
+        else:
+            self.robot.dynamicReal.acceleration.value = self.dimension*(0.,)
+
 
 
     # Stabilization ######################################

@@ -31,10 +31,10 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
         plug(robot.dynamic.Jwaist,self.DWaist.sin1)
         plug(robot.device.velocity,self.DWaist.sin2)
 
-	self.waistHomoToMatrix = HomoToRotation ('waistHomoToMatrix') # Waist orientation: self.waistMatrixToUTheta.sout
-	plug(robot.dynamic.waist,self.waistHomoToMatrix.sin)
-	self.waistMatrixToUTheta = MatrixToUTheta('waistMatrixToUTheta')
-	plug(self.waistHomoToMatrix.sout,self.waistMatrixToUTheta.sin)
+	#self.waistHomoToMatrix = HomoToRotation ('waistHomoToMatrix') # Waist orientation: self.waistMatrixToUTheta.sout
+	#plug(robot.dynamic.waist,self.waistHomoToMatrix.sin)
+	#self.waistMatrixToUTheta = MatrixToUTheta('waistMatrixToUTheta')
+	#plug(self.waistHomoToMatrix.sout,self.waistMatrixToUTheta.sin)
 
 	# For determining nbSupport
         plug (robot.device.forceLLEG,self.force_lf)
@@ -81,7 +81,6 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
 	# Control state
 	plug(robot.dynamic.waist,self.waistHomo)
 
-	#plug (robot.dynamic.com, self.com)
 	plug(robot.dynamic.com, self.estimator.calibration.comIn)
 	plug(robot.dynamic.com, self.com)
         plug (robot.dynamic.Jcom, self.Jcom)
