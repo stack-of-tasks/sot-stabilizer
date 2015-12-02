@@ -90,8 +90,8 @@ class SeqPlayLqrTwoDofCoupledStabilizer(Application):
     def createTasks(self):
         (self.tasks['trunk'],self.gains['trunk'])= createTrunkTask (self.robot, self, 'Tasktrunk')
         (self.tasks['ankles'],self.gains['ankles'])= createAnklesTask (self.robot, self, 'TaskAnkles')
-        self.taskRF      = self.tasks['left-ankle']
-        self.taskLF      = self.tasks['right-ankle']
+        self.taskRF      = self.tasks['leftAnkle']
+        self.taskLF      = self.tasks['rightAnkle']
         self.taskCom     = self.tasks['com']
         self.taskRH      = self.tasks['right-wrist']
         self.taskLH      = self.tasks['left-wrist']

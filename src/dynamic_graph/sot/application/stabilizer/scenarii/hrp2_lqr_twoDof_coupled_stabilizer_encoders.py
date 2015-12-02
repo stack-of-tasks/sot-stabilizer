@@ -31,45 +31,8 @@ class HRP2LqrTwoDofCoupledStabilizerEncoders(HRP2LQRTwoDofCoupledStabilizer):
         plug(robot.dynamic.Jwaist,self.DWaist.sin1)
         plug(robot.device.velocity,self.DWaist.sin2)
 
-	#self.waistHomoToMatrix = HomoToRotation ('waistHomoToMatrix') # Waist orientation: self.waistMatrixToUTheta.sout
-	#plug(robot.dynamic.waist,self.waistHomoToMatrix.sin)
-	#self.waistMatrixToUTheta = MatrixToUTheta('waistMatrixToUTheta')
-	#plug(self.waistHomoToMatrix.sout,self.waistMatrixToUTheta.sin)
-
-	# For determining nbSupport
-        plug (robot.device.forceLLEG,self.force_lf)
-        plug (robot.device.forceRLEG,self.force_rf)
-        plug (robot.frames['rightFootForceSensor'].position,self.rightFootPosition)
-        plug (robot.frames['leftFootForceSensor'].position,self.leftFootPosition)
-
 	# Estimator of the flexibility state
         self.estimator = HRP2ModelBaseFlexEstimatorIMUForceEncoders (robot, taskname+"EstimatorEncoders")
-	self.estimator.setContactModel(1)
-        plug (self.nbSupport,self.estimator.contactNbr) # In
-	
-	# Contacts definition
-	self.estimator.contacts = Stack_of_vector ('contacts')
-        plug(self.supportPos1,self.estimator.contacts.sin1)
-        plug(self.supportPos2,self.estimator.contacts.sin2)
-	self.estimator.contacts.selec1 (0, 6)
-	self.estimator.contacts.selec2 (0, 6)
-	plug(self.nbSupport,self.estimator.calibration.contactsNbr)
-	plug(self.estimator.contacts.sout,self.estimator.calibration.contactsPositionIn)
-	plug(self.estimator.calibration.contactsPositionOut,self.estimator.inputVector.contactsPosition)
-
-        plug(self.forceSupport1,self.estimator.sensorStackforce.sin1)
-        plug(self.forceSupport2,self.estimator.sensorStackforce.sin2)
-
-
-		# Simulation: Stifness and damping
-	kfe=40000
-	kfv=600
-	kte=600
-	ktv=60
-	self.estimator.setKfe(matrixToTuple(np.diag((kfe,kfe,kfe))))
-	self.estimator.setKfv(matrixToTuple(np.diag((kfv,kfv,kfv))))
-	self.estimator.setKte(matrixToTuple(np.diag((kte,kte,kte))))
-	self.estimator.setKtv(matrixToTuple(np.diag((ktv,ktv,ktv))))
 
         plug(self.estimator.flexThetaU, self.flexOriVect ) # Out
         plug(self.estimator.flexOmega, self.flexAngVelVect )

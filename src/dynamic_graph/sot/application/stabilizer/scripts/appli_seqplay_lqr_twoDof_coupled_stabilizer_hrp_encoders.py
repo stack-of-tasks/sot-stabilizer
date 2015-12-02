@@ -159,6 +159,9 @@ appli.robot.addTrace( zmp.name, 'zmp')
 appli.robot.addTrace( appli.zmpRef.name, 'zmp')
 appli.robot.addTrace( zmpEst.name, 'zmp')
 appli.robot.addTrace (stabilizer.name,'computationTime')
+appli.robot.addTrace (robot.dynamic.name,'com')
+appli.robot.addTrace (robot.dynamicEncoders.name,'com')
+appli.robot.addTrace( est.name,'contactNbr' )
 
 appli.startTracer()
 
