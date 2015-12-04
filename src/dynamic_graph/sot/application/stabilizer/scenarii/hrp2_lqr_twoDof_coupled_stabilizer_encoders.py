@@ -8,14 +8,11 @@ import dynamic_graph.signal_base as dgsb
 from dynamic_graph.sot.core import Stack_of_vector, MatrixHomoToPoseUTheta, OpPointModifier, Multiply_matrix_vector, MatrixHomoToPose, MatrixHomoToPoseRollPitchYaw, MatrixToUTheta, HomoToMatrix, HomoToRotation
 from dynamic_graph.sot.core.matrix_util import matrixToTuple
 
-
-
 class HRP2LqrTwoDofCoupledStabilizerEncoders(HRP2LQRTwoDofCoupledStabilizer):
-    
     
     def __init__(self,robot,taskname = 'com-stabilized'):      
 
-	from dynamic_graph.sot.application.state_observation.initializations.hrp2_model_base_flex_estimator_imu_force_encoders import HRP2ModelBaseFlexEstimatorIMUForceEncoders 
+	from dynamic_graph.sot.application.state_observation.initializations.hrp2_model_base_flex_estimator_imu_force_encoders import HRP2ModelBaseFlexEstimatorIMUForceEncoders
         HRP2LQRTwoDofCoupledStabilizer.__init__(self,taskname)
         robot.dynamic.com.recompute(0)
         robot.dynamic.Jcom.recompute(0)
@@ -23,39 +20,38 @@ class HRP2LqrTwoDofCoupledStabilizerEncoders(HRP2LQRTwoDofCoupledStabilizer):
         robot.dynamic.Jwaist.recompute(0)
 	robot.dynamic.inertia.recompute(0)
 
-        self.DCom = Multiply_matrix_vector('DCom') # Com velocity: self.DCom.sout
+	# Reconstruction of the control state
+		# DCoM
+        self.DCom = Multiply_matrix_vector('DCom') 
         plug(robot.dynamic.Jcom,self.DCom.sin1)
         plug(robot.device.velocity,self.DCom.sin2)
 
-        self.DWaist = Multiply_matrix_vector('DWaist') # Waist angulat velocity: self.DWaist.sout
+		# DWaist
+        self.DWaist = Multiply_matrix_vector('DWaist') 
         plug(robot.dynamic.Jwaist,self.DWaist.sin1)
         plug(robot.device.velocity,self.DWaist.sin2)
 
-	# Estimator of the flexibility state
+		# Estimator of the flexibility state
         self.estimator = HRP2ModelBaseFlexEstimatorIMUForceEncoders (robot, taskname+"EstimatorEncoders")
-
-        plug(self.estimator.flexThetaU, self.flexOriVect ) # Out
-        plug(self.estimator.flexOmega, self.flexAngVelVect )
-
 	plug(self.estimator.flexPosition, self.tflex)
 	plug(self.estimator.flexVelocity, self.dtflex)
 	plug(self.estimator.flexAcceleration, self.ddtflex)
 
 	# Control state
-	plug(robot.dynamic.waist,self.waistHomo)
-
-	plug(robot.dynamic.com, self.estimator.calibration.comIn)
 	plug(robot.dynamic.com, self.com)
-        plug (robot.dynamic.Jcom, self.Jcom)
+	plug(robot.dynamic.waist,self.waistHomo)
+        plug(self.estimator.flexThetaU, self.flexOriVect ) 
 	plug(self.DCom.sout,self.comDot)
-
-	plug ( robot.dynamic.Jwaist, self.Jwaist) 
-	plug ( robot.dynamic.inertia, self.inertia)
 	plug(self.DWaist.sout,self.waistAngVel)
+        plug(self.estimator.flexOmega, self.flexAngVelVect )
 
-	plug ( robot.dynamic.Jchest, self.Jchest)
+	# Jacobians
+        plug (robot.dynamic.Jcom, self.Jcom)
+	plug (robot.dynamic.Jchest, self.Jchest)
+	plug ( robot.dynamic.Jwaist, self.Jwaist) 
 
-	# Angular momentum
+	# Inertia
+	plug ( robot.dynamic.inertia, self.inertia)
         plug(robot.dynamic.angularmomentum,self.angularmomentum)
 
 

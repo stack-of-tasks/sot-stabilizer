@@ -87,7 +87,7 @@ est.setForceVariance(1e-4)
 
 stabilizer.setFixedGains(True)
 stabilizer.setHorizon(400)
-est.setWithForceSensors(True)
+est.setWithForceSensors(False)
 
 stabilizer.setStateCost(matrixToTuple(1*np.diag((100,100,1000,100,100,100,100,1,1,100,1,1,1,1))))
 

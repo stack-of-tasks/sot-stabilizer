@@ -30,6 +30,8 @@
 #include <stdexcept>
 #include "boost/date_time/posix_time/posix_time.hpp"
 
+#include <iostream>
+
 namespace sotStabilizer
 {
   using dynamicgraph::sot::TaskAbstract;
@@ -455,7 +457,6 @@ namespace sotStabilizer
                new ::dynamicgraph::command::Setter <HRP2LQRTwoDofCoupledStabilizer,bool>
                 (*this, & HRP2LQRTwoDofCoupledStabilizer::constantInertia ,docstring));
 
-
     Vector rfconf(6);
     rfconf.setZero();
     Vector lfconf(6);
@@ -793,6 +794,8 @@ namespace sotStabilizer
 
       nbSupportSOUT_.setConstant (nbSupport);
       nbSupportSOUT_.setTime (time);
+
+      std::cout << nbSupport << std::endl;
 
       return nbSupport;
   }
