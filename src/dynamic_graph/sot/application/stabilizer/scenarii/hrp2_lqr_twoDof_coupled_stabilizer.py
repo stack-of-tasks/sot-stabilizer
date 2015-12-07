@@ -50,7 +50,7 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
         plug(self.estimator.flexOmega, self.flexAngVelVect )
 
 	# Jacobians
-        plug (robot.dynamic.Jcom, self.Jcom)
+        plug ( robot.dynamic.Jcom  , self.Jcom  )
 	plug ( robot.dynamic.Jwaist, self.Jwaist) 
 	plug ( robot.dynamic.Jchest, self.Jchest)
 

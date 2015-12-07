@@ -645,6 +645,9 @@ namespace sotStabilizer
     // Determination of the number of support
     unsigned int nbSupport=nbSupportSIN_.access(time);
     if (!on_) nbSupport=0;
+    supportPos1_=supportPos1SIN_.access(time);
+    supportPos2_=supportPos2SIN_.access(time);
+
 
     // Control gain
     const double& gain = controlGainSIN_.access (time);
