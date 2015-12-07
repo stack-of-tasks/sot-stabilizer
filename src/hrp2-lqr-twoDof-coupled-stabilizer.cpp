@@ -96,10 +96,6 @@ namespace sotStabilizer
     jacobianComSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::Jcom"),
     jacobianWaistSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::Jwaist"),
     jacobianChestSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::Jchest"),
-    leftFootPositionSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(HomoMatrix)::leftFootPosition"),
-    rightFootPositionSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(HomoMatrix)::rightFootPosition"),
-    forceLeftFootSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::force_lf"),
-    forceRightFootSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::force_rf"),
     controlGainSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(double)::controlGain"),
     inertiaSIN(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(matrix)::inertia"),
     angularmomentumSIN(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::angularmomentum"),
@@ -114,13 +110,9 @@ namespace sotStabilizer
     errorSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::error"),
     controlSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::control"),
     gainSOUT(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(matrix)::gain"),
-    nbSupportSOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(unsigned)::nbSupport"),
-    supportPos1SOUT_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::supportPos1"),
-    supportPos2SOUT_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::supportPos2"),
-    homoSupportPos1SOUT_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(HomoMatrix)::homoSupportPos1"),
-    homoSupportPos2SOUT_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(HomoMatrix)::homoSupportPos2"),
-    forceSupport1SOUT_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::forceSupport1"),
-    forceSupport2SOUT_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::forceSupport2"),
+    nbSupportSIN_ (0x0,"HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(unsigned)::nbSupport"),
+    supportPos1SIN_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::supportPos1"),
+    supportPos2SIN_("HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::supportPos2"),
     AmatrixSOUT(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(matrix)::Amatrix"),
     BmatrixSOUT(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(matrix)::Bmatrix"),
     inertiaSOUT(0x0 , "HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(matrix)::inertiaOut"), 
@@ -132,7 +124,6 @@ namespace sotStabilizer
     energySOUT_ ("HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::energy"),
     computationTimeSOUT (NULL,"HRP2LQRTwoDofCoupledStabilizer("+inName+")::output(vector)::computationTime"),
     dt_ (.005), on_ (false),
-    forceThreshold_ (.036 * constm_*stateObservation::cst::gravityConstant),
     supportPos1_(3), supportPos2_(3),
     fixedGains_(true), zmpMode_(true), computed_(false),
     zmp_ (3), xpredicted_(stateSize_),
@@ -165,7 +156,6 @@ namespace sotStabilizer
     signalRegistration (jacobianComSIN_);
     signalRegistration (jacobianWaistSIN_);
     signalRegistration (jacobianChestSIN_);
-    signalRegistration (leftFootPositionSIN_ << rightFootPositionSIN_ << forceRightFootSIN_ << forceLeftFootSIN_);
     signalRegistration (controlGainSIN_);
     signalRegistration (inertiaSIN);
     signalRegistration (angularmomentumSIN);
@@ -180,8 +170,7 @@ namespace sotStabilizer
     signalRegistration (errorSOUT_);
     signalRegistration (controlSOUT_);
     signalRegistration (gainSOUT);
-    signalRegistration (nbSupportSOUT_ << supportPos1SOUT_ << supportPos2SOUT_ << homoSupportPos1SOUT_ << homoSupportPos2SOUT_);
-    signalRegistration (forceSupport1SOUT_ << forceSupport2SOUT_);
+    signalRegistration (nbSupportSIN_ << supportPos1SIN_ << supportPos2SIN_);
     signalRegistration (AmatrixSOUT);
     signalRegistration (BmatrixSOUT);
     signalRegistration (inertiaSOUT);
@@ -209,20 +198,11 @@ namespace sotStabilizer
     taskSOUT.addDependency (flexAngVelRefSIN_);
     taskSOUT.addDependency (jacobianComSIN_);
     taskSOUT.addDependency (jacobianWaistSIN_);
-    taskSOUT.addDependency (leftFootPositionSIN_);
-    taskSOUT.addDependency (rightFootPositionSIN_);
-    taskSOUT.addDependency (forceRightFootSIN_);
-    taskSOUT.addDependency (forceLeftFootSIN_);
     taskSOUT.addDependency (controlGainSIN_);
     taskSOUT.addDependency (inertiaSIN);
         // jacobianSOUT dependencies
     jacobianSOUT.addDependency (jacobianComSIN_);
     jacobianSOUT.addDependency (jacobianWaistSIN_);
-        // nbSupportSOUT dependency
-    nbSupportSOUT_.addDependency (taskSOUT);
-        // supports position dependencies
-    supportPos1SOUT_.addDependency (taskSOUT);
-    supportPos2SOUT_.addDependency (taskSOUT);
 
     controlSOUT_.addDependency (taskSOUT);
 
@@ -237,8 +217,6 @@ namespace sotStabilizer
     jacobianSOUT.setFunction (boost::bind(&HRP2LQRTwoDofCoupledStabilizer::computeJacobian,this,_1,_2));
 
     controlSOUT_.setFunction (boost::bind(&HRP2LQRTwoDofCoupledStabilizer::getControl,this,_1,_2));
-    nbSupportSOUT_.setFunction(boost::bind(&HRP2LQRTwoDofCoupledStabilizer::getNbSupport,this,_1,_2));
-
 
     std::string docstring;
     docstring =
@@ -466,16 +444,16 @@ namespace sotStabilizer
     lfconf(0) = 0.009490463094;
     lfconf(1) = 0.095000000000;
 
-    supportPos1SOUT_.setConstant (lfconf);
-    supportPos1SOUT_.setTime (0);
+    supportPos1SIN_.setConstant (lfconf);
+    supportPos1SIN_.setTime (0);
     supportPos1_=lfconf;
 
-    supportPos2SOUT_.setConstant (rfconf);
-    supportPos2SOUT_.setTime (0);
+    supportPos2SIN_.setConstant (rfconf);
+    supportPos2SIN_.setTime (0);
     supportPos2_=rfconf;
 
-    nbSupportSOUT_.setConstant (2);
-    nbSupportSOUT_.setTime (0);
+    nbSupportSIN_.setConstant (2);
+    nbSupportSIN_.setTime (0);
 
     stateObservation::Vector com;
     com.resize(3);
@@ -501,77 +479,6 @@ namespace sotStabilizer
                 -0.087341805362338931, 0.77639199232843892, 6.6174449004242214e-22, 0.15070833849597523, -0.03867792067753683, 1.7394745168929315;
     inertiaSIN.setConstant(convertMatrix<dynamicgraph::Matrix>(inertia));
 
-    stateObservation::Matrix leftFootPos;
-    leftFootPos.resize(4,4);
-    leftFootPos <<  1,1.94301e-07,2.363e-10,0.00949046,
-                    -1.94301e-07,1,-2.70566e-12,0.095,
-                    -2.363e-10,2.70562e-12,1,3.03755e-06,
-                    0,0,0,1;
-    leftFootPositionSIN_.setConstant(convertMatrix<dynamicgraph::Matrix>(leftFootPos));
-
-    stateObservation::Matrix rightFootPos;
-    rightFootPos.resize(4,4);
-    rightFootPos <<  1,-9.18094e-18,-1.52169e-16,0.009496046,
-                    9.184e-18,1,-1.10345e-16,-0.095,
-                    1.68756e-16,1.10345e-16,1,2.55006e-07,
-                    0,0,0,1;
-    rightFootPositionSIN_.setConstant(convertMatrix<dynamicgraph::Matrix>(rightFootPos));
-
-    stateObservation::Matrix homoSupportPos2;
-    homoSupportPos2.resize(4,4);
-    homoSupportPos2 <<  1,1.94301e-07,2.363e-10,0.00949046,
-                    -1.94301e-07,1,-2.70566e-12,0.095,
-                    -2.363e-10,2.70562e-12,1,3.03755e-06,
-                    0,0,0,1;
-    homoSupportPos2SOUT_.setConstant(convertMatrix<dynamicgraph::Matrix>(homoSupportPos2));
-
-    stateObservation::Matrix homoSupportPos1;
-    homoSupportPos1.resize(4,4);
-    homoSupportPos1 <<  1,-9.18094e-18,-1.52169e-16,0.009496046,
-                        9.184e-18,1,-1.10345e-16,-0.095,
-                        1.68756e-16,1.10345e-16,1,2.55006e-07,
-                        0,0,0,1;
-    homoSupportPos1SOUT_.setConstant(convertMatrix<dynamicgraph::Matrix>(homoSupportPos1));
-
-    stateObservation::Vector forceRightFoot;
-    forceRightFoot.resize(6);
-    forceRightFoot <<   45.1262,
-                        -21.367,
-                        361.344,
-                        1.12135,
-                        -14.5562,
-                        1.89125;
-    forceRightFootSIN_.setConstant(convertVector<dynamicgraph::Vector>(forceRightFoot));
-
-    stateObservation::Vector forceLeftFoot;
-    forceLeftFoot.resize(6);
-    forceLeftFoot <<    44.6005,
-                        21.7871,
-                        352.85,
-                        -1.00715,
-                        -14.5158,
-                        -1.72017;
-    forceLeftFootSIN_.setConstant(convertVector<dynamicgraph::Vector>(forceLeftFoot));
-
-    stateObservation::Vector forceSupport2;
-    forceSupport2.resize(6);
-    forceSupport2 <<   45.1262,
-                        -21.367,
-                        361.344,
-                        1.12135,
-                        -14.5562,
-                        1.89125;
-    forceSupport2SOUT_.setConstant(convertVector<dynamicgraph::Vector>(forceSupport2));
-
-    stateObservation::Vector forceSupport1;
-    forceSupport1.resize(6);
-    forceSupport1 <<    44.6005,
-                        21.7871,
-                        352.85,
-                        -1.00715,
-                        -14.5158,
-                        -1.72017;
-    forceSupport1SOUT_.setConstant(convertVector<dynamicgraph::Vector>(forceSupport1));
 
     Vector vect;
     stateObservation::Vector vec;
@@ -629,7 +536,7 @@ namespace sotStabilizer
 
     int horizon = 4000;
 
-    nbSupport_=computeNbSupport(0);
+    nbSupport_=2;
 
     double h2;
     h2=(convertVector<stateObservation::Vector>(supportPos1_).block(0,0,2,1)-convertVector<stateObservation::Vector>(supportPos2_).block(0,0,2,1)).squaredNorm();
@@ -700,108 +607,9 @@ namespace sotStabilizer
       return control;
   }
 
-  unsigned int& HRP2LQRTwoDofCoupledStabilizer::getNbSupport(unsigned int& nbSupport, const int& time)
-  {
-      nbSupport=computeNbSupport(time);
-      nbSupport=nbSupportSOUT_.access (time);
-      return nbSupport;
-  }
-
-  unsigned int HRP2LQRTwoDofCoupledStabilizer::computeNbSupport(const int& time)  //const MatrixHomogeneous& leftFootPosition, const MatrixHomogeneous& rightFootPosition, const Vector& forceLf, const Vector& forceRf, const int& time)
-  {
-
-      /// Forces signals
-      const MatrixHomogeneous& leftFootPosition = leftFootPositionSIN_.access (time);
-      const MatrixHomogeneous& rightFootPosition = rightFootPositionSIN_.access (time);
-      const Vector& forceLf = forceLeftFootSIN_.access (time);
-      const Vector& forceRf = forceRightFootSIN_.access (time);
-
-      //feet position
-      Vector rfpos(3);
-      Vector lfpos(3);
-
-      MatrixRotation rfrot;
-      MatrixRotation lfrot;
-
-      VectorUTheta rfuth;
-      VectorUTheta lfuth;
-
-      rightFootPosition.extract(rfpos);
-      rightFootPosition.extract(rfrot);
-      rfuth.fromMatrix(rfrot);
-
-      leftFootPosition.extract(lfpos);
-      leftFootPosition.extract(lfrot);
-      lfuth.fromMatrix(lfrot);
-
-      Vector rfconf(6);
-      Vector lfconf(6);
-
-      for (size_t i=0; i<3; ++i)
-      {
-        rfconf(i)   = rfpos(i);
-        rfconf(i+3) = rfuth(i);
-        lfconf(i)   = lfpos(i);
-        lfconf(i+3) = lfuth(i);
-      }
-
-      // Express vertical component of force in global basis
-      double flz = leftFootPosition (2,0) * forceLf (0) +
-                   leftFootPosition(2,1) * forceLf (1) +
-                   leftFootPosition (2,2) * forceLf (2);
-      double frz = rightFootPosition (2,0) * forceRf (0) +
-                   rightFootPosition(2,1) * forceRf (1) +
-                   rightFootPosition (2,2) * forceRf (2);
-
-      //compute the number of supports
-      unsigned int nbSupport = 0;
-      if (flz >= forceThreshold_)
-      {
-        supportPos1SOUT_.setConstant (lfconf);
-        supportPos1SOUT_.setTime (time);
-        supportPos1_=lfconf;
-        homoSupportPos1SOUT_.setConstant (leftFootPosition);
-        homoSupportPos1SOUT_.setTime (time);
-        forceSupport1SOUT_.setConstant (forceLeftFootSIN_);
-        forceSupport1SOUT_.setTime (time);
-        nbSupport++;
-      }
-
-      if (frz >= forceThreshold_)
-      {
-        if (nbSupport==0)
-        {
-          supportPos1SOUT_.setConstant (rfconf);
-          supportPos1SOUT_.setTime (time);
-          supportPos1_=rfconf;
-          homoSupportPos1SOUT_.setConstant (rightFootPosition);
-          homoSupportPos1SOUT_.setTime (time);
-          forceSupport1SOUT_.setConstant (forceRightFootSIN_);
-          forceSupport1SOUT_.setTime (time);
-        }
-        else
-        {
-          supportPos2SOUT_.setConstant (rfconf);
-          //supportPos2SOUT_.setTime (time);
-          supportPos2_=rfconf;
-          homoSupportPos2SOUT_.setConstant (rightFootPosition);
-          //homoSupportPos2SOUT_.setTime (time);
-          forceSupport2SOUT_.setConstant (forceRightFootSIN_);
-          //forceSupport2SOUT_.setTime (time);
-        }
-        nbSupport++;
-      }
-
-      nbSupportSOUT_.setConstant (nbSupport);
-      nbSupportSOUT_.setTime (time);
-
-      std::cout << nbSupport << std::endl;
-
-      return nbSupport;
-  }
 
 
-/// Compute the control law
+ /// Compute the control law
   VectorMultiBound&
   HRP2LQRTwoDofCoupledStabilizer::computeControlFeedback(VectorMultiBound& task,
       const int& time)
@@ -835,7 +643,7 @@ namespace sotStabilizer
     const stateObservation::Vector & angularmomentum = convertVector<stateObservation::Vector>(angularmomentumSIN.access(time));
 
     // Determination of the number of support
-    unsigned int nbSupport=computeNbSupport(time);
+    unsigned int nbSupport=nbSupportSIN_.access(time);
     if (!on_) nbSupport=0;
 
     // Control gain

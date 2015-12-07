@@ -258,14 +258,11 @@ namespace sotStabilizer
 
 
     Vector& getControl(Vector& control, const int& time);
-    unsigned int& getNbSupport(unsigned int& nbSupport, const int& time);
     inline void computeDynamicsMatrix(const stateObservation::Vector3 cl, const stateObservation::Matrix Kth, const stateObservation::Matrix Kdth, const int& time);
 
   private:
 
     /// Methods
-    // Compute the number of supports
-    unsigned int computeNbSupport(const int& time);
     // Compute the task
     VectorMultiBound& computeControlFeedback(VectorMultiBound& comdot, const int& time);
     // Compute the jacobian
@@ -318,16 +315,6 @@ namespace sotStabilizer
     SignalPtr < dynamicgraph::Matrix, int> jacobianWaistSIN_;
     SignalPtr < dynamicgraph::Matrix, int> jacobianChestSIN_;
 
-        /// Signals to compute number of supports
-    // Position of left foot force sensor in global frame
-    SignalPtr <MatrixHomogeneous, int> leftFootPositionSIN_;
-    // Position of right foot force sensor in global frame
-    SignalPtr <MatrixHomogeneous, int> rightFootPositionSIN_;
-    // Force in left foot sensor
-    SignalPtr <dynamicgraph::Vector, int> forceLeftFootSIN_;
-    // Force in right foot sensor
-    SignalPtr <dynamicgraph::Vector, int> forceRightFootSIN_;
-
         /// Control gain for 0 supports case
     SignalPtr <double, int> controlGainSIN_;
 
@@ -359,14 +346,10 @@ namespace sotStabilizer
     dynamicgraph::SignalPtr < ::dynamicgraph::Matrix, int> gainSOUT;
 
     // Number of support feet
-    SignalTimeDependent <unsigned int, int> nbSupportSOUT_;
+    SignalPtr <unsigned int, int> nbSupportSIN_;
     // Contact Position
-    SignalTimeDependent <Vector, int> supportPos1SOUT_;
-    SignalTimeDependent <Vector, int> supportPos2SOUT_;
-    SignalTimeDependent <MatrixHomogeneous, int> homoSupportPos1SOUT_;
-    SignalTimeDependent <MatrixHomogeneous, int> homoSupportPos2SOUT_;
-    SignalTimeDependent <Vector, int> forceSupport1SOUT_;
-    SignalTimeDependent <Vector, int> forceSupport2SOUT_;
+    SignalTimeDependent <Vector, int> supportPos1SIN_;
+    SignalTimeDependent <Vector, int> supportPos2SIN_;
 
     // A and B matrices computed by the computeDynamics method
     dynamicgraph::SignalPtr < ::dynamicgraph::Matrix, int> AmatrixSOUT;
@@ -400,7 +383,6 @@ namespace sotStabilizer
     bool on_;
     // Number of feet in support
     unsigned int nbSupport_;
-    double forceThreshold_; // Threshold on normal force above which the foot is considered in contact
     Vector supportPos1_, supportPos2_;
 
     stateObservation::Matrix A_;
