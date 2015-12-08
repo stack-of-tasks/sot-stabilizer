@@ -10,7 +10,6 @@ from dynamic_graph.sot.application.stabilizer import VectorPerturbationsGenerato
 from dynamic_graph.sot.core.matrix_util import matrixToTuple
 from dynamic_graph.sot.dynamics.zmp_from_forces import ZmpFromForces
 
-
 def s() :
    stabilizer.stop()
 
@@ -79,8 +78,15 @@ plug (robot.frames['rightFootForceSensor'].position, zmp.sensorPosition_1)
 zmpEst = ZmpFromForces('zmpEstimated')
 plug (est.forcesSupport1 , zmpEst.force_0)
 plug (est.forcesSupport2, zmpEst.force_1)
-plug (stabilizer.homoSupportPos1 , zmpEst.sensorPosition_0)
-plug (stabilizer.homoSupportPos2 , zmpEst.sensorPosition_1)
+plug (est.stackOfContacts.homoSupportPos1 , zmpEst.sensorPosition_0)
+plug (est.stackOfContacts.homoSupportPos2 , zmpEst.sensorPosition_1)
+
+estEnc = appli.taskCoMStabilized.estimatorEnc
+zmpEnc = ZmpFromForces('zmpEncoders')
+plug (estEnc.forcesSupport1 , zmpEnc.force_0)
+plug (estEnc.forcesSupport2, zmpEnc.force_1)
+plug (estEnc.stackOfContacts.homoSupportPos1 , zmpEnc.sensorPosition_0)
+plug (estEnc.stackOfContacts.homoSupportPos2 , zmpEnc.sensorPosition_1)
 
 appli.gains['trunk'].setConstant(2)
 est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-3,)*3+(1e-6,)*3)))
@@ -88,7 +94,7 @@ est.setForceVariance(1e-4)
 
 stabilizer.setFixedGains(True)
 stabilizer.setHorizon(400)
-est.setWithForceSensors(False)
+est.setWithForceSensors(True)
 
 stabilizer.setStateCost(matrixToTuple(1*np.diag((100,100,1000,100,100,100,100,1,1,100,1,1,1,1))))
 
@@ -133,6 +139,7 @@ appli.robot.addTrace (stabilizer.name,'Amatrix')
 appli.robot.addTrace (stabilizer.name,'Bmatrix')
 appli.robot.addTrace( zmp.name, 'zmp')
 appli.robot.addTrace( zmpEst.name, 'zmp')
+appli.robot.addTrace( zmpEnc.name, 'zmp')
 appli.robot.addTrace (stabilizer.name,'computationTime')
 
 appli.robot.addTrace( est.stackOfContacts.name,'nbSupport' )
@@ -142,13 +149,15 @@ appli.robot.addTrace( est.stackOfContacts.name,'supportPos2' )
 appli.robot.addTrace( robot.dynamicEncoders.name,'position' )
 appli.robot.addTrace( robot.dynamic.name,'position' )
 
+appli.robot.addTrace( robot.dynamicEncoders.name,'leftAnkle' )
+appli.robot.addTrace( robot.dynamicEncoders.name,'rightAnkle' )
 
-appli.robot.addTrace( est.contactPos.name,'sout' )
-appli.robot.addTrace( est.FFPosHomo.name,'sout' )
-appli.robot.addTrace( est.FFPosRPY.name,'sout' )
-appli.robot.addTrace( est.encodersState.name,'sout' )
-appli.robot.addTrace( est.stateEncoders.name,'sout' )
-appli.robot.addTrace( est.stackOfContactsFF.name,'nbSupport' )
+appli.robot.addTrace( estEnc.contactPos.name,'sout' )
+appli.robot.addTrace( estEnc.FFPosHomo.name,'sout' )
+appli.robot.addTrace( estEnc.FFPosRPY.name,'sout' )
+appli.robot.addTrace( estEnc.encodersState.name,'sout' )
+appli.robot.addTrace( estEnc.stateEncoders.name,'sout' )
+appli.robot.addTrace( estEnc.stackOfContactsFF.name,'nbSupport' )
 
 appli.startTracer()
 

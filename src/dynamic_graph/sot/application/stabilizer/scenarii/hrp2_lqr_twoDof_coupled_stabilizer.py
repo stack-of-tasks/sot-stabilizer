@@ -35,7 +35,6 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
 
 	# Estimator of the flexibility state
         self.estimator = HRP2ModelBaseFlexEstimatorIMUForce (robot, taskname+"Estimator")
-	self.estimator.setContactModel(1)
         plug (self.estimator.stackOfContacts.nbSupport,self.nbSupport)
 	plug(self.estimator.flexPosition, self.tflex)
 	plug(self.estimator.flexVelocity, self.dtflex)
