@@ -145,6 +145,8 @@ appli.robot.addTrace( estEnc.odometryFF.name,'supportPos2' )
 
 appli.robot.addTrace( estEnc.odometryFF.name,'robotStateOut' )
 
+appli.robot.addTrace( estEnc.odometryFF.name,'pivotPosition' )
+
 appli.startTracer()
 
 stabilizer.setStateCost(matrixToTuple(1*np.diag((200000,2000,100,400,6000,20,1000,10,10,1000,1,10,4,1))))
