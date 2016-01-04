@@ -28,7 +28,7 @@ traj = '/home/alexis/devel/ros/install/resources/seqplay/walkfwd-resampled'
 appli =  SeqPlayLqrTwoDofCoupledStabilizerHRP2Encoders(robot, traj, False, False, False,forceSeqplay)
 appli.withTraces()
 
-est = appli.taskCoMStabilized.estimator
+estEnc = appli.taskCoMStabilized.estimatorEnc
 stabilizer = appli.taskCoMStabilized
 seq = appli.seq
 
@@ -62,12 +62,12 @@ appli.comRef.value=(0.01068, 0.00014, 0.80771000000000004) # two feet Mx=My=0
 
 # Robot
 appli.comRef.value=(0.0263, 0.0040000000000000001, 0.80771000000000004) # zmp au niveau du pied
-est.inputVector.setFootBias1((0.0168,0,0)) # zmpEst=zmp sans feedback
-est.inputVector.setFootBias2((0.0168,0,0))
-est.inputVector.setFootBias1((0.0175,0,0,0,0,0)) # zmpEst=zmp avec feedback
-est.inputVector.setFootBias2((0.0175,0,0,0,0,0))
-est.inputVector.setFootBias1((0,0,0,0,0,0)) # sans biai
-est.inputVector.setFootBias2((0,0,0,0,0,0))
+estEnc.inputVector.setFootBias1((0.0168,0,0)) # zmpEst=zmp sans feedback
+estEnc.inputVector.setFootBias2((0.0168,0,0))
+estEnc.inputVector.setFootBias1((0.0175,0,0,0,0,0)) # zmpEst=zmp avec feedback
+estEnc.inputVector.setFootBias2((0.0175,0,0,0,0,0))
+estEnc.inputVector.setFootBias1((0,0,0,0,0,0)) # sans biai
+estEnc.inputVector.setFootBias2((0,0,0,0,0,0))
 
 zmp = ZmpFromForces('zmpReal')
 plug (robot.device.forceLLEG , zmp.force_0)
@@ -75,26 +75,19 @@ plug (robot.device.forceRLEG, zmp.force_1)
 plug (robot.frames['leftFootForceSensor'].position , zmp.sensorPosition_0)
 plug (robot.frames['rightFootForceSensor'].position, zmp.sensorPosition_1)
 
-zmpEst = ZmpFromForces('zmpEstimated')
-plug (est.forcesSupport1 , zmpEst.force_0)
-plug (est.forcesSupport2, zmpEst.force_1)
-plug (est.stackOfContacts.homoSupportPos1 , zmpEst.sensorPosition_0)
-plug (est.stackOfContacts.homoSupportPos2 , zmpEst.sensorPosition_1)
-
-estEnc = appli.taskCoMStabilized.estimatorEnc
 zmpEnc = ZmpFromForces('zmpEncoders')
 plug (estEnc.forcesSupport1 , zmpEnc.force_0)
 plug (estEnc.forcesSupport2, zmpEnc.force_1)
-plug (estEnc.stackOfContacts.homoSupportPos1 , zmpEnc.sensorPosition_0)
-plug (estEnc.stackOfContacts.homoSupportPos2 , zmpEnc.sensorPosition_1)
+plug (estEnc.odometryFF.homoSupportPos1 , zmpEnc.sensorPosition_0)
+plug (estEnc.odometryFF.homoSupportPos2 , zmpEnc.sensorPosition_1)
 
 appli.gains['trunk'].setConstant(2)
-est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-3,)*3+(1e-6,)*3)))
-est.setForceVariance(1e-4)
+estEnc.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-3,)*3+(1e-6,)*3)))
+estEnc.setForceVariance(1e-4)
 
 stabilizer.setFixedGains(True)
 stabilizer.setHorizon(400)
-est.setWithForceSensors(True)
+estEnc.setWithForceSensors(True)
 
 stabilizer.setStateCost(matrixToTuple(1*np.diag((100,100,1000,100,100,100,100,1,1,100,1,1,1,1))))
 
@@ -111,7 +104,7 @@ perturbatorControl.setMode(2)
 perturbatorControl.activate(False)
 
 # Perturbation Generator on task
-perturbatorTask = VectorPerturbationsGenerator('perturbatedTask')
+perturbatorTask = VectorPerturbationsGenerator('perturbatappli.robot.addTrace( robot.dynamic.name,'position' )edTask')
 perturbatorTask.setSinLessMode(True)
 vect = perturbatorTask.sin
 vect.value = (0,0,0,0,0)
@@ -125,10 +118,10 @@ perturbatorTask.activate(False)
 
 #appli.nextStep()
 
-appli.robot.addTrace( est.name,'flexibility' )
-appli.robot.addTrace( est.name,'input')
-appli.robot.addTrace( est.name,'measurement')
-appli.robot.addTrace( est.name,  'forcesAndMoments')
+appli.robot.addTrace( estEnc.name,'flexibility' )
+appli.robot.addTrace( estEnc.name,'input')
+appli.robot.addTrace( estEnc.name,'measurement')
+appli.robot.addTrace( estEnc.name,  'forcesAndMoments')
 appli.robot.addTrace( stabilizer.name,'task' )
 appli.robot.addTrace ( stabilizer.name,'state')
 appli.robot.addTrace ( stabilizer.name,'stateWorld')
@@ -142,22 +135,15 @@ appli.robot.addTrace( zmpEst.name, 'zmp')
 appli.robot.addTrace( zmpEnc.name, 'zmp')
 appli.robot.addTrace (stabilizer.name,'computationTime')
 
-appli.robot.addTrace( est.stackOfContacts.name,'nbSupport' )
-appli.robot.addTrace( est.stackOfContacts.name,'supportPos1' )
-appli.robot.addTrace( est.stackOfContacts.name,'supportPos2' )
-
 appli.robot.addTrace( robot.dynamicEncoders.name,'position' )
 appli.robot.addTrace( robot.dynamic.name,'position' )
+appli.robot.addTrace( robot.dynamicFF.name,'position' )
+appli.robot.addTrace( estEnc.odometryFF.name,'nbSupport' )
 
-appli.robot.addTrace( robot.dynamicEncoders.name,'leftAnkle' )
-appli.robot.addTrace( robot.dynamicEncoders.name,'rightAnkle' )
+appli.robot.addTrace( estEnc.odometryFF.name,'supportPos1' )
+appli.robot.addTrace( estEnc.odometryFF.name,'supportPos2' )
 
-appli.robot.addTrace( estEnc.contactPos.name,'sout' )
-appli.robot.addTrace( estEnc.FFPosHomo.name,'sout' )
-appli.robot.addTrace( estEnc.FFPosRPY.name,'sout' )
-appli.robot.addTrace( estEnc.encodersState.name,'sout' )
-appli.robot.addTrace( estEnc.stateEncoders.name,'sout' )
-appli.robot.addTrace( estEnc.stackOfContactsFF.name,'nbSupport' )
+appli.robot.addTrace( estEnc.odometryFF.name,'robotStateOut' )
 
 appli.startTracer()
 

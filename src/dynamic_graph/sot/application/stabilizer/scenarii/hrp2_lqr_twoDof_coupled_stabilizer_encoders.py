@@ -13,7 +13,6 @@ class HRP2LqrTwoDofCoupledStabilizerEncoders(HRP2LQRTwoDofCoupledStabilizer):
     def __init__(self,robot,taskname = 'com-stabilized'):      
 
 	from dynamic_graph.sot.application.state_observation.initializations.hrp2_model_base_flex_estimator_imu_force_encoders import HRP2ModelBaseFlexEstimatorIMUForceEncoders
-	from dynamic_graph.sot.application.state_observation.initializations.hrp2_model_base_flex_estimator_imu_force import HRP2ModelBaseFlexEstimatorIMUForce
         HRP2LQRTwoDofCoupledStabilizer.__init__(self,taskname)
         robot.dynamic.com.recompute(0)
         robot.dynamic.Jcom.recompute(0)
@@ -35,19 +34,18 @@ class HRP2LqrTwoDofCoupledStabilizerEncoders(HRP2LQRTwoDofCoupledStabilizer):
 
 		# Estimator of the flexibility state
         self.estimatorEnc = HRP2ModelBaseFlexEstimatorIMUForceEncoders (robot, taskname+"EstimatorEncoders")
-        self.estimator = HRP2ModelBaseFlexEstimatorIMUForce (robot, taskname+"Estimator")
-        plug (self.estimator.stackOfContacts.nbSupport,self.nbSupport)
-	plug(self.estimator.flexPosition, self.tflex)
-	plug(self.estimator.flexVelocity, self.dtflex)
-	plug(self.estimator.flexAcceleration, self.ddtflex)
+	plug (self.estimatorEnc.odometryFF.nbSupport,self.nbSupport)
+	plug(self.estimatorEnc.flexPosition, self.tflex)
+	plug(self.estimatorEnc.flexVelocity, self.dtflex)
+	plug(self.estimatorEnc.flexAcceleration, self.ddtflex)
 
 	# Control state
 	plug(robot.dynamic.com, self.com)
 	plug(robot.dynamic.waist,self.waistHomo)
-        plug(self.estimator.flexThetaU, self.flexOriVect ) 
+        plug(self.estimatorEnc.flexThetaU, self.flexOriVect ) 
 	plug(self.DCom.sout,self.comDot)
 	plug(self.DWaist.sout,self.waistAngVel)
-        plug(self.estimator.flexOmega, self.flexAngVelVect )
+        plug(self.estimatorEnc.flexOmega, self.flexAngVelVect )
 
 	# Jacobians
         plug (robot.dynamic.Jcom, self.Jcom)
