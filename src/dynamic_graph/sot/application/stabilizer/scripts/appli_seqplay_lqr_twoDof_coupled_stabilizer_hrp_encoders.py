@@ -83,9 +83,10 @@ plug (estEnc.odometryFF.homoSupportPos2 , zmpEnc.sensorPosition_1)
 
 appli.gains['trunk'].setConstant(2)
 estEnc.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-3,)*3+(1e-6,)*3)))
+estEnc.setProcessNoiseCovariance(matrixToTuple(np.diag((1e-8,)*12+(1e-4,)*6+(2.5e-8,)*2)))
 estEnc.setForceVariance(1e-4)
 
-stabilizer.setFixedGains(True)
+stabilizer.setFixedGains(False)
 stabilizer.setHorizon(400)
 estEnc.setWithForceSensors(True)
 
