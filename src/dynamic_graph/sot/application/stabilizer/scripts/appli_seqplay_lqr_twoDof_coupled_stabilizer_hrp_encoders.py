@@ -54,7 +54,7 @@ stabilizer.setkfs(kfe)
 stabilizer.setkfd(kfv)
 
 plug(robot.device.velocity,robot.dynamic.velocity)
-plug(robot.device.velocity,robot.dynamicEncoders.velocity)
+#plug(robot.device.velocity,robot.dynamicEncoders.velocity)
 
 # Simulation
 appli.comRef.value=(0.01068, 0.00014, 0.80771000000000004) # two feet Mx=My=0
@@ -83,12 +83,16 @@ plug (estEnc.odometryFF.homoSupportPos2 , zmpEnc.sensorPosition_1)
 
 appli.gains['trunk'].setConstant(2)
 estEnc.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-3,)*3+(1e-6,)*3)))
-estEnc.setProcessNoiseCovariance(matrixToTuple(np.diag((1e-8,)*12+(1e-4,)*6+(2.5e-8,)*2)))
+estEnc.setProcessNoiseCovariance(matrixToTuple(np.diag((1e-8,)*12+(1e-4,)*6)))
 estEnc.setForceVariance(1e-4)
 
 stabilizer.setFixedGains(False)
 stabilizer.setHorizon(400)
+estEnc.inputVector.setConfig((1,1,1))
 estEnc.setWithForceSensors(True)
+estEnc.setWithComBias(False)
+estEnc.setProcessNoiseCovariance(matrixToTuple(np.diag((1e-8,)*12+(1e-4,)*6)))
+#estEnc.setProcessNoiseCovariance(matrixToTuple(np.diag((1e-8,)*12+(1e-4,)*6+(2.5e-8,)*2)))
 
 stabilizer.setStateCost(matrixToTuple(1*np.diag((100,100,1000,100,100,100,100,1,1,100,1,1,1,1))))
 
@@ -105,7 +109,7 @@ perturbatorControl.setMode(2)
 perturbatorControl.activate(False)
 
 # Perturbation Generator on task
-perturbatorTask = VectorPerturbationsGenerator('perturbatappli.robot.addTrace( robot.dynamic.name,'position' )edTask')
+perturbatorTask = VectorPerturbationsGenerator('perturbatedTask')
 perturbatorTask.setSinLessMode(True)
 vect = perturbatorTask.sin
 vect.value = (0,0,0,0,0)
@@ -147,6 +151,18 @@ appli.robot.addTrace( estEnc.odometryFF.name,'supportPos2' )
 appli.robot.addTrace( estEnc.odometryFF.name,'robotStateOut' )
 
 appli.robot.addTrace( estEnc.odometryFF.name,'pivotPosition' )
+
+appli.robot.addTrace( estEnc.odometryFF.name,'forceSupport1' )
+appli.robot.addTrace( estEnc.odometryFF.name,'forceSupport2' )
+
+appli.robot.addTrace( estEnc.odometryFF.name,'rightFootPosition')
+appli.robot.addTrace( estEnc.odometryFF.name,'leftFootPosition')
+
+from dynamic_graph.sot.application.state_observation import Filter
+filtre=Filter("Filter")
+filtre.setWindowSize(10)
+plug(zmp.zmp,filtre.sin)
+appli.robot.addTrace( filtre.name,'sout' )
 
 appli.startTracer()
 
