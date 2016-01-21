@@ -14,8 +14,8 @@ def s() :
    stabilizer.stop()
 
 forceSeqplay = True
-traj = '/home/alexis/devel/ros/install/resources/seqplay/stand-on-left-foot'
-#traj = '/home/alexis/devel/ros/install/resources/seqplay/stand-on-right-foot'
+#traj = '/home/alexis/devel/ros/install/resources/seqplay/stand-on-left-foot'
+traj = '/home/alexis/devel/ros/install/resources/seqplay/stand-on-right-foot'
 #traj = '/home/alexis/devel/ros/install/resources/seqplay/walkfwd-resampled'
 
 #traj = '/home/alexis/devel/ros/install/resources/seqplay/walkfwd-resampled-30'
@@ -82,7 +82,8 @@ plug (est.odometry.homoSupportPos2 , zmpEst.sensorPosition_1)
 
 appli.gains['trunk'].setConstant(2)
 est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-3,)*3+(1e-6,)*3)))
-est.setProcessNoiseCovariance(matrixToTuple(np.diag((1e-8,)*12+(1e-4,)*6+(2.5e-8,)*2)))
+est.setWithComBias(False)
+est.setProcessNoiseCovariance(matrixToTuple(np.diag((1e-8,)*12+(1e-4,)*6)))#+(2.5e-8,)*2)))
 est.setForceVariance(1e-4)
 
 stabilizer.setFixedGains(True)

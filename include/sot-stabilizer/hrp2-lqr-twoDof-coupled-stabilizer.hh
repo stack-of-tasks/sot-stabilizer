@@ -285,6 +285,9 @@ namespace sotStabilizer
     // Velocity of the flexibility
     SignalPtr <dynamicgraph::Vector, int> flexAngVelVectSIN_;
 
+    /// Bias on the CoM
+    SignalPtr < dynamicgraph::Vector, int> comBiasSIN_;
+
         /// Translational part of flexibility
     // Position
     SignalPtr < dynamicgraph::Vector, int> tflexSIN_;

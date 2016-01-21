@@ -82,6 +82,7 @@ namespace sotStabilizer
     comDotSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comDot"),
     waistAngVelSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::waistAngVel"),
     flexAngVelVectSIN_(NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::flexAngVelVect"),
+    comBiasSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comBias"),
     tflexSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::tflex"),
     dtflexSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::dtflex"),
     ddtflexSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::ddtflex"),
@@ -145,6 +146,7 @@ namespace sotStabilizer
     signalRegistration (tflexSIN_);
     signalRegistration (dtflexSIN_);
     signalRegistration (ddtflexSIN_);
+    signalRegistration (comBiasSIN_);
     signalRegistration (comRefSIN_);
     signalRegistration (perturbationVelSIN_);
     signalRegistration (perturbationAccSIN_);
@@ -461,6 +463,8 @@ namespace sotStabilizer
             0,
             0.80771;
     comSIN_.setConstant(convertVector<dynamicgraph::Vector>(com));
+    com.setZero();
+    comBiasSIN_.setConstant(convertVector<dynamicgraph::Vector>(com));
 
     stateObservation::Matrix4 homoWaist;
     homoWaist <<      0.99998573432883131, -0.0053403256847235764, 0.00010981989355530105, -1.651929567364003e-05,
@@ -614,14 +618,19 @@ namespace sotStabilizer
   HRP2LQRTwoDofCoupledStabilizer::computeControlFeedback(VectorMultiBound& task,
       const int& time)
   {
+
+    // CoM bias
+    const stateObservation::Vector & comBias = convertVector<stateObservation::Vector>(comBiasSIN_.access(time));
+
     // State
-    const stateObservation::Vector & com = convertVector<stateObservation::Vector>(comSIN_.access(time));
+    const stateObservation::Vector & com = convertVector<stateObservation::Vector>(comSIN_.access(time));//+comBias;
     const Matrix4& waistHomo = convertMatrix<stateObservation::Matrix>(waistHomoSIN_ (time));
     const stateObservation::Vector & flexOriVect = convertVector<stateObservation::Vector>(flexOriVectSIN_.access(time));
     const stateObservation::Vector & comDot = convertVector<stateObservation::Vector>(comDotSIN_ (time));
     const stateObservation::Vector waistAngVelIn=convertVector<stateObservation::Vector>(waistAngVelSIN_ (time));
     const stateObservation::Vector & waistAngVel = waistAngVelIn.block(3,0,3,1);
     const stateObservation::Vector & flexAngVelVect = convertVector<stateObservation::Vector>(flexAngVelVectSIN_.access(time));
+
     // Translational part of the flexibility
     const stateObservation::Vector & tflex = convertVector<stateObservation::Vector>(tflexSIN_.access(time));
     const stateObservation::Vector & dtflex = convertVector<stateObservation::Vector>(dtflexSIN_.access(time));
@@ -629,7 +638,7 @@ namespace sotStabilizer
 
     // State Reference
         // References of velocities and acceleration are equal to zero
-    const stateObservation::Vector & comRef = convertVector<stateObservation::Vector>(comRefSIN_ (time));
+    const stateObservation::Vector & comRef = convertVector<stateObservation::Vector>(comRefSIN_ (time))+comBias;
     const stateObservation::Vector & perturbationVel = convertVector<stateObservation::Vector>(perturbationVelSIN_ (time));
     const stateObservation::Vector & perturbationAcc = convertVector<stateObservation::Vector>(perturbationAccSIN_ (time));
 

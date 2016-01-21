@@ -48,6 +48,9 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
 	plug(self.DWaist.sout,self.waistAngVel)
         plug(self.estimator.flexOmega, self.flexAngVelVect )
 
+	# CoM bias
+	plug(self.estimator.comBias,self.comBias)
+
 	# Jacobians
         plug ( robot.dynamic.Jcom  , self.Jcom  )
 	plug ( robot.dynamic.Jwaist, self.Jwaist) 
