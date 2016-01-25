@@ -82,13 +82,14 @@ plug (est.odometry.homoSupportPos2 , zmpEst.sensorPosition_1)
 
 appli.gains['trunk'].setConstant(2)
 est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-3,)*3+(1e-6,)*3)))
-est.setWithComBias(False)
-est.setProcessNoiseCovariance(matrixToTuple(np.diag((1e-8,)*12+(1e-4,)*6)))#+(2.5e-8,)*2)))
 est.setForceVariance(1e-4)
+est.setWithForceSensors(True)
+
+est.setWithComBias(True)
+est.setProcessNoiseCovariance(matrixToTuple(np.diag((1e-8,)*12+(1e-4,)*6+(1.e-13,)*2)))
 
 stabilizer.setFixedGains(True)
 stabilizer.setHorizon(400)
-est.setWithForceSensors(True)
 
 stabilizer.setStateCost(matrixToTuple(1*np.diag((100,100,1000,100,100,100,100,1,1,100,1,1,1,1))))
 
@@ -168,8 +169,12 @@ appli.robot.addTrace( est.odometry.name,'forceSupport1' )
 appli.robot.addTrace( est.odometry.name,'forceSupport2' )
 appli.robot.addTrace( est.odometry.name,'robotStateIn' )
 appli.robot.addTrace( est.odometry.name,'robotStateOut' )
+appli.robot.addTrace( est.name,'comBias')
 
 appli.startTracer()
+
+est.setWithComBias(True)
+est.setProcessNoiseCovariance(matrixToTuple(np.diag((1e-8,)*12+(1e-4,)*6+(1.e-13,)*2)))
 
 stabilizer.setStateCost(matrixToTuple(1*np.diag((200000,2000,100,400,6000,20,1000,10,10,1000,1,10,4,1))))
 

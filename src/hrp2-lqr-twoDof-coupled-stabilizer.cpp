@@ -623,7 +623,7 @@ namespace sotStabilizer
     const stateObservation::Vector & comBias = convertVector<stateObservation::Vector>(comBiasSIN_.access(time));
 
     // State
-    const stateObservation::Vector & com = convertVector<stateObservation::Vector>(comSIN_.access(time));//+comBias;
+    const stateObservation::Vector & com = convertVector<stateObservation::Vector>(comSIN_.access(time))+comBias;
     const Matrix4& waistHomo = convertMatrix<stateObservation::Matrix>(waistHomoSIN_ (time));
     const stateObservation::Vector & flexOriVect = convertVector<stateObservation::Vector>(flexOriVectSIN_.access(time));
     const stateObservation::Vector & comDot = convertVector<stateObservation::Vector>(comDotSIN_ (time));
@@ -638,7 +638,7 @@ namespace sotStabilizer
 
     // State Reference
         // References of velocities and acceleration are equal to zero
-    const stateObservation::Vector & comRef = convertVector<stateObservation::Vector>(comRefSIN_ (time))+comBias;
+    const stateObservation::Vector & comRef = convertVector<stateObservation::Vector>(comRefSIN_ (time));//-comBias;
     const stateObservation::Vector & perturbationVel = convertVector<stateObservation::Vector>(perturbationVelSIN_ (time));
     const stateObservation::Vector & perturbationAcc = convertVector<stateObservation::Vector>(perturbationAccSIN_ (time));
 
