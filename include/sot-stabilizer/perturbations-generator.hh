@@ -54,7 +54,7 @@ namespace sotStabilizer
             {
                 perturbationMode_ = k;
                 iterationNumber_ = 0;
-                timeSinceLast_=0;
+                timeSinceLast_= 0;
             }
 
             virtual void setPeriod (const int & k)
@@ -70,6 +70,11 @@ namespace sotStabilizer
                     iterationNumber_=0;
                     timeSinceLast_=0;
                 }
+            }
+
+            virtual void setSinLessMode(const bool & b)
+            {
+                sinLess_=b;
             }
 
             /**
@@ -109,6 +114,11 @@ namespace sotStabilizer
             */
             dynamicgraph::SignalPtr < dynamicgraph::sot::Flags, int> selecSIN;
 
+            /**
+            \brief selection matrix
+            */
+            dynamicgraph::SignalPtr < dynamicgraph::Vector, int> selecVectorSIN;
+
             double perturbationMode_;
             double perturbationPeriod_;
 
@@ -122,6 +132,7 @@ namespace sotStabilizer
             unsigned currentTime_;
 
             stateObservation::GaussianWhiteNoise gwn_;
+            bool sinLess_;
         };
 
 } // namespace sotStateObservation

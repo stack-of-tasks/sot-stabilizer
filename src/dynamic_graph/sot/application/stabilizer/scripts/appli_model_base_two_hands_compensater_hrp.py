@@ -48,13 +48,6 @@ est1.setKfv(matrixToTuple(np.diag((kfv,kfv,kfv))))
 est1.setKte(matrixToTuple(np.diag((kte,kte,kte))))
 est1.setKtv(matrixToTuple(np.diag((ktv,ktv,ktv))))
 
-# Robot: Stifness and damping
-#est1.setKfe(matrixToTuple(np.diag((kfe,kfe,kfe))))
-#est1.setKfv(matrixToTuple(np.diag((kfv,kfv,kfv))))
-#est1.setKte(matrixToTuple(np.diag((320,475,400))) # random z
-#est1.setKtv(matrixToTuple(np.diag((40,3,40)))) # random z
-
-
 flexVect=est1.signal('flexibility')
 flex=est1.signal('flexMatrixInverse')
 flexdot = est1.signal('flexInverseVelocityVector')
@@ -82,22 +75,18 @@ RHand = MatrixHomoToPoseRollPitchYaw('HomotoPoseRH')
 plug(robot.dynamic.signal('right-wrist'),RHand.sin)
 appli.robot.addTrace( RHand.name,  'sout')
 
-# Position main gauche
+# Positions mains gauche et droite
 LHand = MatrixHomoToPoseRollPitchYaw('HomotoPoseLH')
 plug(robot.dynamic.signal('left-wrist'),LHand.sin)
 appli.robot.addTrace( LHand.name,  'sout')
-
-# Position ref main droite
 RHandref = MatrixHomoToPoseRollPitchYaw('HomotoPoseRHR')
 plug(appli.features['right-wrist'].reference,RHandref.sin)
 appli.robot.addTrace( RHandref.name,  'sout')
 
-# Position ref main gauche
+# Positions references mains gauche et droite
 LHandref = MatrixHomoToPoseRollPitchYaw('HomotoPoseLHR')
 plug(appli.features['left-wrist'].reference,LHandref.sin)
 appli.robot.addTrace( LHandref.name,  'sout')
-
-# Position ref main droite
 appli.robot.addTrace( 'tranformation_right',  'gV0')
 
 # Position ref main gauche
@@ -153,71 +142,3 @@ appli.startTracer()
 est1.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-2,)*3+(1e-6,)*3)))
 appli.gains['trunk'].setConstant(2)
 
-time.sleep(60)
-appli.comRef.value=(0.003566999999999999, 0.031536, 0.80771000000000004)
-time.sleep(60)
-
-
-time.sleep(60)
-appli.comRef.value=(0.033566999999999999, 0.001536, 0.80771000000000004)
-time.sleep(60)
-appli.comRef.value=(0.013566999999999999, 0.001536, 0.80771000000000004)
-time.sleep(60)
-appli.comRef.value=(-0.01, 0.001536, 0.80771000000000004)
-time.sleep(60)
-appli.comRef.value=(0.013566999999999999, 0.001536, 0.80771000000000004)
-time.sleep(60)
-appli.comRef.value=(0.013566999999999999, 0.031536, 0.80771000000000004)
-time.sleep(60)
-appli.comRef.value=(0.013566999999999999, 0.001536, 0.80771000000000004)
-time.sleep(60)
-appli.comRef.value=(0.013566999999999999, -0.031536, 0.80771000000000004)
-time.sleep(60)
-appli.comRef.value=(0.013566999999999999, 0.001536, 0.80771000000000004)
-time.sleep(60)
-
-
-
-
-appli.comRef.value=(0.013566999999999999, 0.001536, 0.80771000000000004)
-
-contactNbr.value = 1
-appli.features['left-ankle'].reference.value=((1.0, 0.0, -5.0686451563700001e-17, 0.0094904630937000002), (0.0, 1.0, 0.0, 0.095000000000000001), (5.0686451563700001e-17, 0.0, 1.0, 0.165000198197), (0.0, 0.0, 0.0, 1.0))
-
-
-#time.sleep(120)
-#appli.comRef.value=(0.003566999999999999, 0.031536, 0.80771000000000004)
-#time.sleep(120)
-#appli.comRef.value=(0.003566999999999999, 0.001536, 0.80771000000000004)
-#time.sleep(120)(1e+4,)*3
-
-#appli.comRef.value=(0.00949046, 0.0, 0.80771000000000004)
-#appli.comRef.value=(0.00739606, 0.0, 0.80771000000000004)
-
-
-#appli.nextStep()
-#appli.comRef.value=(0.0, 0.0, 0.80771000000000004)
-#time.sleep(60)
-#est1.setOn(True)
-
-
-
-time.sleep(120)
-appli.comRef.value=(0.033566999999999999, 0.001536, 0.80771000000000004)
-time.sleep(120)
-appli.comRef.value=(0.003566999999999999, 0.001536, 0.80771000000000004)
-time.sleep(120)
-appli.comRef.value=(-0.01, 0.001536, 0.80771000000000004)
-time.sleep(120)
-appli.comRef.value=(0.003566999999999999, 0.001536, 0.80771000000000004)
-time.sleep(120)
-appli.comRef.value=(0.003566999999999999, 0.031536, 0.80771000000000004)
-time.sleep(120)
-appli.comRef.value=(0.003566999999999999, 0.001536, 0.80771000000000004)
-time.sleep(120)
-appli.comRef.value=(0.003566999999999999, -0.031536, 0.80771000000000004)
-time.sleep(120)
-appli.comRef.value=(0.003566999999999999, 0.001536, 0.80771000000000004)
-time.sleep(120)
-
-#appli.comRef.value=(0.003566999999999999, 0.001536, 0.80771000000000004)

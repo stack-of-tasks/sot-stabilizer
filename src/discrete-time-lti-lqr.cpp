@@ -43,6 +43,8 @@ namespace controller
 
                 sotStabilizer::tools::discreteTimeNonAlgRiccatiEqn(A_,B_,Q_,R_,Qn_,Pn_,horizon_);
                 changedValue_=false;
+                stateObservation::Matrix P(Pn_.front());
+                lastGain_ = (R_+B_.transpose()*P*B_).inverse()*B_.transpose()*P*A_;
 #ifndef NDEBUG
                 std::cout<<"A :"<< std::endl;
                 std::cout<< A_ <<std::endl;
@@ -60,13 +62,6 @@ namespace controller
             }
 
 
-
-            stateObservation::Matrix P(Pn_.front());
-
-
-
-            lastGain_ = (R_+B_.transpose()*P*B_).inverse()*B_.transpose()*P*A_;
-
             checkState_(x_);
             u_ = -lastGain_* x_;
 
@@ -80,8 +75,8 @@ namespace controller
 
 #ifndef NDEBUG
 
-//          std::cout<< "P " << std::endl;
-//          std::cout<< P << std::endl;
+            std::cout<< "P " << std::endl;
+            std::cout<< P << std::endl;
             std::cout<<"Gain :"<< std::endl;
             std::cout<< -lastGain_ <<std::endl;
             std::cout<<"State :"<< x_.transpose()<< std::endl;
@@ -120,6 +115,7 @@ namespace controller
                                                 const stateObservation::Matrix & B)
     {
         checkDynamicsMatrices_(A,B);
+
         A_=A;
         B_=B;
 //        std::cout << "changedValue_ DYNAMICS-----------------------------------"<<std::endl;

@@ -51,6 +51,7 @@ namespace sotStabilizer
   using dynamicgraph::sot::VectorUTheta;
   using dynamicgraph::sot::VectorRollPitchYaw;
 
+
 /// Dynamic balance stabilizer
 ///
 /// This task takes as input four signals

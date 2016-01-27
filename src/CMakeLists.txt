@@ -36,6 +36,7 @@ ADD_LIBRARY(${LIBRARY_NAME}
   SHARED
   hrp2-decoupled-stabilizer.cpp
   hrp2-lqr-decoupled-stabilizer.cpp
+  hrp2-lqr-twoDof-coupled-stabilizer.cpp
   hrp2-linear-state-space-stabilizer.cpp
   perturbations-generator.cpp
   discrete-time-non-alg-riccati-eqn.cpp
@@ -45,6 +46,7 @@ ADD_LIBRARY(${LIBRARY_NAME}
   prototyping/zmp-to-com-algebraic-controller.cpp
   prototyping/linearized-table-cart-device.cc
 #  prototyping/linearized-rotational-table-cart-device.cpp
+#  prototyping/non-linear-rotational-table-cart-device.cpp
   ${${PROJECT_NAME}_ABSOLUTE_HEADERS}
 )
 
@@ -131,8 +133,12 @@ INSTALL(FILES
   dynamic_graph/sot/application/stabilizer/scenarii/ds_stabilizer.py
   dynamic_graph/sot/application/stabilizer/scenarii/ds_stabilizer_hrp2.py
   dynamic_graph/sot/application/stabilizer/scenarii/ds_linear_stabilizer_hrp2.py
+  dynamic_graph/sot/application/stabilizer/scenarii/ds_lqr_twoDof_coupled_stabilizer_hrp2.py
   dynamic_graph/sot/application/stabilizer/scenarii/seqplay_stabilizer.py
   dynamic_graph/sot/application/stabilizer/scenarii/seqplay_stabilizer_hrp2.py
+  dynamic_graph/sot/application/stabilizer/scenarii/seqplay_lqr_twoDof_coupled_stabilizer_hrp2.py
+  dynamic_graph/sot/application/stabilizer/scenarii/seqplay_lqr_twoDof_coupled_stabilizer_hrp2_encoders.py
+  dynamic_graph/sot/application/stabilizer/scenarii/seqplay_lqr_twoDof_coupled_stabilizer.py
   dynamic_graph/sot/application/stabilizer/scenarii/hand_compensater_chicken.py
   dynamic_graph/sot/application/stabilizer/scenarii/hand_compensater_solver_kine.py
   dynamic_graph/sot/application/stabilizer/scenarii/leg_oscillator.py
@@ -141,6 +147,8 @@ INSTALL(FILES
   dynamic_graph/sot/application/stabilizer/scenarii/hrp2_linear_stabilizer.py
   dynamic_graph/sot/application/stabilizer/scenarii/hrp2_model_free_observer_stabilizer.py
   dynamic_graph/sot/application/stabilizer/scenarii/ds_model_free_observer_stabilizer_hrp2.py
+  dynamic_graph/sot/application/stabilizer/scenarii/hrp2_lqr_twoDof_coupled_stabilizer.py
+  dynamic_graph/sot/application/stabilizer/scenarii/hrp2_lqr_twoDof_coupled_stabilizer_encoders.py
   dynamic_graph/sot/application/stabilizer/scenarii/__init__.py
   DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/application/stabilizer/scenarii
   )
@@ -155,6 +163,8 @@ INSTALL(FILES
   dynamic_graph/sot/application/stabilizer/scripts/appli_ds_linear_stabilizer_hrp.py
   dynamic_graph/sot/application/stabilizer/scripts/appli_ds_model_free_observer_stabilizer.py
   dynamic_graph/sot/application/stabilizer/scripts/appli_seqplay_stabilizer_hrp.py
+  dynamic_graph/sot/application/stabilizer/scripts/appli_seqplay_lqr_twoDof_coupled_stabilizer_hrp.py
+  dynamic_graph/sot/application/stabilizer/scripts/appli_seqplay_lqr_twoDof_coupled_stabilizer_hrp_encoders.py
 
   DESTINATION ${PYTHON_SITELIB}/dynamic_graph/sot/application/stabilizer/scripts
   )

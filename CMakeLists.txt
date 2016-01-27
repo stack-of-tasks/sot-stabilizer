@@ -49,6 +49,7 @@ ADD_REQUIRED_DEPENDENCY("sot-state-observation")
 SET(${PROJECT_NAME}_HEADERS
     include/sot-stabilizer/hrp2-decoupled-stabilizer.hh
     include/sot-stabilizer/hrp2-lqr-decoupled-stabilizer.hh
+    include/sot-stabilizer/hrp2-lqr-twoDof-coupled-stabilizer.hh
     include/sot-stabilizer/hrp2-linear-state-space-stabilizer.hh
     include/sot-stabilizer/perturbations-generator.hh
     include/sot-stabilizer/controllers/controller-base.hh
@@ -60,6 +61,8 @@ SET(${PROJECT_NAME}_HEADERS
     include/sot-stabilizer/prototyping/zmp-to-com-algebraic-controller.hh
     include/sot-stabilizer/prototyping/linearized-table-cart-device.hh
 #    include/sot-stabilizer/prototyping/linearized-rotational-table-cart-device.hh
+#    include/sot-stabilizer/prototyping/non-linear-rotational-table-cart-device.hh
+
 )
 
 

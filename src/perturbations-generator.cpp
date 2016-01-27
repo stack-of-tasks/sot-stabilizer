@@ -26,13 +26,17 @@ namespace sotStabilizer
         soutSOUT( "VectorPerturbationsGenerator("+inName+")::output(vector)::sout"),
         selecSIN(0x0 ,
                 "VectorPerturbationsGenerator("+inName+")::input(flags)::selec"),
+        selecVectorSIN(0x0 ,
+                        "VectorPerturbationsGenerator("+inName+")::input(Vector)::selecVector"),
         on_(false),
-        currentTime_(0)
+        currentTime_(0),
+        sinLess_(false)
     {
         signalRegistration (sinSIN);
         signalRegistration (soutSOUT);
         signalRegistration (perturbationSIN);
         signalRegistration (selecSIN);
+        signalRegistration (selecVectorSIN);
 
         iterationNumber_ = 0;
 
@@ -78,6 +82,11 @@ namespace sotStabilizer
 	     dynamicgraph::command::Setter <VectorPerturbationsGenerator,bool>
             (*this, &VectorPerturbationsGenerator::activate, docstring));
 
+        addCommand(std::string("setSinLessMode"),
+             new
+             dynamicgraph::command::Setter <VectorPerturbationsGenerator,bool>
+            (*this, &VectorPerturbationsGenerator::setSinLessMode, docstring));
+
     }
 
     VectorPerturbationsGenerator::~VectorPerturbationsGenerator()
@@ -101,7 +110,13 @@ namespace sotStabilizer
             {
                 if (perturbationMode_==0) //dirac
                 {
-                    output = sin;
+                    if(sinLess_==false){
+                        output = sin;
+                    }
+                    else if(sinLess_==true){
+                        output.resize(sin.size());
+                        output.setZero();
+                    }
 
                     if (timeSinceLast_==perturbationPeriod_)
                     {
@@ -130,7 +145,13 @@ namespace sotStabilizer
                 }
                 else if (perturbationMode_==1) //step
                 {
-                    output = sin;
+                    if(sinLess_==false){
+                        output = sin;
+                    }
+                    else if(sinLess_==true){
+                        output.resize(sin.size());
+                        output.setZero();
+                    }
 
                     if (timeSinceLast_==perturbationPeriod_)
                     {
@@ -158,10 +179,16 @@ namespace sotStabilizer
                 }
                 else if (perturbationMode_==2) //white noise
                 {
-
-
                     const dynamicgraph::Vector & perturbation = perturbationSIN(inTime);
-                    const dynamicgraph::sot::Flags & selec = selecSIN(inTime);
+                    const dynamicgraph::sot::Flags & selec = selecSIN(inTime);    
+                    
+                    if(sinLess_==false){
+                        output = sin;
+                    }
+                    else if(sinLess_==true){
+                        output.resize(sin.size());
+                        output.setZero();
+                    }
 
                     gwn_.setDimension(perturbation.size());
                     gwn_.setStandardDeviation(sotStateObservation::convertVector<stateObservation::Vector>(perturbation).asDiagonal());
@@ -171,7 +198,7 @@ namespace sotStabilizer
                         if (selec(i))
                         {
                             output = sotStateObservation::convertVector<dynamicgraph::Vector>
-                                (gwn_.addNoise(sotStateObservation::convertVector<stateObservation::Vector>(sin)));
+                                (gwn_.addNoise(sotStateObservation::convertVector<stateObservation::Vector>(output)));
                         }
                         else
                         {
@@ -182,14 +209,19 @@ namespace sotStabilizer
 
                     ++timeSinceLast_;
                 }
-
-
             }
             else
             {
-                output = sin;
+                if(sinLess_==false){
+                    output = sin;
+                }
+                else if(sinLess_==true){
+                    output.resize(sin.size());
+                    output.setZero();
+                }
             }
 
+           // std::cout << "perturbOn" << on_ << std::endl;
             return currentOutput_=output;
         }
     }

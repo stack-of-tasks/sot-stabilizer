@@ -15,8 +15,6 @@ appli.withTraces()
 est = appli.taskCoMStabilized.estimator
 stabilizer = appli.taskCoMStabilized
 
-appli.refCom=
-
 #perturbator = VectorPerturbationsGenerator('comref')
 #comRef = perturbator.sin
 #comRef.value = appli.comRef.value

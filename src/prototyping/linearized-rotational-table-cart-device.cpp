@@ -16,6 +16,8 @@
 #include <dynamic-graph/command-bind.h>
 #include "command-increment.hh"
 
+#include <iostream>
+
 namespace sotStabilizer
 {
 DYNAMICGRAPH_FACTORY_ENTITY_PLUGIN(LinearizedRotationalTableCartDevice, "LinearizedRotationalTableCartDevice");
@@ -30,12 +32,18 @@ LinearizedRotationalTableCartDevice::LinearizedRotationalTableCartDevice(const s
   flexcomddotSOUT_ ("LinearizedRotationalTableCartDevice("+inName+")::output(vector)::flexcomddot"),
   clSOUT_("LinearizedRotationalTableCartDevice("+inName+")::output(vector)::cl"),
   zmpSOUT_("LinearizedRotationalTableCartDevice("+inName+")::output(vector)::zmp"),
-  cartMass_(58.0), I_ (3,3)
+  cartMass_(58.0), I_ (3,3), cl_(3)
 {
-  A_.resize(18,18); B_.resize(18,18);
-  A_.setZero (); B_.setZero (); I_.setZero();
 
-  stiffness_ <<  100,0,0,
+  A_.resize(18,18);
+  B_.resize(18,18);
+  stiffness_.resize(3,3);
+  viscosity_.resize(3,3);
+  A_.setZero ();
+  B_.setZero ();
+  I_.setZero();
+
+  stiffness_ << 100,0,0,
                 0,100,0,
                 0,0,100;
 
@@ -78,6 +86,16 @@ LinearizedRotationalTableCartDevice::LinearizedRotationalTableCartDevice(const s
   addCommand(std::string("setCartMass"),
              new ::dynamicgraph::command::Setter<LinearizedRotationalTableCartDevice, double>
              (*this, &LinearizedRotationalTableCartDevice::setCartMass, docstring));
+
+  // setCartMass
+  docstring =
+    "\n"
+    "    Set cart height\n"
+    "\n";
+  addCommand(std::string("setCartHeight"),
+             new ::dynamicgraph::command::Setter<LinearizedRotationalTableCartDevice, double>
+             (*this, &LinearizedRotationalTableCartDevice::setCartHeight, docstring));
+
 
   // getCartMass
   docstring =
