@@ -128,6 +128,7 @@ appli.robot.addTrace( est.name,'predictedSensors' )
 appli.robot.addTrace( est.name,'prediction' )
 appli.robot.addTrace( est.name,'inovation' )
 appli.robot.addTrace( est.name,  'forcesAndMoments')
+appli.robot.addTrace( est.name,  'stateCovariance')
 
 appli.robot.addTrace( zmp.name, 'zmp')
 
