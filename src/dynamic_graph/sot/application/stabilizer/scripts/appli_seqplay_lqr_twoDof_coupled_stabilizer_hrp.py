@@ -10,20 +10,9 @@ from dynamic_graph.sot.application.stabilizer import VectorPerturbationsGenerato
 from dynamic_graph.sot.core.matrix_util import matrixToTuple
 from dynamic_graph.sot.dynamics.zmp_from_forces import ZmpFromForces
 
-def s() :
-   stabilizer.stop()
-
 forceSeqplay = True
-#traj = '/home/alexis/devel/ros/install/resources/seqplay/stand-on-left-foot'
-traj = '/home/alexis/devel/ros/install/resources/seqplay/stand-on-right-foot'
-#traj = '/home/alexis/devel/ros/install/resources/seqplay/walkfwd-resampled'
-
-#traj = '/home/alexis/devel/ros/install/resources/seqplay/walkfwd-resampled-30'
-#traj = '/home/alexis/devel/ros/install/resources/seqplay/walkfwd-shifted'
-#traj = '/home/alexis/devel/ros/install/resources/seqplay/stand-on-left-foot-shifted' 
-#traj = '/home/alexis/devel/ros/install/resources/seqplay/onspot16s'; forceSeqplay = False
-#traj = '/home/alexis/devel/ros/install/resources/seqplay/onspot'; forceSeqplay = False
-#traj = '/home/alexis/devel/ros/install/resources/seqplay/walkstraight10cmperstep'; forceSeqplay = False
+#traj = '/home/amifsud/devel/ros/install/resources/seqplay/stand-on-left-foot'
+traj = '/home/amifsud/devel/ros/install/resources/seqplay/stand-on-right-foot'
 
 appli =  SeqPlayLqrTwoDofCoupledStabilizerHRP2(robot, traj, False, False, False,forceSeqplay)
 appli.withTraces()
@@ -33,25 +22,18 @@ stabilizer = appli.taskCoMStabilized
 seq = appli.seq
 
 # Changer raideurs
-b="simu" # "simu"
 
-if b=="robot" :
-  # Simulation
-  kfe=40000
-  kfv=600
-  kte=600
-  ktv=60
-elif b=="simu" :
-  # Robot
-  kfe=40000
-  kfv=600
-  kte=350
-  ktv=10
+# Simulation
+#kfe=40000
+#kfv=600
+#kte=600
+#ktv=60
 
-stabilizer.setkts(kte)
-stabilizer.setktd(ktv)
-stabilizer.setkfs(kfe)
-stabilizer.setkfd(kfv)
+# Robot
+stabilizer.setkts(350)
+stabilizer.setktd(10)
+stabilizer.setkfs(40000)
+stabilizer.setkfd(600)
 
 plug(robot.device.velocity,robot.dynamic.velocity)
 
@@ -75,21 +57,18 @@ plug (robot.frames['leftFootForceSensor'].position , zmp.sensorPosition_0)
 plug (robot.frames['rightFootForceSensor'].position, zmp.sensorPosition_1)
 
 zmpEst = ZmpFromForces('zmpEstimated')
-plug (est.odometry.forceSupport1 , zmpEst.force_0)
-plug (est.odometry.forceSupport2, zmpEst.force_1)
-plug (est.odometry.homoSupportPos1 , zmpEst.sensorPosition_0)
-plug (est.odometry.homoSupportPos2 , zmpEst.sensorPosition_1)
+plug (est.forcesSupport1 , zmpEst.force_0)
+plug (est.forcesSupport2, zmpEst.force_1)
+plug (robot.frames['leftFootForceSensor'].position , zmpEst.sensorPosition_0)
+plug (robot.frames['rightFootForceSensor'].position, zmpEst.sensorPosition_1)
 
 appli.gains['trunk'].setConstant(2)
 est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-3,)*3+(1e-6,)*3)))
 est.setForceVariance(1e-4)
-est.setWithForceSensors(True)
-
-est.setWithComBias(True)
-est.setProcessNoiseCovariance(matrixToTuple(np.diag((1e-8,)*12+(1e-4,)*6+(1.e-13,)*2)))
 
 stabilizer.setFixedGains(True)
 stabilizer.setHorizon(400)
+est.setWithForceSensors(True)
 
 stabilizer.setStateCost(matrixToTuple(1*np.diag((100,100,1000,100,100,100,100,1,1,100,1,1,1,1))))
 
@@ -121,24 +100,52 @@ perturbatorTask.activate(False)
 #appli.nextStep()
 
 appli.robot.addTrace( est.name,'flexibility' )
+appli.robot.addTrace( est.name,'inovation' )
+appli.robot.addTrace( est.name,'flexThetaU' )
+appli.robot.addTrace( est.name,'flexInversePoseThetaU' )
+appli.robot.addTrace( est.name,'flexInverseOmega')
+appli.robot.addTrace( est.name,'flexInverseVelocityVector' )
+appli.robot.addTrace( est.name,'flexMatrixInverse' )
 appli.robot.addTrace( est.name,'input')
 appli.robot.addTrace( est.name,'measurement')
 appli.robot.addTrace( est.name,'simulatedSensors' )
-appli.robot.addTrace( est.name,'predictedSensors' )
-appli.robot.addTrace( est.name,'prediction' )
-appli.robot.addTrace( est.name,'inovation' )
 appli.robot.addTrace( est.name,  'forcesAndMoments')
-appli.robot.addTrace( est.name,  'stateCovariance')
-
+appli.robot.addTrace( est.name,  'forcesSupport1')
+appli.robot.addTrace( est.name,  'forcesSupport2')
+appli.robot.addTrace( stabilizer.name,'task' )
+appli.robot.addTrace( stabilizer.name,'nbSupport' )
+appli.robot.addTrace( stabilizer.name,'error' )
+appli.robot.addTrace( robot.device.name, 'forceLLEG')
+appli.robot.addTrace( robot.device.name, 'forceRLEG')
+appli.robot.addTrace( robot.device.name, 'forceLARM')
+appli.robot.addTrace( robot.device.name, 'forceRARM')
+appli.robot.addTrace( robot.device.name, 'accelerometer')
+appli.robot.addTrace( robot.device.name, 'gyrometer')
+appli.robot.addTrace ( stabilizer.name,'state')
+appli.robot.addTrace ( stabilizer.name,'stateWorld')
+appli.robot.addTrace ( stabilizer.name,'stateRef')
+appli.robot.addTrace ( stabilizer.name,'stateError')
+appli.robot.addTrace ( stabilizer.name,'stateExtended')
+appli.robot.addTrace ( stabilizer.name,'control')
+appli.robot.addTrace (robot.device.name,'velocity')
+appli.robot.addTrace (robot.dynamic.name,'angularmomentum')
+appli.robot.addTrace (robot.dynamic.name,'waist')
+appli.robot.addTrace (stabilizer.name,'inertiaOut')
+appli.robot.addTrace (stabilizer.name,'gain')
+appli.robot.addTrace (stabilizer.name,'Amatrix')
+appli.robot.addTrace (stabilizer.name,'Bmatrix')
+appli.robot.addTrace (stabilizer.name,'supportPos1')
+appli.robot.addTrace (stabilizer.name,'supportPos2')
+appli.robot.addTrace (stabilizer.name,'energy')
 appli.robot.addTrace( zmp.name, 'zmp')
-
-
-appli.robot.addTrace( est.name,'comBias')
+appli.robot.addTrace( appli.zmpRef.name, 'zmp')
+appli.robot.addTrace( zmpEst.name, 'zmp')
 
 appli.startTracer()
 
+
 est.setWithComBias(True)
-est.setProcessNoiseCovariance(matrixToTuple(np.diag((1e-8,)*12+(1e-4,)*6+(1.e-13,)*2)))
+est.setProcessNoiseCovariance(matrixToTuple(np.diag((1e-8,)*12+(1e-4,)*6+(1.e-15,)*2)))
 
 stabilizer.setStateCost(matrixToTuple(1*np.diag((200000,2000,100,400,6000,20,1000,10,10,1000,1,10,4,1))))
 
