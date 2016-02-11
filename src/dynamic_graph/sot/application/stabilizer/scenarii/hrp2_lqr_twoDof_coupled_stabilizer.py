@@ -22,6 +22,7 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
         robot.dynamic.waist.recompute(0)
         robot.dynamic.Jwaist.recompute(0)
 	robot.dynamic.inertia.recompute(0)
+	robot.dynamic.angularmomentum.recompute(0)
 
 	# DCoM
         self.DCom = Multiply_matrix_vector('DCom') # Com velocity: self.DCom.sout
