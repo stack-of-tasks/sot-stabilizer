@@ -12,7 +12,7 @@ from dynamic_graph.sot.dynamics.zmp_from_forces import ZmpFromForces
 
 forceSeqplay = True
 #traj = '/home/amifsud/devel/ros/install/resources/seqplay/stand-on-left-foot'
-traj = '/home/amifsud/devel/ros/install/resources/seqplay/stand-on-right-foot'
+traj = '/home/alexis/devel/ros/install/resources/seqplay/stand-on-right-foot'
 
 appli =  SeqPlayLqrTwoDofCoupledStabilizerHRP2(robot, traj, False, False, False,forceSeqplay)
 appli.withTraces()
@@ -41,15 +41,6 @@ plug(robot.device.velocity,robot.dynamic.velocity)
 appli.comRef.value=(0.01068, 0.00014, 0.80771000000000004) # two feet Mx=My=0
 #appli.comRef.value=(0.00182, 0.09582, 0.80769999999999997) # one foot Mx=My=0
 
-# Robot
-appli.comRef.value=(0.0263, 0.0040000000000000001, 0.80771000000000004) # zmp au niveau du pied
-est.inputVector.setFootBias1((0.0168,0,0)) # zmpEst=zmp sans feedback
-est.inputVector.setFootBias2((0.0168,0,0))
-est.inputVector.setFootBias1((0.0175,0,0,0,0,0)) # zmpEst=zmp avec feedback
-est.inputVector.setFootBias2((0.0175,0,0,0,0,0))
-est.inputVector.setFootBias1((0,0,0,0,0,0)) # sans biai
-est.inputVector.setFootBias2((0,0,0,0,0,0))
-
 zmp = ZmpFromForces('zmpReal')
 plug (robot.device.forceLLEG , zmp.force_0)
 plug (robot.device.forceRLEG, zmp.force_1)
@@ -63,41 +54,10 @@ plug (robot.frames['leftFootForceSensor'].position , zmpEst.sensorPosition_0)
 plug (robot.frames['rightFootForceSensor'].position, zmpEst.sensorPosition_1)
 
 appli.gains['trunk'].setConstant(2)
-est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-3,)*3+(1e-6,)*3)))
-est.setForceVariance(1e-4)
-
 stabilizer.setFixedGains(True)
 stabilizer.setHorizon(400)
-est.setWithForceSensors(True)
 
 stabilizer.setStateCost(matrixToTuple(1*np.diag((100,100,1000,100,100,100,100,1,1,100,1,1,1,1))))
-
-# Perturbation Generator on control
-perturbatorControl = VectorPerturbationsGenerator('perturbatedControl')
-perturbatorControl.setSinLessMode(True)
-vect1 = perturbatorControl.sin
-vect1.value = (0,0,0,0,0)
-plug (perturbatorControl.sout,stabilizer.perturbationAcc)
-appli.robot.addTrace( perturbatorControl.name, 'sout')
-perturbatorControl.perturbation.value=(1,1,0,1,1)
-perturbatorControl.selec.value = '11111'
-perturbatorControl.setMode(2)
-perturbatorControl.activate(False)
-
-# Perturbation Generator on task
-perturbatorTask = VectorPerturbationsGenerator('perturbatedTask')
-perturbatorTask.setSinLessMode(True)
-vect = perturbatorTask.sin
-vect.value = (0,0,0,0,0)
-plug (perturbatorTask.sout,stabilizer.perturbationVel)
-appli.robot.addTrace( perturbatorTask.name, 'sout')
-perturbatorTask.perturbation.value=(1,0,0,0,0)
-perturbatorTask.selec.value = '11111'
-perturbatorTask.setMode(0)
-perturbatorTask.setPeriod(0)
-perturbatorTask.activate(False)
-
-#appli.nextStep()
 
 appli.robot.addTrace( est.name,'flexibility' )
 appli.robot.addTrace( est.name,'inovation' )
@@ -142,6 +102,31 @@ appli.robot.addTrace( appli.zmpRef.name, 'zmp')
 appli.robot.addTrace( zmpEst.name, 'zmp')
 
 appli.startTracer()
+
+# Perturbation Generator on control
+perturbatorControl = VectorPerturbationsGenerator('perturbatedControl')
+perturbatorControl.setSinLessMode(True)
+vect1 = perturbatorControl.sin
+vect1.value = (0,0,0,0,0)
+plug (perturbatorControl.sout,stabilizer.perturbationAcc)
+appli.robot.addTrace( perturbatorControl.name, 'sout')
+perturbatorControl.perturbation.value=(1,1,0,1,1)
+perturbatorControl.selec.value = '11111'
+perturbatorControl.setMode(2)
+perturbatorControl.activate(False)
+
+# Perturbation Generator on task
+perturbatorTask = VectorPerturbationsGenerator('perturbatedTask')
+perturbatorTask.setSinLessMode(True)
+vect = perturbatorTask.sin
+vect.value = (0,0,0,0,0)
+plug (perturbatorTask.sout,stabilizer.perturbationVel)
+appli.robot.addTrace( perturbatorTask.name, 'sout')
+perturbatorTask.perturbation.value=(1,0,0,0,0)
+perturbatorTask.selec.value = '11111'
+perturbatorTask.setMode(0)
+perturbatorTask.setPeriod(0)
+perturbatorTask.activate(False)
 
 
 est.setWithComBias(True)
