@@ -103,6 +103,9 @@ appli.robot.addTrace( zmpEst.name, 'zmp')
 
 appli.startTracer()
 
+self.setWithForceSensors(False)
+self.setWithComBias(False)
+
 # Perturbation Generator on control
 perturbatorControl = VectorPerturbationsGenerator('perturbatedControl')
 perturbatorControl.setSinLessMode(True)

@@ -83,16 +83,16 @@ plug (estEnc.odometryFF.homoSupportPos2 , zmpEnc.sensorPosition_1)
 
 appli.gains['trunk'].setConstant(2)
 estEnc.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-3,)*3+(1e-6,)*3)))
-estEnc.setProcessNoiseCovariance(matrixToTuple(np.diag((1e-8,)*12+(1e-4,)*6)))
+#estEnc.setProcessNoiseCovariance(matrixToTuple(np.diag((1e-8,)*12+(1e-4,)*6)))
 estEnc.setForceVariance(1e-4)
 
 stabilizer.setFixedGains(False)
 stabilizer.setHorizon(400)
 estEnc.inputVector.setConfig((1,1,1))
-estEnc.setWithForceSensors(True)
-estEnc.setWithComBias(False)
-estEnc.setProcessNoiseCovariance(matrixToTuple(np.diag((1e-8,)*12+(1e-4,)*6)))
-#estEnc.setProcessNoiseCovariance(matrixToTuple(np.diag((1e-8,)*12+(1e-4,)*6+(2.5e-8,)*2)))
+#estEnc.setWithForceSensors(True)
+#estEnc.setWithComBias(False)
+#estEnc.setProcessNoiseCovariance(matrixToTuple(np.diag((1e-8,)*12+(1e-4,)*6)))
+##estEnc.setProcessNoiseCovariance(matrixToTuple(np.diag((1e-8,)*12+(1e-4,)*6+(2.5e-8,)*2)))
 
 stabilizer.setStateCost(matrixToTuple(1*np.diag((100,100,1000,100,100,100,100,1,1,100,1,1,1,1))))
 
