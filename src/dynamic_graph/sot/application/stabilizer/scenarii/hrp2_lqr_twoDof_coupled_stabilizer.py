@@ -17,12 +17,22 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
 
 	from dynamic_graph.sot.application.state_observation.initializations.hrp2_model_base_flex_estimator_imu_force import HRP2ModelBaseFlexEstimatorIMUForce  
         HRP2LQRTwoDofCoupledStabilizer.__init__(self,taskname)
-        robot.dynamic.com.recompute(0)
-        robot.dynamic.Jcom.recompute(0)
-        robot.dynamic.waist.recompute(0)
-        robot.dynamic.Jwaist.recompute(0)
-	robot.dynamic.inertia.recompute(0)
-	robot.dynamic.angularmomentum.recompute(0)
+
+	robot.device.state.value=robot.halfSitting
+	robot.device.velocity.value=(0.,)*36
+	robot.device.forceLLEG.value=(1.8349814919184242, -7.4412430930486302, 256.06853454222494, -0.035428813912447302, 2.0798475785647286, 0.14169701504511384)
+	robot.device.forceRLEG.value=(2.4303733340459406, 11.156361786170869, 285.59013529212666, -0.69957871247984049, 2.0516111892090887, -0.22872430884228223)
+	robot.device.accelerometer.value=(0.12527866711822, 0.089756740219665537, 9.8059788372472152)
+	robot.device.gyrometer.value=(-0.0029326257213877862, 0.007655425240526083, -8.001571126249214e-05)
+
+	def recomputeDynamic(i):
+		robot.dynamic.chest.recompute(i)
+		robot.dynamic.com.recompute(i)
+		robot.dynamic.Jcom.recompute(i)
+		robot.dynamic.angularmomentum.recompute(i)
+		robot.dynamic.inertia.recompute(i)
+		robot.dynamic.waist.recompute(i)
+	recomputeDynamic(0)
 
 	# DCoM
         self.DCom = Multiply_matrix_vector('DCom') # Com velocity: self.DCom.sout
@@ -40,6 +50,9 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
 	plug(self.estimator.flexPosition, self.tflex)
 	plug(self.estimator.flexVelocity, self.dtflex)
 	plug(self.estimator.flexAcceleration, self.ddtflex)
+
+	self.estimator.state.recompute(2)
+	recomputeDynamic(2)
 
 	# Control state
 	plug(robot.dynamic.com, self.com)
