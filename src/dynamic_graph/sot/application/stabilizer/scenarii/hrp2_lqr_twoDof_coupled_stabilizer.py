@@ -24,6 +24,8 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
 	robot.device.forceRLEG.value=(2.4303733340459406, 11.156361786170869, 285.59013529212666, -0.69957871247984049, 2.0516111892090887, -0.22872430884228223)
 	robot.device.accelerometer.value=(0.12527866711822, 0.089756740219665537, 9.8059788372472152)
 	robot.device.gyrometer.value=(-0.0029326257213877862, 0.007655425240526083, -8.001571126249214e-05)
+	robot.device.forceLARM.value=(-2.04071, 3.25524, -5.89116, 0.0814646, 0.0779619, 0.0190317)
+	robot.device.forceRARM.value=(2.07224, -9.57906, 0.69111, -0.415802, 0.289026, 0.00621748)
 
 	def recomputeDynamic(i):
 		robot.dynamic.chest.recompute(i)
@@ -46,7 +48,7 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
 
 	# Estimator of the flexibility state
         self.estimator = HRP2ModelBaseFlexEstimatorIMUForce (robot, taskname+"Estimator")
-        plug (self.estimator.odometry.nbSupport,self.nbSupport)
+        plug (self.estimator.interface.modeledContactsNbr,self.nbSupport)
 	plug(self.estimator.flexPosition, self.tflex)
 	plug(self.estimator.flexVelocity, self.dtflex)
 	plug(self.estimator.flexAcceleration, self.ddtflex)
