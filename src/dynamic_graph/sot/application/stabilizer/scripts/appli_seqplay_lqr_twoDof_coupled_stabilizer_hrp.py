@@ -57,11 +57,14 @@ appli.gains['trunk'].setConstant(2)
 stabilizer.setFixedGains(True)
 stabilizer.setHorizon(400)
 
+est.interface.setWithUnmodeledMeausrements(False)
+
+
 stabilizer.setStateCost(matrixToTuple(1*np.diag((100,100,1000,100,100,100,100,1,1,100,1,1,1,1))))
 
 appli.robot.addTrace( est.name,'flexibility' )
+appli.robot.addTrace( est.name,'state' )
 appli.robot.addTrace( est.name,'inovation' )
-appli.robot.addTrace( est.name,'flexThetaU' )
 appli.robot.addTrace( est.name,'flexInversePoseThetaU' )
 appli.robot.addTrace( est.name,'flexInverseOmega')
 appli.robot.addTrace( est.name,'flexInverseVelocityVector' )
@@ -98,8 +101,9 @@ appli.robot.addTrace (stabilizer.name,'supportPos1')
 appli.robot.addTrace (stabilizer.name,'supportPos2')
 appli.robot.addTrace (stabilizer.name,'energy')
 appli.robot.addTrace( zmp.name, 'zmp')
-appli.robot.addTrace( appli.zmpRef.name, 'zmp')
-appli.robot.addTrace( zmpEst.name, 'zmp')
+appli.robot.addTrace( est.interface.name, 'modeledContactsNbr')
+appli.robot.addTrace( est.interface.name, 'unmodeledContactsNbr')
+appli.robot.addTrace( est.interface.name, 'contactsNbr')
 
 appli.startTracer()
 
