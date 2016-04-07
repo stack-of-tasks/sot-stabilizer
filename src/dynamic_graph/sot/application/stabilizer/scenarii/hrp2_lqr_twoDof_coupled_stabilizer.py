@@ -51,7 +51,6 @@ class HRP2LqrTwoDofCoupledStabilizer(HRP2LQRTwoDofCoupledStabilizer):
         plug (self.estimator.interface.modeledContactsNbr,self.nbSupport)
 	plug(self.estimator.flexPosition, self.tflex)
 	plug(self.estimator.flexVelocity, self.dtflex)
-	plug(self.estimator.flexAcceleration, self.ddtflex)
 
 	self.estimator.state.recompute(2)
 	recomputeDynamic(2)

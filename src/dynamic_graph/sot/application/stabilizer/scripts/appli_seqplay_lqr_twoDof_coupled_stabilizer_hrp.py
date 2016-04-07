@@ -12,7 +12,9 @@ from dynamic_graph.sot.dynamics.zmp_from_forces import ZmpFromForces
 
 forceSeqplay = True
 #traj = '/home/amifsud/devel/ros/install/resources/seqplay/stand-on-left-foot'
-traj = '/home/alexis/devel/ros/install/resources/seqplay/stand-on-right-foot'
+#traj = '/home/alexis/devel/ros/install/resources/seqplay/stand-on-right-foot'
+
+traj = '/home/alexis/devel/ros/install/resources/seqplay/walkfwd-resampled'
 
 appli =  SeqPlayLqrTwoDofCoupledStabilizerHRP2(robot, traj, False, False, False,forceSeqplay)
 appli.withTraces()
@@ -32,7 +34,7 @@ seq = appli.seq
 # Robot
 stabilizer.setkts(350)
 stabilizer.setktd(10)
-stabilizer.setkfs(40000)
+stabilizer.setkfs(4000)
 stabilizer.setkfd(600)
 
 plug(robot.device.velocity,robot.dynamic.velocity)
@@ -58,6 +60,9 @@ stabilizer.setFixedGains(True)
 stabilizer.setHorizon(400)
 
 est.interface.setWithUnmodeledMeausrements(False)
+
+est.setProcessNoiseCovariance(matrixToTuple(np.diag((1e-8,)*12+(1e-8,)*6+(0e0,)*6+(1.e-13,)*2+(1.e-4,)*6)))
+est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-3,)*3+(1e-13,)*3+(1e-13,)*6))) 
 
 
 stabilizer.setStateCost(matrixToTuple(1*np.diag((100,100,1000,100,100,100,100,1,1,100,1,1,1,1))))

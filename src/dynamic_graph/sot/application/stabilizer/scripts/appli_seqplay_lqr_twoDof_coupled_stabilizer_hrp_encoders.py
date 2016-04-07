@@ -82,7 +82,7 @@ plug (estEnc.odometryFF.homoSupportPos1 , zmpEnc.sensorPosition_0)
 plug (estEnc.odometryFF.homoSupportPos2 , zmpEnc.sensorPosition_1)
 
 appli.gains['trunk'].setConstant(2)
-estEnc.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-3,)*3+(1e-6,)*3)))
+#estEnc.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-3,)*3+(1e-6,)*3)))
 #estEnc.setProcessNoiseCovariance(matrixToTuple(np.diag((1e-8,)*12+(1e-4,)*6)))
 estEnc.setForceVariance(1e-4)
 
@@ -123,8 +123,19 @@ perturbatorTask.activate(False)
 
 #appli.nextStep()
 
+appli.robot.addTrace( estEnc.odometry.name,'freeFlyer' )
+appli.robot.addTrace( robot.dynamicEncoders.name,'position' )
+appli.robot.addTrace( robot.dynamic.name,'position' )
+appli.robot.addTrace( robot.dynamicOdo.name,'position' )
+
+appli.robot.addTrace( robot.dynamic.name,'com' )
+appli.robot.addTrace( robot.dynamicEncoders.name,'com' )
+appli.robot.addTrace( robot.dynamic.name,'left-ankle' )
+appli.robot.addTrace( robot.dynamicEncoders.name,'left-ankle' )
+
 appli.robot.addTrace( estEnc.name,'flexibility' )
 appli.robot.addTrace( estEnc.name,'input')
+appli.robot.addTrace( estEnc.interface.name,'contactsNbr')
 appli.robot.addTrace( estEnc.name,'measurement')
 appli.robot.addTrace( estEnc.name,  'forcesAndMoments')
 appli.robot.addTrace( stabilizer.name,'task' )

@@ -293,8 +293,6 @@ namespace sotStabilizer
     SignalPtr < dynamicgraph::Vector, int> tflexSIN_;
     // Vitesse
     SignalPtr < dynamicgraph::Vector, int> dtflexSIN_;
-    // Acceleration
-    SignalPtr < dynamicgraph::Vector, int> ddtflexSIN_;
 
         /// Reference state
     // Position of center of mass
