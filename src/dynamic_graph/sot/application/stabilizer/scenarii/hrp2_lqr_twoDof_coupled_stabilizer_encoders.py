@@ -34,10 +34,9 @@ class HRP2LqrTwoDofCoupledStabilizerEncoders(HRP2LQRTwoDofCoupledStabilizer):
 
 		# Estimator of the flexibility state
         self.estimatorEnc = HRP2ModelBaseFlexEstimatorIMUForceEncoders (robot, taskname+"EstimatorEncoders")
-	plug (self.estimatorEnc.odometryFF.nbSupport,self.nbSupport)
+	plug (self.estimatorEnc.interface.supportContactsNbr,self.nbSupport)
 	plug(self.estimatorEnc.flexPosition, self.tflex)
 	plug(self.estimatorEnc.flexVelocity, self.dtflex)
-	plug(self.estimatorEnc.flexAcceleration, self.ddtflex)
 
 	# Control state
 	plug(robot.dynamic.com, self.com)
