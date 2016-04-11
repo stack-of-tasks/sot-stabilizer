@@ -28,6 +28,7 @@ appli =  SeqPlayLqrTwoDofCoupledStabilizerHRP2Encoders(robot, traj, False, False
 appli.withTraces()
 
 estEnc = appli.taskCoMStabilized.estimatorEnc
+est = appli.taskCoMStabilized.estimator
 stabilizer = appli.taskCoMStabilized
 seq = appli.seq
 
@@ -52,6 +53,7 @@ stabilizer.setkfs(kfe)
 stabilizer.setkfd(kfv)
 
 plug(robot.device.velocity,robot.dynamic.velocity)
+plug(robot.device.velocity,robot.dynamicEncoders.velocity)
 
 zmp = ZmpFromForces('zmpReal')
 plug (robot.device.forceLLEG , zmp.force_0)
@@ -95,6 +97,15 @@ perturbatorTask.setMode(0)
 perturbatorTask.setPeriod(0)
 perturbatorTask.activate(False)
 
+appli.robot.addTrace( estEnc.name,'input')
+appli.robot.addTrace( estEnc.name,'measurement')
+appli.robot.addTrace( robot.dynamicEncoders.name,'waist' )
+appli.robot.addTrace( est.name,'input')
+appli.robot.addTrace( est.name,'measurement')
+
+appli.robot.addTrace( robot.device.name,'state')
+appli.robot.addTrace( robot.device.name,'robotState')
+
 appli.robot.addTrace( estEnc.odometry.name,'freeFlyer' )
 appli.robot.addTrace( robot.dynamicEncoders.name,'position' )
 appli.robot.addTrace( robot.dynamic.name,'position' )
@@ -107,9 +118,6 @@ appli.robot.addTrace( robot.dynamicEncoders.name,'left-ankle' )
 
 appli.robot.addTrace( estEnc.name,'flexibility' )
 appli.robot.addTrace( estEnc.name,'state' )
-appli.robot.addTrace( estEnc.name,'input')
-appli.robot.addTrace( estEnc.interface.name,'contactsNbr')
-appli.robot.addTrace( estEnc.name,'measurement')
 appli.robot.addTrace( estEnc.name,  'forcesAndMoments')
 appli.robot.addTrace( stabilizer.name,'task' )
 appli.robot.addTrace ( stabilizer.name,'state')
