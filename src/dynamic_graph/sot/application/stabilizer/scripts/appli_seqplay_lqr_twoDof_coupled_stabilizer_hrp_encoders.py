@@ -55,6 +55,7 @@ stabilizer.setkfd(kfv)
 plug(robot.device.velocity,robot.dynamic.velocity)
 plug(robot.device.velocity,robot.dynamicEncoders.velocity)
 
+
 zmp = ZmpFromForces('zmpReal')
 plug (robot.device.forceLLEG , zmp.force_0)
 plug (robot.device.forceRLEG, zmp.force_1)
@@ -131,7 +132,6 @@ appli.robot.addTrace( zmp.name, 'zmp')
 #appli.robot.addTrace( zmpEst.name, 'zmp')
 #appli.robot.addTrace( zmpEnc.name, 'zmp')
 appli.robot.addTrace (stabilizer.name,'computationTime')
-
 appli.robot.addTrace( robot.dynamicEncoders.name,'position' )
 appli.robot.addTrace( robot.dynamic.name,'position' )
 
