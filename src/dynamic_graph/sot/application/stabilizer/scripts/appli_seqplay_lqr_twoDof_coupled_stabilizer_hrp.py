@@ -12,9 +12,8 @@ from dynamic_graph.sot.dynamics.zmp_from_forces import ZmpFromForces
 
 forceSeqplay = True
 #traj = '/home/amifsud/devel/ros/install/resources/seqplay/stand-on-left-foot'
-#traj = '/home/alexis/devel/ros/install/resources/seqplay/stand-on-right-foot'
-
-traj = '/home/alexis/devel/ros/install/resources/seqplay/walkfwd-resampled'
+traj = '/home/alexis/devel/ros/install/resources/seqplay/stand-on-right-foot'
+#traj = '/home/alexis/devel/ros/install/resources/seqplay/walkfwd-resampled'
 
 appli =  SeqPlayLqrTwoDofCoupledStabilizerHRP2(robot, traj, False, False, False,forceSeqplay)
 appli.withTraces()
@@ -50,6 +49,13 @@ plug (est.forcesSupport1 , zmpEst.force_0)
 plug (est.forcesSupport2, zmpEst.force_1)
 plug (robot.frames['leftFootForceSensor'].position , zmpEst.sensorPosition_0)
 plug (robot.frames['rightFootForceSensor'].position, zmpEst.sensorPosition_1)
+
+est.setWithForceSensors(True)
+est.setWithUnmodeledMeasurements(False)
+est.setWithComBias(False)
+est.setAbsolutePosition(False)
+
+est.drift.init()
 
 appli.gains['trunk'].setConstant(2)
 stabilizer.setFixedGains(True)
@@ -95,6 +101,7 @@ appli.robot.addTrace (stabilizer.name,'supportPos2')
 appli.robot.addTrace (stabilizer.name,'energy')
 appli.robot.addTrace( zmp.name, 'zmp')
 appli.robot.addTrace( est.interface.name, 'modeledContactsNbr')
+appli.robot.addTrace( est.interface.name, 'supportContactsNbr')
 appli.robot.addTrace( est.interface.name, 'unmodeledContactsNbr')
 appli.robot.addTrace( est.interface.name, 'contactsNbr')
 

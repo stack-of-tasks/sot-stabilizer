@@ -68,6 +68,11 @@ plug (robot.frames['rightFootForceSensor'].position, zmp.sensorPosition_1)
 #plug (estEnc.odometryFF.homoSupportPos1 , zmpEnc.sensorPosition_0)
 #plug (estEnc.odometryFF.homoSupportPos2 , zmpEnc.sensorPosition_1)
 
+estEnc.setWithForceSensors(True)
+estEnc.setWithUnmodeledMeasurements(True)
+estEnc.setWithComBias(False)
+estEnc.setAbsolutePosition(True)
+
 appli.gains['trunk'].setConstant(2)
 estEnc.setForceVariance(1e-4)
 stabilizer.setFixedGains(False)
