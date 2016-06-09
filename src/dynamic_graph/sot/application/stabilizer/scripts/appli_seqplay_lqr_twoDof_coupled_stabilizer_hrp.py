@@ -13,7 +13,7 @@ from dynamic_graph.sot.dynamics.zmp_from_forces import ZmpFromForces
 forceSeqplay = True
 #traj = '/home/amifsud/devel/ros/install/resources/seqplay/stand-on-left-foot'
 traj = '/home/alexis/devel/ros/install/resources/seqplay/stand-on-right-foot'
-#traj = '/home/alexis/devel/ros/install/resources/seqplay/walkfwd-resampled'
+traj = '/home/alexis/devel/ros/install/resources/seqplay/walkfwd-resampled'
 
 appli =  SeqPlayLqrTwoDofCoupledStabilizerHRP2(robot, traj, False, False, False,forceSeqplay)
 appli.withTraces()
@@ -33,7 +33,7 @@ seq = appli.seq
 # Robot
 stabilizer.setkts(350)
 stabilizer.setktd(10)
-stabilizer.setkfs(4000)
+stabilizer.setkfs(5000)
 stabilizer.setkfd(600)
 
 plug(robot.device.velocity,robot.dynamic.velocity)
@@ -47,15 +47,26 @@ plug (robot.frames['rightFootForceSensor'].position, zmp.sensorPosition_1)
 zmpEst = ZmpFromForces('zmpEstimated')
 plug (est.forcesSupport1 , zmpEst.force_0)
 plug (est.forcesSupport2, zmpEst.force_1)
-plug (robot.frames['leftFootForceSensor'].position , zmpEst.sensorPosition_0)
-plug (robot.frames['rightFootForceSensor'].position, zmpEst.sensorPosition_1)
+plug (est.interface.positionSupport1 , zmpEst.sensorPosition_0)
+plug (est.interface.positionSupport2 , zmpEst.sensorPosition_1)
 
 est.setWithForceSensors(True)
 est.setWithUnmodeledMeasurements(False)
 est.setWithComBias(False)
 est.setAbsolutePosition(False)
 
-est.drift.init()
+# Covariances
+est.setProcessNoiseCovariance(matrixToTuple(np.diag((1e-8,)*12+(1e-4,)*12+(1.e-2,)*6+(1e-15,)*2+(1.e-8,)*3)))
+est.setMeasurementNoiseCovariance(matrixToTuple(np.diag((1e-3,)*3+(1e-6,)*3+(1e-13,)*6))) 
+est.setForceVariance(1e-6)
+
+# Contact model definition
+est.setKfe(matrixToTuple(np.diag((40000,40000,40000))))
+est.setKfv(matrixToTuple(np.diag((600,600,600))))
+est.setKte(matrixToTuple(np.diag((600,600,600))))
+est.setKtv(matrixToTuple(np.diag((60,60,60))))
+
+#est.initAbsolutePoses()
 
 appli.gains['trunk'].setConstant(2)
 stabilizer.setFixedGains(True)
@@ -64,10 +75,6 @@ stabilizer.setHorizon(400)
 appli.robot.addTrace( est.name,'flexibility' )
 appli.robot.addTrace( est.name,'state' )
 appli.robot.addTrace( est.name,'inovation' )
-appli.robot.addTrace( est.name,'flexInversePoseThetaU' )
-appli.robot.addTrace( est.name,'flexInverseOmega')
-appli.robot.addTrace( est.name,'flexInverseVelocityVector' )
-appli.robot.addTrace( est.name,'flexMatrixInverse' )
 appli.robot.addTrace( est.name,'input')
 appli.robot.addTrace( est.name,'measurement')
 appli.robot.addTrace( est.name,'simulatedSensors' )
@@ -100,9 +107,9 @@ appli.robot.addTrace (stabilizer.name,'supportPos1')
 appli.robot.addTrace (stabilizer.name,'supportPos2')
 appli.robot.addTrace (stabilizer.name,'energy')
 appli.robot.addTrace( zmp.name, 'zmp')
+appli.robot.addTrace( zmpEst.name, 'zmp')
 appli.robot.addTrace( est.interface.name, 'modeledContactsNbr')
 appli.robot.addTrace( est.interface.name, 'supportContactsNbr')
-appli.robot.addTrace( est.interface.name, 'unmodeledContactsNbr')
 appli.robot.addTrace( est.interface.name, 'contactsNbr')
 
 appli.startTracer()
