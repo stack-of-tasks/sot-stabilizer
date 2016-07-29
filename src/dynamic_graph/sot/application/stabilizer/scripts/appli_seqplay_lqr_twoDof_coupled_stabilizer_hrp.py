@@ -45,8 +45,8 @@ plug (robot.frames['leftFootForceSensor'].position , zmp.sensorPosition_0)
 plug (robot.frames['rightFootForceSensor'].position, zmp.sensorPosition_1)
 
 zmpEst = ZmpFromForces('zmpEstimated')
-plug (est.forcesSupport1 , zmpEst.force_0)
-plug (est.forcesSupport2, zmpEst.force_1)
+plug (est.interface.forceSupport1 , zmpEst.force_0)
+plug (est.interface.forceSupport2, zmpEst.force_1)
 plug (est.interface.positionSupport1 , zmpEst.sensorPosition_0)
 plug (est.interface.positionSupport2 , zmpEst.sensorPosition_1)
 
