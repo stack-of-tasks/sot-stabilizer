@@ -85,7 +85,6 @@ namespace sotStabilizer
     comBiasSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comBias"),
     tflexSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::tflex"),
     dtflexSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::dtflex"),
-    ddtflexSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::ddtflex"),
     comRefSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::comRef"),
     perturbationVelSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::perturbationVel"),
     perturbationAccSIN_ (NULL, "HRP2LQRTwoDofCoupledStabilizer("+inName+")::input(vector)::perturbationAcc"),
@@ -145,7 +144,6 @@ namespace sotStabilizer
     signalRegistration (flexAngVelVectSIN_);
     signalRegistration (tflexSIN_);
     signalRegistration (dtflexSIN_);
-    signalRegistration (ddtflexSIN_);
     signalRegistration (comBiasSIN_);
     signalRegistration (comRefSIN_);
     signalRegistration (perturbationVelSIN_);
@@ -493,7 +491,6 @@ namespace sotStabilizer
     flexAngVelVectSIN_.setConstant(vect);
     tflexSIN_.setConstant(vect);
     dtflexSIN_.setConstant(vect);
-    ddtflexSIN_.setConstant(vect);
     angularmomentumSIN.setConstant(vect);
     vect.resize(6); vect.setZero();
     waistAngVelSIN_.setConstant(vect);
@@ -634,7 +631,6 @@ namespace sotStabilizer
     // Translational part of the flexibility
     const stateObservation::Vector & tflex = convertVector<stateObservation::Vector>(tflexSIN_.access(time));
     const stateObservation::Vector & dtflex = convertVector<stateObservation::Vector>(dtflexSIN_.access(time));
-    const stateObservation::Vector & ddtflex = convertVector<stateObservation::Vector>(ddtflexSIN_.access(time));
 
     // State Reference
         // References of velocities and acceleration are equal to zero
